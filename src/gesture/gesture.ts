@@ -50,8 +50,11 @@ export function release(
   width: number,
   _can: { prev: boolean; next: boolean },
 ): "next" | "prev" | "cancel" {
-  const far = -dx / width >= GESTURE.commitFraction;
-  const flung = -vx >= GESTURE.flingVelocity && -dx >= GESTURE.flingMinDx;
-  const flungBack = vx >= GESTURE.flingVelocity;
-  return (far || flung) && !flungBack ? "next" : "cancel";
+  const distance = Math.abs(dx);
+  const speed = Math.sign(dx) * vx; // along the drag; negative when flung back
+  const far = distance / width >= GESTURE.commitFraction;
+  const flung = speed >= GESTURE.flingVelocity && distance >= GESTURE.flingMinDx;
+  const flungBack = -speed >= GESTURE.flingVelocity;
+  if (!(far || flung) || flungBack) return "cancel";
+  return dx < 0 ? "next" : "prev";
 }

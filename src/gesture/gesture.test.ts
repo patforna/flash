@@ -84,4 +84,11 @@ describe("release", () => {
   test("a fling back against the drag cancels, however far the drag went", () => {
     expect(release(-300, 0.45, width, both)).toBe("cancel");
   });
+
+  test("rightwards mirrors it all for the previous card", () => {
+    expect(release(168, 0, width, both)).toBe("prev");
+    expect(release(24, 0.45, width, both)).toBe("prev");
+    expect(release(23, 2, width, both)).toBe("cancel");
+    expect(release(300, -0.45, width, both)).toBe("cancel");
+  });
 });
