@@ -11,6 +11,7 @@
 // [x] question: 8–100 characters after trimming, one line, inline markup only, unique ignoring case
 // [x] answer: 1–520 characters after trimming, at most 12 lines, code lines at most 46 characters, no tabs, markup
 // [x] characters the fonts don't cover fail, named with their code point
+// [x] including what an HTML entity turns into
 // [x] ids unique: different questions with the same slug
 // [x] the fixture deck loads cleanly
 import { describe, expect, test } from "bun:test";
@@ -284,5 +285,13 @@ answer = "Dead tuples."
       "Case studies",
     ]);
     expect(deck.cards).toHaveLength(9);
+  });
+
+  test("fails what an HTML entity turns into when neither font covers it", () => {
+    const toml = file([card({ answer: "Done &#x2713; &mdash; or not." })]);
+
+    expect(problemsOf(toml)).toEqual([
+      'card 1 "what-is-redis-for": answer has "✓" (U+2713), which neither font covers',
+    ]);
   });
 });

@@ -131,8 +131,10 @@ function readAnswer(answer: string) {
 // Adds what the markup and the characters break to a field's problems, and keeps its HTML.
 function finish(field: string, text: string, result: Rendered, problems: string[]) {
   if ("problems" in result) problems.push(...result.problems.map((reason) => `${field} has ${reason}`));
-  for (const character of uncovered(text)) problems.push(`${field} has ${character}, which neither font covers`);
-  return { html: "html" in result ? result.html : "", problems };
+  const html = "html" in result ? result.html : "";
+  // The HTML too: an entity such as `&#x2713;` only becomes its character there.
+  for (const character of uncovered(text + html)) problems.push(`${field} has ${character}, which neither font covers`);
+  return { html, problems };
 }
 
 function checkCardTopics(topics: string[], declared: readonly string[] | undefined): string[] {
