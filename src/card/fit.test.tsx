@@ -9,7 +9,7 @@
 // [x] useFit: a part overflowing across (a code line wider than its column) also steps down
 // [x] useFit: "scroll" when no step fits
 // [x] useFit: measures once per key, not on every render (a flip re-renders the card; measuring forces layout)
-// [ ] useFit: measures again when its key changes
+// [x] useFit: measures again when its key changes
 import { render, screen, waitFor } from "@testing-library/react";
 import { useLayoutEffect, useRef } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -130,5 +130,13 @@ describe("useFit", () => {
     const checks = fonts.check.mock.calls.length;
     rerender(<Face fitKey="vacuum" />);
     expect(fonts.check.mock.calls.length).toBe(checks);
+  });
+
+  it("measures again when its key changes", () => {
+    const { rerender } = render(<Face fitKey="vacuum" />);
+    rerender(<Face fitKey="shard" overflow={{ until: 2, axis: "down" }} />);
+    const face = screen.getByTestId("face");
+    expect(face.dataset.fit).toBe("2");
+    expect(face.dataset.step).toBe("2");
   });
 });
