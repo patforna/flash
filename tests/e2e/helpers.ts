@@ -14,7 +14,7 @@ export const test = base.extend({
   },
 });
 
-export interface Point {
+interface Point {
   x: number;
   y: number;
 }
@@ -31,7 +31,7 @@ export function cdp(page: Page): Promise<CDPSession> {
 }
 
 // Math.random as mulberry32 from a fixed seed, before any of the page's scripts run.
-export async function seed(page: Page, from = 42): Promise<void> {
+async function seed(page: Page, from = 42): Promise<void> {
   await page.addInitScript((s) => {
     let a = s;
     Math.random = () => {
@@ -47,8 +47,8 @@ const MOVE_MS = 8; // a touch screen's report rate: a move every 8 ms
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, Math.max(0, ms)));
 
-// A finger on the screen: CDP touch events (real pointerType "touch") with explicit timestamps, paced in real time,
-// so the page sees exactly the speed asked for. Every gesture of the specs is made of these.
+// A finger on the screen: CDP touch events (real pointerType "touch") with explicit timestamps, none sent ahead of its
+// stamp, so the page sees exactly the speed asked for, whatever the machine's load. Swipes and drags are made of these.
 export async function finger(page: Page, at: Point) {
   const session = await cdp(page);
   const t0 = Date.now();
@@ -73,10 +73,6 @@ export async function finger(page: Page, at: Point) {
         here = { x: from.x + ((to.x - from.x) * i) / steps, y: from.y + ((to.y - from.y) * i) / steps };
         await send("touchMove", here);
       }
-    },
-    async wait(ms: number) {
-      elapsed += ms;
-      await sleep(t0 + elapsed - Date.now());
     },
     async up() {
       await send("touchEnd");

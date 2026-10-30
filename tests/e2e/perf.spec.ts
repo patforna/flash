@@ -18,7 +18,8 @@ async function slowCPU(page: Page) {
 // What the observers have seen since `since` (a performance.now() time): Event Timing entries of 16 ms or more, and
 // long animation frames (over 50 ms, by definition).
 interface Seen {
-  events: { name: string; duration: number }[];
+  // Each entry with where its time went: waiting to be handled, the handlers, then until the next frame was shown.
+  events: { name: string; duration: number; delay: number; processing: number }[];
   frames: number[];
 }
 
@@ -45,7 +46,14 @@ async function seenSince(page: Page, since: number): Promise<Seen> {
       seen: { events: PerformanceEventTiming[]; frames: PerformanceEntry[] };
     };
     return {
-      events: seen.events.filter((e) => e.startTime >= t).map((e) => ({ name: e.name, duration: e.duration })),
+      events: seen.events
+        .filter((e) => e.startTime >= t)
+        .map((e) => ({
+          name: e.name,
+          duration: e.duration,
+          delay: Math.round(e.processingStart - e.startTime),
+          processing: Math.round(e.processingEnd - e.processingStart),
+        })),
       frames: seen.frames.filter((f) => f.startTime >= t).map((f) => Math.round(f.duration)),
     };
   }, since);
@@ -88,10 +96,15 @@ test("a tap turns the card and a key deals the next, each within 48 ms (Event Ti
   await quiet(700);
 
   const { events } = await seenSince(page, since);
-  const worst = events.reduce((max, e) => Math.max(max, e.duration), 0);
+  const worst = events.reduce((a, b) => (b.duration > a.duration ? b : a), {
+    name: "",
+    duration: 0,
+    delay: 0,
+    processing: 0,
+  });
   test.info().annotations.push({
     type: "worst Event Timing entry",
-    description: `${worst} ms (${events.length} entries of 16 ms or more)`,
+    description: `${worst.name} ${worst.duration} ms: ${worst.delay} ms waiting, ${worst.processing} ms in handlers (${events.length} entries of 16 ms or more)`,
   });
   expect(events.filter((e) => e.duration > 48)).toEqual([]);
 });
