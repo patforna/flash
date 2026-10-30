@@ -17,4 +17,12 @@ describe("classify", () => {
   test("crossing the slop mostly sideways is horizontal", () => {
     expect(classify(at(100, 100), at(88, 110))).toBe("horizontal");
   });
+
+  test("crossing the slop any steeper is vertical", () => {
+    expect(classify(at(100, 100), at(89, 110))).toBe("vertical");
+  });
+
+  test("a move just inside the slop is still pending", () => {
+    expect(classify(at(100, 100), at(106, 107.9))).toBe("pending");
+  });
 });
