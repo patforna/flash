@@ -193,4 +193,23 @@ describe("topics", () => {
 
     expect(chips()).toEqual(["All, 3 cards", "Redis, 2 cards", "Postgres, 1 card", "Queues, 1 card"]);
   });
+
+  test("a topic's chip narrows the pass to its cards; All widens it again, keeping the card on top", async () => {
+    await reading();
+    const chip = (name: string) => within(screen.getByRole("group", { name: "Topics" })).getByRole("button", { name });
+
+    fireEvent.click(chip("Queues, 1 card"));
+    expect(chip("Queues, 1 card").getAttribute("aria-pressed")).toBe("true");
+    expect([question(layer("current")), within(layer("current")).getAllByText("1 / 1").length]).toEqual([
+      "Why queue work?",
+      2,
+    ]);
+
+    fireEvent.click(chip("All, 3 cards"));
+    expect(chip("All, 3 cards").getAttribute("aria-pressed")).toBe("true");
+    expect([question(layer("current")), within(layer("current")).getAllByText("1 / 3").length]).toEqual([
+      "Why queue work?",
+      2,
+    ]);
+  });
 });

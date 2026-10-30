@@ -37,8 +37,8 @@ function Reader({ deck }: { deck: Deck }) {
         counts={counts}
         total={deck.cards.length}
         selected={view.selected}
-        onToggle={() => {}}
-        onAll={() => {}}
+        onToggle={view.toggleTopic}
+        onAll={view.clearTopics}
         colourOf={() => ""}
       />
       <CardStage
