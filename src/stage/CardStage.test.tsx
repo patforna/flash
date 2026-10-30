@@ -323,4 +323,15 @@ describe("buttons", () => {
     await land();
     expect(calls).toEqual(["goNext", "goPrev"]);
   });
+
+  test('"Previous" is off on a pass\'s first card', () => {
+    setup();
+    expect(screen.getByRole("button", { name: "Previous" })).toHaveProperty("disabled", true);
+    expect(screen.getByRole("button", { name: "Next" })).toHaveProperty("disabled", false);
+  });
+
+  test("the end card has nothing to show on its back", () => {
+    setup({ start: 4 });
+    expect(screen.queryByRole("button", { name: "Show answer" })).toBeNull();
+  });
 });
