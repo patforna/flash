@@ -10,7 +10,7 @@ const OPTIONS = {
 };
 
 // Bun escapes `<` in text and attribute values, so every `<` in its output starts a tag.
-const TOKEN = /<(\/?)([a-z][a-z0-9]*)[^>]*>|([^<]+)/g;
+const TOKEN = /<(\/?)([a-z][a-z0-9]*)([^>]*)>|([^<]+)/g;
 
 type Rendered = { html: string } | { problems: string[] };
 
@@ -20,14 +20,19 @@ export function renderAnswer(src: string): Rendered {
   const html = Bun.markdown
     .html(src, OPTIONS)
     .replaceAll("<br />\n", "\n")
-    .replace(TOKEN, (tag: string, slash: string, name: string | undefined, text: string | undefined) => {
-      if (name === undefined) {
-        // Whitespace between blocks is dropped; in a paragraph or an item, each line is a line on the card.
-        return open.some((t) => t === "p" || t === "li") ? (text ?? "").replaceAll("\n", "<br>") : "";
+    .replace(TOKEN, (_: string, slash: string, name: string, attrs: string, text: string | undefined) => {
+      if (text !== undefined) {
+        // Code keeps its lines; in a paragraph or an item each line is a line on the card; whitespace between blocks goes.
+        if (open.includes("pre")) return text;
+        return open.some((t) => t === "p" || t === "li") ? text.replaceAll("\n", "<br>") : "";
       }
-      if (slash) open.pop();
-      else open.push(name);
-      return tag;
+      if (slash) {
+        open.pop();
+        return `</${name}>`;
+      }
+      open.push(name);
+      // Every attribute goes but the start of a numbered list (`code` loses its `class="language-…"`).
+      return `<${name}${name === "ol" ? (attrs.match(/ start="\d+"/)?.[0] ?? "") : ""}>`;
     });
   return { html };
 }
