@@ -1,8 +1,8 @@
 // Test support for the gesture and the stage: a recording stand-in for Web Animations, and pointers with timestamps.
 import { act } from "@testing-library/react";
 
-export // Records what was animated; finish() and cancel() settle `finished` as browsers do (cancel rejects it).
-class FakeAnimation {
+// Records what was animated; finish() and cancel() settle `finished` as browsers do (cancel rejects it).
+export class FakeAnimation {
   playState: AnimationPlayState = "running";
   readonly finished: Promise<FakeAnimation>;
   #resolve: (a: FakeAnimation) => void = () => {};
@@ -32,8 +32,8 @@ class FakeAnimation {
   }
 }
 
-export // A finger (or mouse) going down on `target` at (x, y) at time `t` ms; later events go to the stage, as captured.
-function press(stage: HTMLElement, target: Element, x: number, y: number, t = 0, init: PointerEventInit = {}) {
+// A finger (or mouse) going down on `target` at (x, y) at time `t` ms; later events go to the stage, as captured.
+export function press(stage: HTMLElement, target: Element, x: number, y: number, t = 0, init: PointerEventInit = {}) {
   let now = { x, y, t };
   const fire = (type: string, el: Element) =>
     act(() => {
