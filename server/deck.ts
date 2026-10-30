@@ -52,6 +52,8 @@ export function loadDeck(toml: string): Deck {
   }
 
   if (intact("topics")) for (const text of checkTopics(file.topics)) report(undefined, text);
+  if (Array.isArray(file.card) && cards.length === 0) report(undefined, "no cards");
+  if (cards.length > LIMITS.cards) report(undefined, `${cards.length} cards (max ${LIMITS.cards})`);
 
   const seen = new Map<string, number>();
   const rendered: Card[] = [];
