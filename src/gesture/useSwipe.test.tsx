@@ -314,4 +314,18 @@ describe("cancelling", () => {
     });
     expect(onCommit).not.toHaveBeenCalled();
   });
+
+  test("a cancelled right drag sends the previous card back off screen, then hides it again", async () => {
+    const { stage, layer, animations } = setup();
+    const prev = layer("prev");
+    const finger = press(stage, layer("current"), 400, 200);
+    finger.move(450, 200, 50);
+    finger.up(100);
+    expect(animations.map((a) => [a.el, a.keyframes, a.options])).toEqual([
+      [prev, [{ transform: "translateX(-910px)" }, { transform: "translateX(-960px)" }], cancel],
+    ]);
+    expect(inline(prev)).toEqual({ transform: "translateX(-960px)", visibility: "visible" });
+    await act(async () => animations[0]?.finish());
+    expect(inline(prev)).toEqual({ transform: "", visibility: "" });
+  });
 });

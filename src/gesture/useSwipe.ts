@@ -65,7 +65,7 @@ function swipe(stage: RefObject<HTMLElement | null>, options: RefObject<SwipeOpt
     if (running !== run) return;
     running = null;
     const { dir } = run;
-    if (!dir) return;
+    if (!dir) return clear();
     settling = run;
     flushSync(() => options.current.onCommit(dir));
   }
@@ -75,6 +75,10 @@ function swipe(stage: RefObject<HTMLElement | null>, options: RefObject<SwipeOpt
     if (!settling) return;
     for (const animation of settling.animations) animation.cancel();
     settling = null;
+    clear();
+  }
+
+  function clear() {
     for (const el of touched) {
       el.style.removeProperty("transform");
       el.style.removeProperty("visibility");
@@ -141,6 +145,13 @@ function swipe(stage: RefObject<HTMLElement | null>, options: RefObject<SwipeOpt
       const from = el.style.transform;
       el.style.removeProperty("transform");
       animations.push(animate(el, [{ transform: from }, { transform: rest }], timing));
+    }
+    const { prev } = g.layers;
+    if (prev?.style.visibility === "visible") {
+      // Its resting style is hidden, so it ends off screen, still visible, until the run completes.
+      const from = prev.style.transform;
+      write(prev, `translateX(${gone(g.rect)}px)`);
+      animations.push(animate(prev, [{ transform: from }, { transform: prev.style.transform }], timing));
     }
     play(animations, null);
   }
