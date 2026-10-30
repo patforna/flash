@@ -184,16 +184,25 @@ function swipe(stage: RefObject<HTMLElement | null>, options: RefObject<SwipeOpt
     if (decision === "cancel") springBack(g);
   };
 
+  // The browser took the pointer (a scroll, a system gesture): whatever moved goes back.
+  const cancel = () => {
+    const g = gesture;
+    gesture = null;
+    if (g?.axis === "horizontal") springBack(g);
+  };
+
   function listen() {
     const el = stage.current;
     if (!el) return;
     el.addEventListener("pointerdown", down);
     el.addEventListener("pointermove", move);
     el.addEventListener("pointerup", up);
+    el.addEventListener("pointercancel", cancel);
     return () => {
       el.removeEventListener("pointerdown", down);
       el.removeEventListener("pointermove", move);
       el.removeEventListener("pointerup", up);
+      el.removeEventListener("pointercancel", cancel);
     };
   }
 

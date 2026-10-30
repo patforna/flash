@@ -329,3 +329,28 @@ describe("cancelling", () => {
     expect(inline(prev)).toEqual({ transform: "", visibility: "" });
   });
 });
+
+describe("ignoring", () => {
+  test("a vertical drag does nothing", () => {
+    const { stage, layer, animations, onTap, onCommit } = setup();
+    const finger = press(stage, layer("current"), 700, 200);
+    finger.move(696, 160);
+    finger.move(640, 120);
+    finger.up();
+    expect(inline(layer("current"))).toEqual({ transform: "", visibility: "" });
+    expect(animations).toEqual([]);
+    expect(onTap).not.toHaveBeenCalled();
+    expect(onCommit).not.toHaveBeenCalled();
+  });
+
+  test("a pointercancel mid-drag springs the card back", () => {
+    const { stage, layer, animations } = setup();
+    const finger = press(stage, layer("current"), 700, 200);
+    finger.move(500, 200);
+    finger.cancel();
+    expect(animations.map((a) => a.keyframes.at(-1))).toEqual([
+      { transform: "translateX(0px) rotate(0deg)" },
+      { transform: "scale(0.965) translateY(8px)" },
+    ]);
+  });
+});
