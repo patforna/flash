@@ -1,10 +1,11 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { Deck } from "../../shared/types";
 import { useDeckQuery } from "../api/useDeckQuery";
 import { CardView } from "../card/CardView";
 import { EndCard } from "../card/EndCard";
 import { MessageCard } from "../card/MessageCard";
 import { useDeck } from "../deck/useDeck";
+import { TopicPanel } from "../panel/TopicPanel";
 import { toggleFullscreen } from "../platform/fullscreen";
 import { CardStage } from "../stage/CardStage";
 
@@ -28,26 +29,43 @@ const OFFSET = { prev: -1, current: 0, next: 1 } as const;
 
 function Reader({ deck }: { deck: Deck }) {
   const view = useDeck(deck);
+  const counts = useMemo(() => countTopics(deck), [deck]);
   return (
-    <CardStage
-      view={view}
-      renderCard={(card, role) =>
-        card === "end" ? (
-          <EndCard key="end" total={view.total} />
-        ) : (
-          <CardView
-            key={card.id}
-            card={card}
-            side={role === "current" ? view.side : "front"}
-            position={view.position + OFFSET[role]}
-            total={view.total}
-            colourOf={() => ""}
-          />
-        )
-      }
-      onFullscreen={toggleFullscreen}
-    />
+    <>
+      <TopicPanel
+        topics={deck.topics}
+        counts={counts}
+        total={deck.cards.length}
+        selected={view.selected}
+        onToggle={() => {}}
+        onAll={() => {}}
+        colourOf={() => ""}
+      />
+      <CardStage
+        view={view}
+        renderCard={(card, role) =>
+          card === "end" ? (
+            <EndCard key="end" total={view.total} />
+          ) : (
+            <CardView
+              key={card.id}
+              card={card}
+              side={role === "current" ? view.side : "front"}
+              position={view.position + OFFSET[role]}
+              total={view.total}
+              colourOf={() => ""}
+            />
+          )
+        }
+        onFullscreen={toggleFullscreen}
+      />
+    </>
   );
+}
+
+// How many cards carry each topic: the panel names each chip with its count.
+function countTopics({ topics, cards }: Deck): Map<string, number> {
+  return new Map(topics.map((topic) => [topic, cards.filter((card) => card.topics.includes(topic)).length]));
 }
 
 // True once `ms` have passed since the first render.

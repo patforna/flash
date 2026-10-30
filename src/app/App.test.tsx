@@ -2,11 +2,11 @@
 // [x] nothing for 200 ms while the deck loads, then a card reading "shuffling…"
 // [x] the error card once the deck can't be fetched; tapping it fetches again
 // [ ] the empty card for a deck without cards
-// [ ] the first card of a pass on the stage, front up; the next card underneath, front up too
+// [x] the first card of a pass on the stage, front up; the next card underneath, front up too
 // [ ] the panel: All with the deck's total, the topics in order with their counts, the wordmark at its foot
 // [ ] a chip toggles its topic, All clears the selection
 // [ ] colours by the topic's declared index, on the chips and the card
-// [ ] the end card closes the pass
+// [x] the end card closes the pass
 // [ ] a live region says where you are: "Card 1 of 3", the end card's text
 // [ ] haptics on next, previous, reshuffle, the end card's reshuffle and a chip toggle; never on a flip
 // [ ] the fullscreen chip leads the panel; f toggles fullscreen
@@ -178,5 +178,19 @@ describe("reading", () => {
     for (let i = 0; i < 3; i++) await goNext();
 
     expect(within(layer("current")).getByText("That's all 3.")).toBeTruthy();
+  });
+});
+
+describe("topics", () => {
+  // The chips in the panel, by their accessible names.
+  const chips = () =>
+    within(screen.getByRole("group", { name: "Topics" }))
+      .getAllByRole("button")
+      .map((chip) => chip.getAttribute("aria-label"));
+
+  test("the panel offers All with the deck's total, then each topic in the deck's order with its count", async () => {
+    await reading();
+
+    expect(chips()).toEqual(["All, 3 cards", "Redis, 2 cards", "Postgres, 1 card", "Queues, 1 card"]);
   });
 });
