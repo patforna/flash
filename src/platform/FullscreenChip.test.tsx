@@ -1,11 +1,11 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { FullscreenChip } from "./FullscreenChip";
 
 // To do:
 // [x] renders nothing where fullscreen isn't available
 // [x] in a tab that can go fullscreen: a "Full screen" button with an icon hidden from assistive technology
-// [ ] goes fullscreen when clicked
+// [x] goes fullscreen when clicked
 // [ ] hides once fullscreen and returns when fullscreen ends (fullscreenchange)
 // [ ] hides when the display mode stops being a browser tab (the query's change event)
 
@@ -44,5 +44,14 @@ describe("FullscreenChip", () => {
 
     const button = screen.getByRole("button", { name: "Full screen" });
     expect(button.querySelector("svg")?.getAttribute("aria-hidden")).toBe("true");
+  });
+
+  it("goes fullscreen when clicked", () => {
+    const request = fullscreenTab();
+    render(<FullscreenChip />, { reactStrictMode: true });
+
+    fireEvent.click(screen.getByRole("button", { name: "Full screen" }));
+
+    expect(request).toHaveBeenCalledWith({ navigationUI: "hide" });
   });
 });
