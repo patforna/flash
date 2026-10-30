@@ -5,7 +5,7 @@ import { useDeckQuery } from "../api/useDeckQuery";
 import { CardView } from "../card/CardView";
 import { EndCard, endCardText } from "../card/EndCard";
 import { FONTS } from "../card/fit";
-import { MessageCard } from "../card/MessageCard";
+import { MessageCard, type MessageCardProps } from "../card/MessageCard";
 import type { DeckView } from "../deck/types";
 import { useDeck } from "../deck/useDeck";
 import { Wordmark } from "../desk/Wordmark";
@@ -16,6 +16,7 @@ import { toggleFullscreen } from "../platform/fullscreen";
 import { tick } from "../platform/haptics";
 import { useWakeLock } from "../platform/wakeLock";
 import { CardStage } from "../stage/CardStage";
+import { StillStage } from "../stage/StillStage";
 import styles from "./App.module.css";
 
 // A deck that arrives within this long never shows the loading card, so a quick start doesn't flash it.
@@ -45,17 +46,33 @@ function Desk({ panel, children }: { panel?: ReactNode; children: ReactNode }) {
   );
 }
 
-// The card on the stage while there is nothing to read.
+// The card on the stack while there is nothing to read.
 function Message({ deck }: { deck: UseQueryResult<Deck, Error> }) {
   const late = useElapsed(LOADING_AFTER_MS);
+  const message = say(deck, late);
+  return (
+    message && (
+      <StillStage>
+        <MessageCard {...message} />
+      </StillStage>
+    )
+  );
+}
+
+// What that card says, if anything yet.
+function say(deck: UseQueryResult<Deck, Error>, late: boolean): MessageCardProps | null {
   // Validation makes an empty deck impossible; should one come, it says so rather than show an end card.
-  if (deck.data) return <MessageCard title="No cards here." />;
+  if (deck.data) return { title: "No cards here." };
   // Tapping the error card asks again (nothing else does: no refetch on focus or reconnect); it shuffles meanwhile.
   if (deck.isError && !deck.isFetching) {
-    const retry = () => void deck.refetch();
-    return <MessageCard title="Can't reach the deck." hint="Tap to try again" tone="error" onTap={retry} />;
+    return {
+      title: "Can't reach the deck.",
+      hint: "Tap to try again",
+      tone: "error",
+      onTap: () => void deck.refetch(),
+    };
   }
-  return late ? <MessageCard title="shuffling…" /> : null;
+  return late ? { title: "shuffling…" } : null;
 }
 
 // Where each layer's card sits in the pass, from the card on top.
