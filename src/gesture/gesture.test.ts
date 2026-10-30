@@ -53,4 +53,10 @@ describe("velocityX", () => {
   test("an uneven drag gives the least-squares slope, not the end points' (0.67)", () => {
     expect(velocityX([at(0, 0, 0), at(0, 0, 8), at(16, 0, 16), at(16, 0, 24)])).toBeCloseTo(0.8);
   });
+
+  test("samples older than the last 80 ms are ignored", () => {
+    const flick = [at(0, 0, 0), at(300, 0, 10)];
+    const settle = [at(300, 0, 100), at(310, 0, 140), at(320, 0, 180)];
+    expect(velocityX([...flick, ...settle])).toBeCloseTo(0.25);
+  });
 });

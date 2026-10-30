@@ -30,12 +30,14 @@ export function isTap(start: Sample, end: Sample): boolean {
 }
 
 export function velocityX(samples: readonly Sample[]): number {
-  const n = samples.length;
-  const meanT = samples.reduce((sum, s) => sum + s.t, 0) / n;
-  const meanX = samples.reduce((sum, s) => sum + s.x, 0) / n;
+  const end = samples.at(-1)?.t ?? 0;
+  const recent = samples.filter((s) => s.t >= end - GESTURE.velocityWindowMs);
+  const n = recent.length;
+  const meanT = recent.reduce((sum, s) => sum + s.t, 0) / n;
+  const meanX = recent.reduce((sum, s) => sum + s.x, 0) / n;
   let covariance = 0;
   let variance = 0;
-  for (const s of samples) {
+  for (const s of recent) {
     covariance += (s.t - meanT) * (s.x - meanX);
     variance += (s.t - meanT) ** 2;
   }
