@@ -36,15 +36,45 @@ test("the first card shows one of the deck's questions, front up", async ({ page
   await expect(announcer(page)).toHaveText("Card 1 of 9");
 });
 
+// Whether the card underneath shows its question.
+const writingUnderneath = (page: Page) =>
+  question(page, "next").evaluate((el) => el.checkVisibility({ visibilityProperty: true }));
+
+// Frame by frame through the first half of the turn, where the card on top passes edge-on (its easing reaches 90°
+// within a sixth of the time and lies flat by half of it): whether the card underneath showed its question.
+const underneathWhileTurning = (page: Page) =>
+  page.evaluate(
+    () =>
+      new Promise<boolean[]>((resolve) => {
+        const turning = document.querySelector('[data-role="current"] [data-side]');
+        const writing = document.querySelector('[data-role="next"] h2');
+        const frames: boolean[] = [];
+        const look = () => {
+          const turn = turning?.getAnimations()[0];
+          const duration = Number(turn?.effect?.getTiming().duration);
+          if (!writing || !turn || Number(turn.currentTime) > duration / 2) return resolve(frames);
+          frames.push(writing.checkVisibility({ visibilityProperty: true }));
+          requestAnimationFrame(look);
+        };
+        requestAnimationFrame(look);
+      }),
+  );
+
 test("a tap turns the card over to its answer", async ({ page }) => {
   await tap(page, await centre(page));
-
   await expect(flipper(page)).toHaveAttribute("data-side", "back");
+  // Near 90° the card turning is almost edge-on: the card underneath is blank paper meanwhile.
+  const frames = await underneathWhileTurning(page);
+  expect(frames.length, "frames in the first half of the turn").toBeGreaterThanOrEqual(3);
+  expect(frames.filter((shown) => shown).length, "of them, frames showing the question underneath").toBe(0);
+
   const [front, back] = [flipper(page).locator("> :first-child"), flipper(page).locator("> :nth-child(2)")];
   await expect(front).toHaveAttribute("aria-hidden", "true");
   await expect(back).not.toHaveAttribute("aria-hidden");
   await expect(back.locator("h2")).toHaveText((await question(page).textContent()) ?? "");
   await expect(back.locator("h2 + div")).not.toBeEmpty();
+  await settled(page);
+  expect(await writingUnderneath(page)).toBe(true);
 });
 
 test("a swipe left deals the next card, front up", async ({ page }) => {
