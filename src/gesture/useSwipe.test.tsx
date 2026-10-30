@@ -357,6 +357,12 @@ describe("ignoring", () => {
     expect(onTap).not.toHaveBeenCalled();
   });
 
+  test("a pointer that goes down off the card is ignored", () => {
+    const { stage, onTap } = setup();
+    press(stage, stage, 100, 200).up(50);
+    expect(onTap).not.toHaveBeenCalled();
+  });
+
   test("a pointercancel mid-drag springs the card back", () => {
     const { stage, layer, animations } = setup();
     const finger = press(stage, layer("current"), 700, 200);
