@@ -1,5 +1,5 @@
 import { fireEvent, renderHook } from "@testing-library/react";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { useWakeLock } from "./wakeLock";
 
 // To do:
@@ -7,7 +7,7 @@ import { useWakeLock } from "./wakeLock";
 // [x] requests a screen lock on the first pointerdown
 // [x] requests a screen lock on the first keydown
 // [x] keeps the one lock while input continues
-// [ ] releases it after five minutes without input
+// [x] releases it after five minutes without input
 // [ ] releases it after idleMs without input; each input restarts the countdown
 // [ ] acquires it again on the next input
 // [ ] requests it again when the page becomes visible, if it was held
@@ -26,8 +26,13 @@ function wakeLockApi() {
   return { request, sentinels };
 }
 
+beforeEach(() => {
+  vi.useFakeTimers();
+});
+
 afterEach(() => {
   Reflect.deleteProperty(navigator, "wakeLock");
+  vi.useRealTimers();
 });
 
 describe("useWakeLock", () => {
@@ -65,5 +70,17 @@ describe("useWakeLock", () => {
     fireEvent.pointerDown(document.body);
 
     expect(request).toHaveBeenCalledTimes(1);
+  });
+
+  it("releases it after five minutes without input", async () => {
+    const { sentinels } = wakeLockApi();
+    renderHook(() => useWakeLock(), { reactStrictMode: true });
+    fireEvent.pointerDown(document.body);
+
+    await vi.advanceTimersByTimeAsync(5 * 60_000 - 1);
+    expect(sentinels[0]?.release).not.toHaveBeenCalled();
+
+    await vi.advanceTimersByTimeAsync(1);
+    expect(sentinels[0]?.release).toHaveBeenCalled();
   });
 });
