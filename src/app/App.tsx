@@ -22,7 +22,9 @@ export function App() {
   useWakeLock();
   const deck = useDeckQuery();
   const late = useElapsed(LOADING_AFTER_MS);
-  if (deck.data) return <Reader deck={deck.data} />;
+  // Validation makes an empty deck impossible; should one come, it says so rather than show an end card.
+  if (deck.data)
+    return deck.data.cards.length > 0 ? <Reader deck={deck.data} /> : <MessageCard title="No cards here." />;
   // Tapping the error card asks again (nothing else does: no refetch on focus or reconnect); it shuffles meanwhile.
   if (deck.isError && !deck.isFetching) {
     const retry = () => void deck.refetch();

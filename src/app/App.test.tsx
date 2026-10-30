@@ -10,7 +10,7 @@
 // [x] a live region says where you are: "Card 1 of 3", the end card's text
 // [x] haptics on next, previous, reshuffle, the end card's reshuffle and a chip toggle; never on a flip
 // [x] the fullscreen chip leads the panel; f toggles fullscreen
-// [ ] the wake lock is asked for on the first input
+// [x] the wake lock is asked for on the first input
 // [ ] performance mark flash:first-card once the fonts are in and the first card is on screen, once per page load
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
@@ -147,6 +147,15 @@ describe("an unreachable deck", () => {
     expect(await screen.findByText("shuffling…")).toBeTruthy();
     expect(screen.queryByRole("button", { name: "Can't reach the deck. Tap to try again" })).toBeNull();
     expect(fetchMock).toHaveBeenCalledTimes(4);
+  });
+});
+
+describe("an empty deck", () => {
+  test('says "No cards here."', async () => {
+    serve(async () => json({ ...deck, cards: [] }));
+    renderApp();
+
+    expect(await screen.findByText("No cards here.")).toBeTruthy();
   });
 });
 
