@@ -2,7 +2,7 @@
 // [x] a tap calls onTap; a long hold doesn't; never after a drag
 // [x] a horizontal drag writes translate and rotate on the current layer
 // [x] the card underneath scales and rises with progress
-// [x] a right drag shows the previous layer, following from −(cardRect.right + 80); changing direction hands over
+// [x] a right drag shows the previous layer, following from −cardRect.right; changing direction hands over
 // [x] a right drag without a previous card rubber-bands the current one
 // [x] zero React commits during a drag
 // [x] a release past the threshold flings at the release speed (fill: forwards only here), out to half a card past
@@ -27,7 +27,8 @@ import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import { FakeAnimation, inline, press } from "./testing";
 import { type SwipeOptions, useSwipe } from "./useSwipe";
 
-// The card: 600 × 360 at (280, 24). 28 % of it is 168 px; off screen to the left is −(880 + 80) = −960 px.
+// The card: 600 × 360 at (280, 24). 28 % of it is 168 px; off screen to the left is −(880 + 80) = −960 px. The previous
+// card waits at −880 px, its right edge on the screen's left edge, so a right drag shows it from the first pixel.
 const card = { x: 280, y: 24, left: 280, top: 24, right: 880, bottom: 384, width: 600, height: 360 };
 
 beforeEach(() => {
@@ -159,9 +160,9 @@ describe("following the finger", () => {
     const finger = press(stage, layer("current"), 400, 200);
     finger.move(450, 200);
     expect(layer("prev").style.visibility).toBe("visible");
-    expect(layer("prev").style.transform).toBe("translateX(-910px)");
+    expect(layer("prev").style.transform).toBe("translateX(-830px)");
     finger.move(600, 200);
-    expect(layer("prev").style.transform).toBe("translateX(-760px)");
+    expect(layer("prev").style.transform).toBe("translateX(-680px)");
     expect(layer("current").style.transform).toBe("");
     expect(layer("next").style.transform).toBe("");
   });
@@ -184,7 +185,7 @@ describe("following the finger", () => {
     finger.move(450, 200);
     expect(layer("current").style.transform).toBe("");
     expect(layer("next").style.transform).toBe("");
-    expect(inline(layer("prev"))).toEqual({ transform: "translateX(-910px)", visibility: "visible" });
+    expect(inline(layer("prev"))).toEqual({ transform: "translateX(-830px)", visibility: "visible" });
   });
 
   test("with no previous card, a right drag only gives a little, like a rubber band", () => {
@@ -258,8 +259,8 @@ describe("committing", () => {
     finger.up();
     const [slide] = animations;
     expect(slide?.el).toBe(layer("prev"));
-    expect(slide?.keyframes).toEqual([{ transform: "translateX(-800px)" }, { transform: "translateX(0px)" }]);
-    expect(slide?.options).toEqual({ duration: 320, easing: "cubic-bezier(0.2, 0.2, 0.3, 1)", fill: "forwards" });
+    expect(slide?.keyframes).toEqual([{ transform: "translateX(-720px)" }, { transform: "translateX(0px)" }]);
+    expect(slide?.options).toEqual({ duration: 320, easing: "cubic-bezier(0.2, 0.222, 0.3, 1)", fill: "forwards" });
     await act(async () => slide?.finish());
     expect(onCommit).toHaveBeenCalledExactlyOnceWith("prev");
   });
@@ -302,7 +303,7 @@ describe("cancelling", () => {
     finger.move(450, 200, 50);
     finger.up(100);
     expect(animations.map((a) => [a.el, a.keyframes, a.options])).toEqual([
-      [prev, [{ transform: "translateX(-910px)" }, { transform: "translateX(-960px)" }], cancel],
+      [prev, [{ transform: "translateX(-830px)" }, { transform: "translateX(-960px)" }], cancel],
     ]);
     expect(inline(prev)).toEqual({ transform: "translateX(-960px)", visibility: "visible" });
     await act(async () => animations[0]?.finish());
@@ -523,7 +524,7 @@ describe("commit(dir), for keys and buttons", () => {
     expect(animations.map((a) => [a.el, a.keyframes, a.options])).toEqual([
       [
         layer("prev"),
-        [{ transform: "translateX(-960px)" }, { transform: "translateX(0px)" }],
+        [{ transform: "translateX(-880px)" }, { transform: "translateX(0px)" }],
         { duration: 320, easing: "cubic-bezier(0.2, 0.7, 0.3, 1)", fill: "forwards" },
       ],
     ]);

@@ -49,8 +49,11 @@ const rest = (el: HTMLElement) => {
   el.style.removeProperty("transform");
   el.style.removeProperty("visibility");
 };
-// Where a card rests once it has gone, 80 px past the screen's left edge, and where the previous card comes back from.
+// Where a card rests once it has gone, 80 px past the screen's left edge.
 const gone = (card: DOMRect) => -(card.right + 80);
+// Where the previous card waits to come back: its right edge on the screen's left edge, so the first pixel of a right
+// drag shows its first pixel.
+const waiting = (card: DOMRect) => -card.right;
 // The card underneath, from resting (p = 0) to in place (p = 1).
 const underneath = (p: number) => `scale(${fixed(0.965 + 0.035 * p)}) translateY(${fixed(8 * (1 - p))}px)`;
 
@@ -163,7 +166,7 @@ function swipe(stage: RefObject<HTMLElement | null>, options: RefObject<SwipeOpt
       rest(layers.current);
       if (layers.next) rest(layers.next);
       show(layers.prev);
-      write(layers.prev, `translateX(${gone(rect) + dx}px)`);
+      write(layers.prev, `translateX(${waiting(rect) + dx}px)`);
       return;
     }
     if (layers.prev) rest(layers.prev);
@@ -211,7 +214,7 @@ function swipe(stage: RefObject<HTMLElement | null>, options: RefObject<SwipeOpt
       const fade = animate(prev, [{ opacity: 0 }, { opacity: 1 }], { duration: MOTION.fadeMs, fill: "forwards" });
       return play([fade], "prev");
     }
-    const from = gone(rect) + dx;
+    const from = waiting(rect) + dx;
     const timing = { duration: flingDuration(-from, vx), easing: easing ?? flingEasing(-from, vx) };
     const at = prev.style.transform || `translateX(${from}px)`;
     play(
