@@ -17,8 +17,9 @@
   mask-image: linear-gradient(to top, transparent, black 24px);
 }
 
-/* A chip is a sticker outline until it is selected; then it is stuck on: filled, tilted, with a hard shadow.
-   Pressing pushes the sticker into its shadow. Only transform and opacity ever move. */
+/* A chip takes everything from its sticker's colour. Not selected, it is a muted sticker: a faint fill, an outline
+   and a label tinted with it. Selected, it is stuck on: filled, tilted, with a hard shadow in a dark shade of its own
+   colour, like an offset print. Pressing pushes the sticker into its shadow. Only transform and opacity ever move. */
 .chip {
   --press: 0px;
   --turn: 0deg;
@@ -30,7 +31,7 @@
   border: 0;
   border-radius: 7px;
   background: none;
-  color: var(--chalk);
+  color: color-mix(in oklab, var(--sticker) 35%, var(--chalk));
   font-family: var(--font-hand);
   font-size: 14px;
   font-weight: 600;
@@ -52,12 +53,13 @@
 
 .chip::after {
   z-index: -1;
+  background: color-mix(in oklab, var(--sticker) 18%, var(--desk));
   box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--sticker) 60%, transparent);
 }
 
 .chip::before {
   z-index: -2;
-  background: black;
+  background: color-mix(in oklab, var(--sticker) 40%, black);
   opacity: 0;
   transform: translate(calc(3px - var(--press)), calc(3px - var(--press)));
   transition: transform 90ms ease-out;

@@ -22,6 +22,7 @@ Reading:
 - Topics in a permanent panel on the left: it uses width the 5:3 card can't, and nothing takes height.
 - Multi-select with OR, nothing selected meaning all: studying two topics together is normal, and "nothing = all" removes the empty state. AND was rejected.
 - Wrapped sticker chips, not one tab per row: all 13 seed topics fit in 6 rows without scrolling.
+- A chip takes its whole look from its sticker's colour. Not selected, it is a muted sticker: a fill of 18 % of its colour on the desk, the 60 % outline, a label 35 % of the way to its colour (all OKLab mixes); the fullscreen chip and All are muted in chalk. Selected, it is stuck on: full colour, dark ink, tilt, and a hard shadow 40 % of its colour on black. A departure from plan §3 (outline only, chalk labels, a black shadow) after the M3 review: the default screen was 90 % neutral, the chips read as Material's outlined filter chips, and a black shadow on the desk (1.13:1) barely showed.
 - Counts only on All and in each chip's accessible name: a count widens every chip by about 20 px and costs rows.
 - One live region in the app reads out where you are ("Card 7 of 16", or the end card's text), and before there is a deck what the loading or error card says: the cards remount on every move, so a live region inside one never announces. It lives in the desk, which every state renders, and mounts empty.
 - Topics in the file's order, coloured by declared index mod 8: the author groups related topics, the order never shifts, and neighbours never share a colour.

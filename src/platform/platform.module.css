@@ -1,5 +1,5 @@
-/* The fullscreen chip sits first among the topic chips (plan §3): a 44 px square shaped like an unselected one, its
-   outline and icon in chalk rather than a topic's colour. Pressing pushes it 2 px, as it does a sticker. */
+/* The fullscreen chip sits first among the topic chips (plan §3): a 44 px square shaped like an unselected one, a
+   muted sticker in chalk rather than a topic's colour, as All is. Pressing pushes it 2 px, as it does a sticker. */
 .chip {
   display: inline-flex;
   align-items: center;
@@ -9,7 +9,7 @@
   padding: 0;
   border: 1.5px solid color-mix(in srgb, var(--chalk) 60%, transparent);
   border-radius: 7px;
-  background: none;
+  background: color-mix(in oklab, var(--chalk) 18%, var(--desk));
   color: var(--chalk);
   cursor: pointer;
   transition: transform 90ms ease-out;
