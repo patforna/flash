@@ -14,4 +14,8 @@ describe("chooseStep", () => {
   it("chooses step 0, the largest type, when it fits", () => {
     expect(chooseStep(() => true, 3)).toBe(0);
   });
+
+  it("chooses the first smaller step that fits", () => {
+    expect(chooseStep((step) => step >= 2, 3)).toBe(2);
+  });
 });
