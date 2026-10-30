@@ -2,7 +2,7 @@
 // [x] GET /healthz answers 200 with ok, the card count and the version, never cached
 // [x] GET /api/cards returns the deck with its ETag and no-cache
 // [x] a matching If-None-Match gets 304 and no body, weak and listed tags included
-// [ ] HEAD answers like GET
+// [x] HEAD answers like GET
 // [ ] contract: the /api/cards body parses with the wire schema
 import { describe, expect, test } from "bun:test";
 import { createApi } from "./api";
@@ -48,5 +48,18 @@ describe("GET /api/cards", () => {
 
     expect(res.status).toBe(200);
     expect(await res.json()).toEqual(deck);
+  });
+});
+
+describe("HEAD", () => {
+  test.each(["/api/cards", "/healthz"])("answers %s like GET, without the body", async (path) => {
+    const get = await api.request(path);
+    const head = await api.request(path, { method: "HEAD" });
+
+    expect(head.status).toBe(200);
+    expect(head.headers.get("ETag")).toBe(get.headers.get("ETag"));
+    expect(head.headers.get("Cache-Control")).toBe(get.headers.get("Cache-Control"));
+    expect(head.headers.get("Content-Type")).toBe(get.headers.get("Content-Type"));
+    expect(await head.text()).toBe("");
   });
 });
