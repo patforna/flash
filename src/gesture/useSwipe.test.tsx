@@ -270,4 +270,17 @@ describe("committing", () => {
     expect(inline(before.current)).toEqual({ transform: "", visibility: "" });
     expect(inline(before.next)).toEqual({ transform: "", visibility: "" });
   });
+
+  test("a flick right slides the previous card in to its place, then commits", async () => {
+    const { stage, layer, animations, onCommit } = setup();
+    const finger = press(stage, layer("current"), 400, 200);
+    for (let i = 1; i <= 8; i++) finger.move(400 + 20 * i, 200);
+    finger.up();
+    const [slide] = animations;
+    expect(slide?.el).toBe(layer("prev"));
+    expect(slide?.keyframes).toEqual([{ transform: "translateX(-800px)" }, { transform: "translateX(0px)" }]);
+    expect(slide?.options).toEqual({ duration: 320, easing: "cubic-bezier(0.2, 0.2, 0.3, 1)", fill: "forwards" });
+    await act(async () => slide?.finish());
+    expect(onCommit).toHaveBeenCalledExactlyOnceWith("prev");
+  });
 });

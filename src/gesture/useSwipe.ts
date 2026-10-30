@@ -112,6 +112,22 @@ function swipe(stage: RefObject<HTMLElement | null>, options: RefObject<SwipeOpt
     play(animations, "next");
   }
 
+  function slideIn(g: Gesture, dx: number, vx: number) {
+    const { prev } = g.layers;
+    if (!prev) return;
+    const from = dx - g.rect.right - OFF_SCREEN;
+    const timing = { duration: flingDuration(-from, vx), easing: flingEasing(-from, vx) };
+    play(
+      [
+        animate(prev, [{ transform: prev.style.transform }, { transform: "translateX(0px)" }], {
+          ...timing,
+          fill: "forwards",
+        }),
+      ],
+      "prev",
+    );
+  }
+
   const down = (e: PointerEvent) => {
     const layers = options.current.layers();
     if (!layers) return;
@@ -134,7 +150,9 @@ function swipe(stage: RefObject<HTMLElement | null>, options: RefObject<SwipeOpt
     g.samples.push(sample(e));
     const dx = e.clientX - g.start.x;
     const vx = velocityX(g.samples);
-    if (release(dx, vx, g.rect.width, options.current.can()) === "next") fling(g, dx, vx);
+    const decision = release(dx, vx, g.rect.width, options.current.can());
+    if (decision === "next") fling(g, dx, vx);
+    if (decision === "prev") slideIn(g, dx, vx);
   };
 
   function listen() {
