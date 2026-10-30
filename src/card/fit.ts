@@ -10,8 +10,11 @@ export function chooseStep(fits: (step: number) => boolean, steps: number): numb
 // The faces' type: the handwriting, and Radon for code and the counter's digits.
 const FONTS = ['1em "Shantell Sans"', '1em "Monaspace Radon"'];
 
+// A face fits when none of its parts overflows its box, down or across (a code line wider than its column).
 function overflows(face: HTMLElement): boolean {
-  return Array.from(face.children).some((part) => part.scrollHeight > part.clientHeight);
+  return Array.from(face.children).some(
+    (part) => part.scrollHeight > part.clientHeight || part.scrollWidth > part.clientWidth,
+  );
 }
 
 export function useFit(ref: RefObject<HTMLElement | null>, steps: number, _key: string): number | "scroll" {

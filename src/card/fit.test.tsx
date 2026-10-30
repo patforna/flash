@@ -6,7 +6,7 @@
 // [x] useFit: content hidden (no data-fit) until the fonts load; then measured
 // [x] useFit: waits for the code font too (code blocks and the counter are set in it)
 // [x] useFit: walks the steps while a part overflows down
-// [ ] useFit: a part overflowing across (a code line wider than its column) also steps down
+// [x] useFit: a part overflowing across (a code line wider than its column) also steps down
 // [ ] useFit: "scroll" when no step fits
 // [ ] useFit: measures again when its key changes
 import { render, screen, waitFor } from "@testing-library/react";
@@ -106,5 +106,10 @@ describe("useFit", () => {
     const face = screen.getByTestId("face");
     expect(face.dataset.fit).toBe("2");
     expect(face.dataset.step).toBe("2");
+  });
+
+  it("also steps down while a part overflows across, as a code line wider than its column does", () => {
+    render(<Face fitKey="skip-locked" overflow={{ until: 1, axis: "across" }} />);
+    expect(screen.getByTestId("face").dataset.fit).toBe("1");
   });
 });
