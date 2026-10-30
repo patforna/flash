@@ -15,3 +15,7 @@ export function loadSelection(s: Pick<Storage, "getItem"> | null, known: readonl
     return new Set();
   }
 }
+
+export function saveSelection(s: Pick<Storage, "setItem"> | null, selected: ReadonlySet<string>): void {
+  s?.setItem(KEY, JSON.stringify([...selected]));
+}

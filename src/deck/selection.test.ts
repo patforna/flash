@@ -5,11 +5,11 @@
 // - [x] loadSelection drops unknown labels
 // - [x] loadSelection gives the empty set for nothing stored, invalid JSON or a non-array
 // - [x] loadSelection gives the empty set for a throwing storage or no storage
-// - [ ] saveSelection writes the JSON array under flash:v1:topics
+// - [x] saveSelection writes the JSON array under flash:v1:topics
 // - [ ] saveSelection swallows a throwing storage and does nothing without one
 
 import { describe, expect, it } from "vitest";
-import { loadSelection, toggle } from "./selection";
+import { loadSelection, saveSelection, toggle } from "./selection";
 
 const known = ["Redis", "Postgres", "Queues"];
 // A storage holding value under the selection's key, and nothing else.
@@ -50,5 +50,13 @@ describe("loadSelection", () => {
     };
     expect(loadSelection(blocked, known)).toEqual(new Set());
     expect(loadSelection(null, known)).toEqual(new Set());
+  });
+});
+
+describe("saveSelection", () => {
+  it("writes the JSON array under flash:v1:topics", () => {
+    const writes: string[][] = [];
+    saveSelection({ setItem: (key, value) => writes.push([key, value]) }, new Set(["Redis", "Queues"]));
+    expect(writes).toEqual([["flash:v1:topics", '["Redis","Queues"]']]);
   });
 });
