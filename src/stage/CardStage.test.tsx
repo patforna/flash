@@ -160,6 +160,20 @@ describe("swipes", () => {
     expect(calls).toEqual(["goNext"]);
     expect(layer("current").textContent).toBe("b?");
     expect(animations.map((a) => a.playState)).toEqual(["idle", "idle"]);
-    for (const role of ["prev", "current", "next"]) expect(inline(layer(role))).toEqual({ transform: "", visibility: "" });
+    for (const role of ["prev", "current", "next"])
+      expect(inline(layer(role))).toEqual({ transform: "", visibility: "" });
+  });
+
+  test("data-state follows it: idle, dragging, animating, idle", async () => {
+    const { stage, layer } = setup();
+    expect(stage.dataset.state).toBe("idle");
+    const finger = press(stage, layer("current"), 700, 200);
+    expect(stage.dataset.state).toBe("idle");
+    finger.move(650, 200);
+    expect(stage.dataset.state).toBe("dragging");
+    finger.up();
+    expect(stage.dataset.state).toBe("animating");
+    await land();
+    expect(stage.dataset.state).toBe("idle");
   });
 });

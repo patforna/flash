@@ -61,12 +61,17 @@ function swipe(stage: RefObject<HTMLElement | null>, options: RefObject<SwipeOpt
     el.style.visibility = "visible";
     touched.add(el);
   };
+  // The stage's data-state, for styles (will-change only while dragging) and for whoever waits for it to settle.
+  const mark = (state: "idle" | "dragging" | "animating") => {
+    if (stage.current) stage.current.dataset.state = state;
+  };
   const animate = (el: Element, keyframes: Keyframe[], timing: KeyframeAnimationOptions) =>
     (options.current.animate ?? ((target, k, o) => target.animate(k, o)))(el, keyframes, timing);
 
   function play(animations: Animation[], dir: Dir | null) {
     const run: Run = { animations, dir };
     running = run;
+    mark("animating");
     Promise.all(animations.map((a) => a.finished)).then(
       () => complete(run),
       () => {},
@@ -86,12 +91,14 @@ function swipe(stage: RefObject<HTMLElement | null>, options: RefObject<SwipeOpt
   function abort() {
     for (const animation of running?.animations ?? []) animation.cancel();
     running = null;
+    mark("idle");
     clear();
   }
 
   function complete(run: Run) {
     if (running !== run) return;
     running = null;
+    mark("idle");
     const { dir } = run;
     if (!dir) return clear();
     settling = run;
@@ -232,6 +239,7 @@ function swipe(stage: RefObject<HTMLElement | null>, options: RefObject<SwipeOpt
       g.axis = classify(g.start, sample(e));
       // A card dragged mid-flip would travel edge-on: the flip (the card's [data-side] transition) ends now.
       if (g.axis === "horizontal") {
+        mark("dragging");
         for (const turning of g.layers.current.querySelector("[data-side]")?.getAnimations({ subtree: true }) ?? []) {
           turning.finish();
         }
@@ -244,6 +252,7 @@ function swipe(stage: RefObject<HTMLElement | null>, options: RefObject<SwipeOpt
     const g = own(e);
     if (!g) return;
     gesture = null;
+    mark("idle");
     if (g.axis === "pending" && isTap(g.start, sample(e))) options.current.onTap();
     if (g.axis !== "horizontal") return;
     g.samples.push(sample(e));
@@ -260,12 +269,14 @@ function swipe(stage: RefObject<HTMLElement | null>, options: RefObject<SwipeOpt
     const g = own(e);
     if (!g) return;
     gesture = null;
+    mark("idle");
     if (g.axis === "horizontal") springBack(g);
   };
 
   function listen() {
     const el = stage.current;
     if (!el) return;
+    mark("idle");
     el.addEventListener("pointerdown", down);
     el.addEventListener("pointermove", move);
     el.addEventListener("pointerup", up);
