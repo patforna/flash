@@ -190,4 +190,16 @@ describe("following the finger", () => {
     finger.move(400, 200);
     expect(layer("next").style.transform).toBe("scale(1) translateY(0px)");
   });
+
+  test("a right drag pulls the previous card back in over the current one, from off screen", () => {
+    const { stage, layer } = setup();
+    const finger = press(stage, layer("current"), 400, 200);
+    finger.move(450, 200);
+    expect(layer("prev").style.visibility).toBe("visible");
+    expect(layer("prev").style.transform).toBe("translateX(-910px)");
+    finger.move(600, 200);
+    expect(layer("prev").style.transform).toBe("translateX(-760px)");
+    expect(layer("current").style.transform).toBe("");
+    expect(layer("next").style.transform).toBe("");
+  });
 });

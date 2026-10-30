@@ -19,6 +19,9 @@ interface Gesture {
   rect: DOMRect; // the current card at pointerdown, in viewport px
 }
 
+// How far past the screen's left edge a card rests once it has gone, and where the previous card comes back from.
+const OFF_SCREEN = 80;
+
 const sample = (e: PointerEvent): Sample => ({ t: e.timeStamp, x: e.clientX, y: e.clientY });
 const tilt = (dx: number) => Math.min(GESTURE.tiltMax, Math.max(-GESTURE.tiltMax, dx * GESTURE.tiltPerPx));
 const fixed = (n: number) => Math.round(n * 1e4) / 1e4;
@@ -46,6 +49,11 @@ export function useSwipe(stage: RefObject<HTMLElement | null>, o: SwipeOptions):
       if (gesture.axis !== "horizontal") return;
       const { layers, rect } = gesture;
       const dx = e.clientX - gesture.start.x;
+      if (dx > 0 && layers.prev) {
+        layers.prev.style.visibility = "visible";
+        layers.prev.style.transform = `translateX(${dx - rect.right - OFF_SCREEN}px)`;
+        return;
+      }
       layers.current.style.transform = `translateX(${dx}px) rotate(${tilt(dx)}deg)`;
       if (layers.next) layers.next.style.transform = underneath(Math.min(-dx / rect.width / GESTURE.commitFraction, 1));
     };
