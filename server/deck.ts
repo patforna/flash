@@ -85,16 +85,20 @@ export function loadDeck(toml: string): Deck {
 function readCard(raw: CardsFile["card"][number], declared: readonly string[] | undefined) {
   const problems: string[] = [];
   const question = raw.question.trim();
+  if (question.length < LIMITS.questionMin) {
+    problems.push(`question is ${question.length} characters (min ${LIMITS.questionMin})`);
+  }
   if (question.length > LIMITS.questionMax) {
     problems.push(`question is ${question.length} characters (max ${LIMITS.questionMax})`);
   }
+  const questionHtml = renderQuestion(question);
+  if ("problems" in questionHtml) problems.push(...questionHtml.problems.map((reason) => `question has ${reason}`));
   const { topics } = raw;
   if (topics.length === 0) problems.push("has no topics");
   if (topics.length > LIMITS.cardTopics) problems.push(`has ${topics.length} topics (max ${LIMITS.cardTopics})`);
   for (const topic of topics)
     if (declared && !declared.includes(topic)) problems.push(`topic "${topic}" is not declared`);
   for (const topic of repeated(topics)) problems.push(`topic "${topic}" is listed more than once`);
-  const questionHtml = renderQuestion(question);
   const answerHtml = renderAnswer(raw.answer.trim());
   const card: Card = {
     id: slug(question),

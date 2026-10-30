@@ -8,7 +8,7 @@
 // [x] declared topics: 1–30, 1–20 characters, the pattern, no trailing space, no repeats, each used
 // [x] cards: 1–500
 // [x] a card's topics: 1–3, declared, no repeats
-// [ ] question: 8–100 characters after trimming, one line, inline markup only, unique ignoring case
+// [x] question: 8–100 characters after trimming, one line, inline markup only, unique ignoring case
 // [ ] answer: 1–520 characters after trimming, at most 12 lines, code lines at most 46 characters, no tabs, markup
 // [ ] characters the fonts don't cover fail, named with their code point
 // [ ] ids unique: different questions with the same slug
@@ -205,6 +205,20 @@ answer = "Dead tuples."
       'card 1 "which-card-has-no-topics": has no topics',
       'card 2 "which-card-has-four-topics": has 4 topics (max 3)',
       'card 3 "which-card-repeats-a-topic": topic "Redis" is listed more than once',
+    ]);
+  });
+
+  test("checks each question: 8–100 characters after trimming, one line, inline markup only", () => {
+    const toml = file([
+      card({ question: "  Short?  " }),
+      card({ question: "What is\nthis card?" }),
+      card({ question: "What is *Redis* for?" }),
+    ]);
+
+    expect(problemsOf(toml)).toEqual([
+      'card 1 "short": question is 6 characters (min 8)',
+      'card 2 "what-is-this-card": question has more than one line',
+      'card 3 "what-is-redis-for": question has emphasis (*text* or _text_): only **bold** is allowed',
     ]);
   });
 });
