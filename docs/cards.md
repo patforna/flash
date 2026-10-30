@@ -91,12 +91,14 @@ These fail, naming the card and the reason:
 | `---` straight under a line of text             | Markdown reads it as underlining a heading                                       |
 | `---` on a line of its own                      | a rule, which a card doesn't have                                                |
 | a link: `[text](url)`                           | nothing on a card can be opened; a bare URL stays plain text                     |
-| a line starting `[label]:`                      | Markdown reads it as a link's reference and hides it, even in a list item        |
+| a line starting `[label]:`, however indented    | Markdown reads it as a link's reference and hides it, even in a list item        |
 | emphasis: `*words*` or `_words_`                | no italics in the handwriting; `a*b*c` counts too, so put such text in backticks |
 | a list inside a list                            | one level of list only                                                           |
 | an image `![alt](src)` or a quote `> text`      | cards are text only                                                              |
-| an unclosed fence: an odd number of fence lines | the rest of the answer would turn into code                                      |
+| an unclosed fence                               | the rest of the answer would turn into code                                      |
 | a character the fonts lack                      | it would show in some other font                                                 |
+
+A fence closes only on a line holding nothing but the character it opened with (` ``` ` or `~~~`), at least as many of them; how far either is indented doesn't matter.
 
 Characters the fonts lack include ✓ and ✗, ⇒, Greek letters such as λ and π, emoji, and invisible ones pasted from elsewhere: the thin space (U+2009) and the narrow no-break space (U+202F). Covered, among others: → ← ↔ ↑ ↓ ≤ ≥ ≈ ≠ × ± ∞ – — “ ” ‘ ’ … € £ µ ° ² ½ •.
 

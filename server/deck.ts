@@ -3,7 +3,7 @@ import type { z } from "zod";
 import { isCovered } from "../shared/glyphs";
 import { type CardsFile, CardsFileSchema, LIMITS } from "../shared/schema";
 import type { Card, Deck } from "../shared/types";
-import { FENCE, type Rendered, renderAnswer, renderQuestion } from "./markdown";
+import { type Rendered, readLines, renderAnswer, renderQuestion } from "./markdown";
 
 export class DeckError extends Error {
   readonly problems: string[];
@@ -119,11 +119,10 @@ function readAnswer(answer: string) {
     problems.push(`answer is ${answer.length} characters (max ${LIMITS.answerMax})`);
   const lines = answer.split("\n");
   if (lines.length > LIMITS.answerLines) problems.push(`answer is ${lines.length} lines (max ${LIMITS.answerLines})`);
-  let fenced = false;
+  const { kinds } = readLines(answer);
   lines.forEach((line, n) => {
     if (line.includes("\t")) problems.push(`answer has a tab on line ${n + 1}`);
-    if (FENCE.test(line)) fenced = !fenced;
-    else if (fenced && line.length > LIMITS.codeLine) {
+    if (kinds[n] === "code" && line.length > LIMITS.codeLine) {
       problems.push(`code on answer line ${n + 1} is ${line.length} characters (max ${LIMITS.codeLine})`);
     }
   });

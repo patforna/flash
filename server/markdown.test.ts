@@ -12,6 +12,8 @@
 // [x] rejects a loose list, a list inside a list and a code block inside a list item
 // [x] rejects an unclosed fence, caught on the source
 // [x] rejects a link reference definition, caught on the source, also at the start of a list item
+// [x] reads fences and definitions as Bun (md4c) does with indented code off: at any indentation; a fence closed only
+//     by the same character, at least as long, with nothing after it
 // [x] reports every reason at once, each once
 // [x] renderQuestion: plain text without the outer <p>; inline code, bold and arrows
 // [x] renderQuestion rejects a second line, block markup and emphasis
@@ -98,14 +100,16 @@ describe("renderAnswer", () => {
     expect(renderAnswer(src)).toEqual({ problems: [reason] });
   });
 
-  test.each(["Glossary:\n\n[SLO]: objective", "- [SLO]: objective\n- two", "1. [x]: y"])(
-    "rejects a link reference definition, which Markdown hides: %p",
-    (src) => {
-      expect(renderAnswer(src)).toEqual({
-        problems: ["a link reference definition ([label]: …), which Markdown hides"],
-      });
-    },
-  );
+  test.each([
+    "Glossary:\n\n[SLO]: objective",
+    "- [SLO]: objective\n- two",
+    "1. [x]: y",
+    "Glossary:\n\n    [SLO]: objective",
+  ])("rejects a link reference definition, which Markdown hides: %p", (src) => {
+    expect(renderAnswer(src)).toEqual({
+      problems: ["a link reference definition ([label]: …), which Markdown hides"],
+    });
+  });
 
   test("leaves a line with [label]: elsewhere, or in code, as text", () => {
     expect(renderAnswer("Text [ref]: not at the start\n```\n[a]: b\n```")).toEqual({
@@ -113,12 +117,23 @@ describe("renderAnswer", () => {
     });
   });
 
-  test.each(["Code:\n```sql\nSELECT 1", "Code:\n~~~\nSELECT 1", "```\na\n```\n\n```\nb"])(
-    "rejects an unclosed fence, counted on the source: %p",
-    (src) => {
-      expect(renderAnswer(src)).toEqual({ problems: ["an unclosed code fence (``` or ~~~)"] });
-    },
-  );
+  test.each([
+    "Code:\n```sql\nSELECT 1",
+    "Code:\n~~~\nSELECT 1",
+    "```\na\n```\n\n```\nb",
+    "Code:\n    ```\n    a\nMore text.",
+    "````\na\n```\nMore text.",
+    "~~~\na\n```\nMore text.",
+    "```\na\n``` b\nMore text.",
+  ])("rejects an unclosed fence, read on the source as Bun reads it: %p", (src) => {
+    expect(renderAnswer(src)).toEqual({ problems: ["an unclosed code fence (``` or ~~~)"] });
+  });
+
+  test("closes a fence wherever Bun does: indented, longer, or with spaces after it", () => {
+    expect(renderAnswer("```\na\n    ```\nB.\n````\nc\n``````  \nD.")).toEqual({
+      html: "<pre><code>a\n</code></pre><p>B.</p><pre><code>c\n</code></pre><p>D.</p>",
+    });
+  });
 
   test("reports every reason at once, each once, in order", () => {
     const src = "# Title\n\n[a](https://a.dev) and [b](https://b.dev)\n\n- one\n\n- two\n\n*em*\n\n```\ncode";

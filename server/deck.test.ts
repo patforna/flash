@@ -257,6 +257,16 @@ answer = "Dead tuples."
     expect(problemsOf(toml)).toEqual(['card 1 "what-is-redis-for": code on answer line 4 is 47 characters (max 46)']);
   });
 
+  test("…in a fence at any indentation, and not after one closes however it is indented", () => {
+    const over = "y".repeat(47);
+    const toml = file([
+      card({ answer: `Code:\n    \`\`\`\n${over}\n    \`\`\`` }),
+      card({ question: "What follows the code?", answer: `Code:\n\`\`\`\nx\n     \`\`\`\nThen ${over} wraps.` }),
+    ]);
+
+    expect(problemsOf(toml)).toEqual(['card 1 "what-is-redis-for": code on answer line 3 is 47 characters (max 46)']);
+  });
+
   test("fails what neither font covers, naming each character once with its code point", () => {
     const toml = file([
       card({ question: "Why 😀 and 😀 again?", answer: "Fine: → ≤ é ü.\nNot: 漢字." }),

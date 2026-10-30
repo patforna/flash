@@ -9,11 +9,31 @@ const OPTIONS = {
   autolinks: false,
 };
 
-// A line that opens or closes a fenced code block (a backtick fence's info string has no backticks).
-export const FENCE = /^ {0,3}(?:`{3,}[^`]*|~{3,}.*)$/;
+// A line that opens a fenced code block: 3 or more backticks (a backtick fence's info string has none) or tildes.
+const FENCE = /^ *(`{3,}(?=[^`]*$)|~{3,})/;
 
 // A line Markdown reads as a link reference definition and hides: `[label]: …`, also opening a list item.
-const REFERENCE = /^ {0,3}(?:(?:[-+*]|\d{1,9}[.)]) +)?\[[^\]]+\]:/;
+const REFERENCE = /^ *(?:(?:[-+*]|\d{1,9}[.)]) +)?\[[^\]]+\]:/;
+
+export type LineKind = "text" | "fence" | "code";
+
+// Each source line's kind as Bun (md4c) reads it with indented code off, where indentation never matters: a fence
+// opens on a FENCE line and closes only on a line of the same character, at least as long, with nothing after it but
+// spaces. `unclosed`: a fence still open at the end, which Bun closes silently.
+export function readLines(src: string): { kinds: LineKind[]; unclosed: boolean } {
+  const kinds: LineKind[] = [];
+  let fence: string | undefined;
+  for (const line of src.split("\n")) {
+    if (fence === undefined) {
+      fence = FENCE.exec(line)?.[1];
+      kinds.push(fence ? "fence" : "text");
+    } else if (new RegExp(`^ *${fence[0]}{${fence.length},} *$`).test(line)) {
+      fence = undefined;
+      kinds.push("fence");
+    } else kinds.push("code");
+  }
+  return { kinds, unclosed: fence !== undefined };
+}
 
 // U+2060 WORD JOINER: invisible, it forbids a line break on either side of it.
 const JOIN = "\u2060";
@@ -69,14 +89,13 @@ function result({ html, problems }: { html: string; problems: Set<string> }): Re
 
 function render(src: string, allowed: ReadonlySet<string>) {
   const problems = new Set<string>();
-  let fenced = false;
-  for (const line of src.split("\n")) {
-    if (FENCE.test(line)) fenced = !fenced;
-    else if (!fenced && REFERENCE.test(line))
+  const { kinds, unclosed } = readLines(src);
+  if (unclosed) problems.add("an unclosed code fence (``` or ~~~)");
+  src.split("\n").forEach((line, n) => {
+    if (kinds[n] === "text" && REFERENCE.test(line)) {
       problems.add("a link reference definition ([label]: …), which Markdown hides");
-  }
-  // Bun silently closes an open fence at the end: an odd number of fence lines means one was never closed.
-  if (fenced) problems.add("an unclosed code fence (``` or ~~~)");
+    }
+  });
   const open: string[] = [];
   // A hard break comes out as `<br />` plus the line's own newline: one break, like a soft one.
   const html = Bun.markdown

@@ -76,6 +76,7 @@ Data:
 - Validation is strict and reports every problem at once; the server refuses to start on a bad deck.
 - A question is 1–100 characters with a letter or digit for its id, not plan §9's 8–100: the brief's front is "a short sentence (question, tell me about..., topic, etc.)", so a topic alone ("TLS") is one.
 - An answer has at most 11 lines, not plan §9's 12: the smallest fit step holds 11.5 rules, so a 12-line answer passed `cards:check` and could only scroll, which the fit test fails at ship time.
+- The source checks (an unclosed fence, `[label]:` lines, the 46 characters of code) read the lines as Bun's md4c does with indented code off, through one reader (`readLines` in `server/markdown.ts`): at any indentation, a fence closed only by a line of the same character, at least as long, with nothing after it. Not plan §9's count of fence lines: four backticks closed by three, a fence closed by ```` ``` x ````, or an indented fence passed the check and turned the rest of the answer into code.
 - Corrections of the source notes live in TOML comments and `docs/seed.md`, never on a card: commentary about the source is not study material. The notes' stubs get no cards.
 - The deck's version (the first 12 characters of the base64url SHA-256 of its canonical JSON) is the ETag and what `/healthz` reports, so a deploy can confirm what it shipped.
 
