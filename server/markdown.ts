@@ -10,7 +10,7 @@ const OPTIONS = {
 };
 
 // A line that opens or closes a fenced code block (a backtick fence's info string has no backticks).
-const FENCE = /^ {0,3}(?:`{3,}[^`]*|~{3,}.*)$/;
+export const FENCE = /^ {0,3}(?:`{3,}[^`]*|~{3,}.*)$/;
 
 // Bun escapes `<` in text and attribute values, so every `<` in its output starts a tag.
 const TOKEN = /<(\/?)([a-z][a-z0-9]*)([^>]*)>|([^<]+)/g;

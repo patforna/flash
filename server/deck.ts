@@ -2,7 +2,7 @@ import { parse, TomlError } from "smol-toml";
 import type { z } from "zod";
 import { type CardsFile, CardsFileSchema, LIMITS } from "../shared/schema";
 import type { Card, Deck } from "../shared/types";
-import { renderAnswer, renderQuestion } from "./markdown";
+import { FENCE, renderAnswer, renderQuestion } from "./markdown";
 
 export class DeckError extends Error {
   readonly problems: string[];
@@ -99,7 +99,22 @@ function readCard(raw: CardsFile["card"][number], declared: readonly string[] | 
   for (const topic of topics)
     if (declared && !declared.includes(topic)) problems.push(`topic "${topic}" is not declared`);
   for (const topic of repeated(topics)) problems.push(`topic "${topic}" is listed more than once`);
-  const answerHtml = renderAnswer(raw.answer.trim());
+  const answer = raw.answer.trim();
+  if (answer === "") problems.push("answer is empty");
+  if (answer.length > LIMITS.answerMax)
+    problems.push(`answer is ${answer.length} characters (max ${LIMITS.answerMax})`);
+  const lines = answer.split("\n");
+  if (lines.length > LIMITS.answerLines) problems.push(`answer is ${lines.length} lines (max ${LIMITS.answerLines})`);
+  let fenced = false;
+  lines.forEach((line, n) => {
+    if (line.includes("\t")) problems.push(`answer has a tab on line ${n + 1}`);
+    if (FENCE.test(line)) fenced = !fenced;
+    else if (fenced && line.length > LIMITS.codeLine) {
+      problems.push(`code on answer line ${n + 1} is ${line.length} characters (max ${LIMITS.codeLine})`);
+    }
+  });
+  const answerHtml = renderAnswer(answer);
+  if ("problems" in answerHtml) problems.push(...answerHtml.problems.map((reason) => `answer has ${reason}`));
   const card: Card = {
     id: slug(question),
     topics,

@@ -9,7 +9,7 @@
 // [x] cards: 1–500
 // [x] a card's topics: 1–3, declared, no repeats
 // [x] question: 8–100 characters after trimming, one line, inline markup only, unique ignoring case
-// [ ] answer: 1–520 characters after trimming, at most 12 lines, code lines at most 46 characters, no tabs, markup
+// [x] answer: 1–520 characters after trimming, at most 12 lines, code lines at most 46 characters, no tabs, markup
 // [ ] characters the fonts don't cover fail, named with their code point
 // [ ] ids unique: different questions with the same slug
 // [ ] the fixture deck loads cleanly
@@ -220,5 +220,34 @@ answer = "Dead tuples."
       'card 2 "what-is-this-card": question has more than one line',
       'card 3 "what-is-redis-for": question has emphasis (*text* or _text_): only **bold** is allowed',
     ]);
+  });
+
+  test("checks each answer: 1–520 characters after trimming, at most 12 lines, no tabs, allowed markup only", () => {
+    const toml = file([
+      card({ question: "Which answer is empty?", answer: "  \n  " }),
+      card({ question: "Which answer is too long?", answer: "word ".repeat(105) }),
+      card({
+        question: "Which answer has 13 lines?",
+        answer: Array.from({ length: 13 }, (_, i) => `Line ${i + 1}`).join("\n"),
+      }),
+      card({ question: "Which answer has a tab?", answer: "One\n\tindented" }),
+      card({ question: "Which answer has a heading?", answer: "# Heading" }),
+    ]);
+
+    expect(problemsOf(toml)).toEqual([
+      'card 1 "which-answer-is-empty": answer is empty',
+      'card 2 "which-answer-is-too-long": answer is 524 characters (max 520)',
+      'card 3 "which-answer-has-13-lines": answer is 13 lines (max 12)',
+      'card 4 "which-answer-has-a-tab": answer has a tab on line 2',
+      'card 5 "which-answer-has-a-heading": answer has a heading (a line starting with #, or a line underlined with --- or ===)',
+    ]);
+  });
+
+  test("keeps code lines to 46 characters", () => {
+    const fits = "x".repeat(46);
+    const over = "y".repeat(47);
+    const toml = file([card({ answer: `Code:\n\`\`\`\n${fits}\n${over}\n\`\`\`\nOutside code, ${over} wraps.` })]);
+
+    expect(problemsOf(toml)).toEqual(['card 1 "what-is-redis-for": code on answer line 4 is 47 characters (max 46)']);
   });
 });
