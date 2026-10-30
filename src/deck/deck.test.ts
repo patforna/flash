@@ -85,4 +85,10 @@ describe("deal", () => {
     const pool = ["a", "b", "c", "d", "e"];
     expect(deal(pool, mulberry32(4))).toEqual({ order: shuffle(pool, mulberry32(4)), index: 0, side: "front" });
   });
+
+  it("puts keep first and shuffles the rest", () => {
+    const rng = mulberry32(5);
+    const orders = new Set(Array.from({ length: 60 }, () => deal(["a", "b", "c"], rng, { keep: "b" }).order.join("")));
+    expect(orders).toEqual(new Set(["bac", "bca"]));
+  });
 });

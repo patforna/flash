@@ -7,8 +7,11 @@ export function poolFor(cards: readonly Card[], selected: ReadonlySet<string>): 
   return (chosen.length > 0 ? chosen : cards).map((c) => c.id);
 }
 
-export function deal(pool: readonly string[], rng: Rng): Pass {
-  return { order: shuffle(pool, rng), index: 0, side: "front" };
+export function deal(pool: readonly string[], rng: Rng, { keep }: { keep?: string } = {}): Pass {
+  const order = shuffle(pool, rng);
+  const k = order.findIndex((id) => id === keep);
+  if (k > 0) swap(order, 0, k);
+  return { order, index: 0, side: "front" };
 }
 
 // Fisher–Yates, on a copy.
