@@ -6,7 +6,7 @@
 // [x] fenced code renders as pre > code without its class, its lines and escapes intact
 // [x] inline code and bold render; -> and <- are typeset as → and ← outside code
 // [x] raw HTML is escaped text, not an error; tables, strikethrough, task lists and autolinks stay text
-// [ ] rejects a heading (ATX and setext), a link, an image, a block quote, a rule and emphasis, each with its reason
+// [x] rejects a heading (ATX and setext), a link, an image, a block quote, a rule and emphasis, each with its reason
 // [ ] rejects a loose list, a list inside a list and a code block inside a list item
 // [ ] rejects an unclosed fence, caught on the source
 // [ ] reports every reason at once, each once
@@ -62,5 +62,15 @@ describe("renderAnswer", () => {
     expect(renderAnswer(src)).toEqual({
       problems: ["a heading (a line starting with #, or a line underlined with --- or ===)"],
     });
+  });
+
+  test.each([
+    ["[docs](https://x.dev)", "a link"],
+    ["![logo](x.png)", "an image"],
+    ["> quoted", "a block quote (a line starting with >)"],
+    ["Above\n\n---\n\nBelow", "a horizontal rule (a line of ---, *** or ___)"],
+    ["*maybe* or _maybe_", "emphasis (*text* or _text_): only **bold** is allowed"],
+  ])("rejects %p with its reason", (src, reason) => {
+    expect(renderAnswer(src)).toEqual({ problems: [reason] });
   });
 });

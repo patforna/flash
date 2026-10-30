@@ -14,9 +14,20 @@ const TOKEN = /<(\/?)([a-z][a-z0-9]*)([^>]*)>|([^<]+)/g;
 
 const ANSWER_TAGS = new Set(["p", "br", "ul", "ol", "li", "strong", "code", "pre"]);
 
-function reason(tag: string): string {
-  return /^h[1-6]$/.test(tag) ? "a heading (a line starting with #, or a line underlined with --- or ===)" : `<${tag}>`;
-}
+const HEADING = "a heading (a line starting with #, or a line underlined with --- or ===)";
+const REASONS: Record<string, string> = {
+  h1: HEADING,
+  h2: HEADING,
+  h3: HEADING,
+  h4: HEADING,
+  h5: HEADING,
+  h6: HEADING,
+  a: "a link",
+  img: "an image",
+  blockquote: "a block quote (a line starting with >)",
+  hr: "a horizontal rule (a line of ---, *** or ___)",
+  em: "emphasis (*text* or _text_): only **bold** is allowed",
+};
 
 type Rendered = { html: string } | { problems: string[] };
 
@@ -40,7 +51,7 @@ export function renderAnswer(src: string): Rendered {
         open.pop();
         return `</${name}>`;
       }
-      if (!ANSWER_TAGS.has(name)) problems.add(reason(name));
+      if (!ANSWER_TAGS.has(name)) problems.add(REASONS[name] ?? `<${name}>`);
       open.push(name);
       // Every attribute goes but the start of a numbered list (`code` loses its `class="language-…"`).
       return `<${name}${name === "ol" ? (attrs.match(/ start="\d+"/)?.[0] ?? "") : ""}>`;
