@@ -17,6 +17,9 @@ function overflows(face: HTMLElement): boolean {
   );
 }
 
+// Sets data-fit on the face to the largest type step at which nothing overflows ("scroll" if none fits), measured
+// before paint once the fonts are in; the CSS sizes the type from data-fit and hides the content until it is set.
+// Returns the step; measures again only when the key changes.
 export function useFit(ref: RefObject<HTMLElement | null>, steps: number, key: string): number | "scroll" {
   const [fit, setFit] = useState<number | "scroll">(0);
   // biome-ignore lint/correctness/useExhaustiveDependencies: the key names the content; measure again only when it changes.

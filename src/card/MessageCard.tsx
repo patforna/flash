@@ -19,6 +19,7 @@ export function MessageCard({ title, hint, tone = "pencil", onTap }: MessageCard
         onClick={onTap}
       >
         <span className={styles.title}>{title}</span>
+        {/* The space makes a button's name read "title hint". */}
         {hint && (
           <>
             {" "}
