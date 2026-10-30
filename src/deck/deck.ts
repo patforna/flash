@@ -33,6 +33,10 @@ export function prev(p: Pass): Pass {
   return p.index > 0 ? { ...p, index: p.index - 1, side: "front" } : p;
 }
 
+export function reshuffle(p: Pass, pool: readonly string[], rng: Rng): Pass {
+  return deal(pool, rng, { avoidFirst: p.order[p.index] });
+}
+
 // Fisher–Yates, on a copy.
 export function shuffle<T>(xs: readonly T[], rng: Rng): T[] {
   const out = [...xs];

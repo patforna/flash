@@ -14,14 +14,14 @@
 // - [x] next: one forward, front up; past the last card the end card; a no-op on the end card
 // - [x] prev: one back, front up; a no-op at 0; from the end card the last card
 // - [x] flip toggles the side; a no-op on the end card (it has no back)
-// - [ ] reshuffle: a new pass of the pool that never starts with the current card
+// - [x] reshuffle: a new pass of the pool that never starts with the current card
 // - [ ] reshuffle: on the end card, never starts with the last card
 // - [ ] reselect: the current card, if still in the pool, first and on the same side
 // - [ ] reselect: otherwise, or from the end card, a fresh deal, front up
 
 import { describe, expect, it } from "vitest";
 import type { Card } from "../../shared/types";
-import { deal, flip, next, poolFor, prev, shuffle } from "./deck";
+import { deal, flip, next, poolFor, prev, reshuffle, shuffle } from "./deck";
 import type { Pass, Rng, Side } from "./types";
 
 const card = (id: string, ...topics: string[]): Card => ({ id, topics, questionHtml: id, answerHtml: id });
@@ -159,5 +159,18 @@ describe("flip", () => {
   it("does nothing on the end card, which has no back", () => {
     const end = at(3);
     expect(flip(end)).toBe(end);
+  });
+});
+
+describe("reshuffle", () => {
+  it("deals a new pass of the pool, front up", () => {
+    expect(reshuffle(at(1, "back"), ["a", "b", "c", "d"], mulberry32(10))).toMatchObject({ index: 0, side: "front" });
+    expect(reshuffle(at(1, "back"), ["a", "b", "c", "d"], mulberry32(10)).order.toSorted()).toEqual(["a", "b", "c", "d"]);
+  });
+
+  it("never starts the new pass with the current card", () => {
+    const rng = mulberry32(11);
+    const orders = new Set(Array.from({ length: 40 }, () => reshuffle(at(1), ["a", "b", "c"], rng).order.join("")));
+    expect(orders).toEqual(new Set(["abc", "acb", "cab", "cba"]));
   });
 });
