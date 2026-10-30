@@ -7,7 +7,7 @@
 // [x] shape: unknown top-level key, missing field, wrong type; a misspelt key doesn't stop the other cards' checks
 // [x] declared topics: 1–30, 1–20 characters, the pattern, no trailing space, no repeats, each used
 // [x] cards: 1–500
-// [ ] a card's topics: 1–3, declared, no repeats
+// [x] a card's topics: 1–3, declared, no repeats
 // [ ] question: 8–100 characters after trimming, one line, inline markup only, unique ignoring case
 // [ ] answer: 1–520 characters after trimming, at most 12 lines, code lines at most 46 characters, no tabs, markup
 // [ ] characters the fonts don't cover fail, named with their code point
@@ -188,5 +188,23 @@ answer = "Dead tuples."
 
     expect(problemsOf('topics = ["Redis"]\ncard = []')).toEqual(["no cards", 'topic "Redis" is not used by any card']);
     expect(problemsOf(file(many))).toEqual(["501 cards (max 500)"]);
+  });
+
+  test("gives each card 1 to 3 declared topics, none repeated", () => {
+    const topics = ["Redis", "Postgres", "Queues", "Edge"];
+    const toml = file(
+      [
+        card({ question: "Which card has no topics?", topics: [] }),
+        card({ question: "Which card has four topics?", topics }),
+        card({ question: "Which card repeats a topic?", topics: ["Redis", "Redis"] }),
+      ],
+      topics,
+    );
+
+    expect(problemsOf(toml)).toEqual([
+      'card 1 "which-card-has-no-topics": has no topics',
+      'card 2 "which-card-has-four-topics": has 4 topics (max 3)',
+      'card 3 "which-card-repeats-a-topic": topic "Redis" is listed more than once',
+    ]);
   });
 });

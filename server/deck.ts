@@ -66,9 +66,13 @@ export function loadDeck(toml: string): Deck {
     const first = seen.get(question.toLowerCase());
     if (first === undefined) seen.set(question.toLowerCase(), i);
     else report(i, `question duplicates card ${first + 1}`);
+    if (card.topics.length === 0) report(i, "has no topics");
+    if (card.topics.length > LIMITS.cardTopics)
+      report(i, `has ${card.topics.length} topics (max ${LIMITS.cardTopics})`);
     if (intact("topics")) {
       for (const topic of card.topics) if (!file.topics.includes(topic)) report(i, `topic "${topic}" is not declared`);
     }
+    for (const topic of repeated(card.topics)) report(i, `topic "${topic}" is listed more than once`);
     const questionHtml = renderQuestion(question);
     const answerHtml = renderAnswer(card.answer.trim());
     rendered.push({
@@ -98,7 +102,7 @@ function checkTopics(topics: string[]): string[] {
   const problems: string[] = [];
   if (topics.length === 0) problems.push("no topics declared");
   if (topics.length > LIMITS.topics) problems.push(`${topics.length} topics declared (max ${LIMITS.topics})`);
-  topics.forEach((topic, i) => {
+  for (const topic of topics) {
     const name = `topic "${topic}"`;
     if (topic === "") problems.push(`${name} is empty`);
     else if (topic.length > LIMITS.topicLabel) {
@@ -107,10 +111,14 @@ function checkTopics(topics: string[]): string[] {
     else if (!LABEL.test(topic)) {
       problems.push(`${name} must start with a letter or digit and hold only letters, digits, spaces and & + . / -`);
     }
-    // Reported at its second appearance only.
-    if (topics.indexOf(topic, topics.indexOf(topic) + 1) === i) problems.push(`${name} is declared more than once`);
-  });
+  }
+  for (const topic of repeated(topics)) problems.push(`topic "${topic}" is declared more than once`);
   return problems;
+}
+
+// What appears more than once, each once.
+function repeated(items: string[]): string[] {
+  return [...new Set(items.filter((item, i) => items.indexOf(item) !== i))];
 }
 
 function parseToml(toml: string) {
