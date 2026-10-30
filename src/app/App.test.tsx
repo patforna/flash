@@ -1,5 +1,5 @@
 // To do:
-// [ ] nothing for 200 ms while the deck loads, then a card reading "shuffling…"
+// [x] nothing for 200 ms while the deck loads, then a card reading "shuffling…"
 // [ ] the error card once the deck can't be fetched; tapping it fetches again
 // [ ] the empty card for a deck without cards
 // [ ] the first card of a pass on the stage, front up; the next card underneath, front up too
@@ -53,5 +53,15 @@ describe("loading", () => {
 
     act(() => vi.advanceTimersByTime(1));
     expect(screen.getByText("shuffling…")).toBeTruthy();
+  });
+});
+
+describe("an unreachable deck", () => {
+  test("shows the error card once every try has failed", async () => {
+    const fetchMock = serve(async () => new Response("down", { status: 503 }));
+    renderApp();
+
+    expect(await screen.findByRole("button", { name: "Can't reach the deck. Tap to try again" })).toBeTruthy();
+    expect(fetchMock).toHaveBeenCalledTimes(3);
   });
 });
