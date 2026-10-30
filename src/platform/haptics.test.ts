@@ -5,7 +5,7 @@ import { tick } from "./haptics";
 // [x] vibrates for 8 ms under a coarse pointer
 // [x] vibrates for the given duration
 // [x] keeps still under a fine pointer
-// [ ] never throws: no vibration API; a vibration that throws
+// [x] never throws: no vibration API; a vibration that throws
 
 // happy-dom matches (pointer: coarse) when the device reports touch points.
 function coarsePointer() {
@@ -48,5 +48,20 @@ describe("tick", () => {
     tick();
 
     expect(vibrate).not.toHaveBeenCalled();
+  });
+
+  it("never throws where there is no vibration API", () => {
+    coarsePointer();
+
+    expect(() => tick()).not.toThrow();
+  });
+
+  it("never throws when the vibration does", () => {
+    coarsePointer();
+    vibration().mockImplementation(() => {
+      throw new DOMException("Blocked", "NotAllowedError");
+    });
+
+    expect(() => tick()).not.toThrow();
   });
 });
