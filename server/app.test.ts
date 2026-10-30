@@ -2,7 +2,7 @@
 // [ ] serves the API
 // [x] serves index.html at / and /index.html, revalidated on every use
 // [x] serves hashed assets as immutable for a year
-// [ ] serves the service worker, its helpers, the manifest and the icons, revalidated on every use
+// [x] serves the service worker, its helpers, the manifest and the icons, revalidated on every use
 // [ ] answers 404 for anything else: missing files, other methods, traversal attempts raw and percent-encoded
 // [ ] sets the robots, sniffing and referrer headers on every response: static, API, 304 and 404
 // [ ] HEAD answers like GET for static files
@@ -63,5 +63,20 @@ describe("createApp", () => {
     expect(res.status).toBe(200);
     expect(res.headers.get("Content-Type")).toStartWith(type);
     expect(res.headers.get("Cache-Control")).toBe("public, max-age=31536000, immutable");
+  });
+
+  test.each([
+    ["/sw.js", "text/javascript"],
+    ["/registerSW.js", "text/javascript"],
+    ["/workbox-5a8f.js", "text/javascript"],
+    ["/manifest.webmanifest", "application/manifest+json"],
+    ["/icon.svg", "image/svg+xml"],
+    ["/icon-192.png", "image/png"],
+  ])("serves %s, revalidated on every use", async (path, type) => {
+    const res = await app.request(path);
+
+    expect(res.status).toBe(200);
+    expect(res.headers.get("Content-Type")).toStartWith(type);
+    expect(res.headers.get("Cache-Control")).toBe("no-cache");
   });
 });
