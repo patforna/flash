@@ -1,6 +1,11 @@
+import { useRef } from "react";
 import type { Card } from "../../shared/types";
 import type { Side } from "../deck/types";
 import styles from "./card.module.css";
+import { useFit } from "./fit";
+
+// Each face goes through its own type steps: the question's three on the front, the answer's three on the back.
+const STEPS = 3;
 
 export interface CardViewProps {
   card: Card;
@@ -11,11 +16,15 @@ export interface CardViewProps {
 }
 
 export function CardView({ card, side, position, total, colourOf }: CardViewProps) {
+  const front = useRef<HTMLDivElement>(null);
+  const back = useRef<HTMLDivElement>(null);
+  useFit(front, STEPS, card.id);
+  useFit(back, STEPS, card.id);
   const colours = card.topics.map(colourOf);
   return (
     <div className={styles.frame}>
       <div className={styles.flipper} data-side={side}>
-        <div className={styles.face} {...hiddenUnless(side === "front")}>
+        <div ref={front} className={styles.face} {...hiddenUnless(side === "front")}>
           <div className={styles.band} style={{ backgroundColor: colours[0] }} />
           {/* biome-ignore lint/security/noDangerouslySetInnerHtml: the server renders the deck's Markdown through an allowlist of tags */}
           <h2 className={styles.question} dangerouslySetInnerHTML={{ __html: card.questionHtml }} />
@@ -29,7 +38,7 @@ export function CardView({ card, side, position, total, colourOf }: CardViewProp
           </ul>
           <Counter position={position} total={total} />
         </div>
-        <div className={`${styles.face} ${styles.back}`} {...hiddenUnless(side === "back")}>
+        <div ref={back} className={`${styles.face} ${styles.back}`} {...hiddenUnless(side === "back")}>
           {/* biome-ignore lint/security/noDangerouslySetInnerHtml: the server renders the deck's Markdown through an allowlist of tags */}
           <h2 className={styles.header} dangerouslySetInnerHTML={{ __html: card.questionHtml }} />
           {/* biome-ignore lint/security/noDangerouslySetInnerHtml: the server renders the deck's Markdown through an allowlist of tags */}

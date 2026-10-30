@@ -5,7 +5,7 @@
 // [x] the front: the card's topics as dots with labels, each dot in its topic's colour
 // [x] the front: the counter, the position zero-padded to the total's width ("07 / 16")
 // [x] the back: the question again in its header, then the answer
-// [ ] each face carries data-fit once measured
+// [x] each face carries data-fit once measured
 import { configure, render, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { Card } from "../../shared/types";
@@ -99,6 +99,12 @@ describe("CardView", () => {
       "Autovacuum runs it in the background.",
     ]);
     expect(back.getByText("07 / 16")).toBeTruthy();
+  });
+
+  it("fits each face on its own: both carry data-fit once measured", () => {
+    const { container } = render(<CardView card={vacuum} side="front" position={7} total={16} colourOf={colourOf} />);
+    const faces = Array.from(container.querySelectorAll<HTMLElement>(`.${styles.face}`));
+    expect(faces.map((face) => face.dataset.fit)).toEqual(["0", "0"]);
   });
 });
 
