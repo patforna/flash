@@ -1,5 +1,16 @@
 import type { Page } from "@playwright/test";
-import { announcer, expect, firstCard, flipper, fullscreen, insets, question, settled, test } from "./helpers";
+import {
+  announcer,
+  expect,
+  firstCard,
+  flipper,
+  fullscreen,
+  insets,
+  question,
+  settled,
+  shuffling,
+  test,
+} from "./helpers";
 
 // The screenshot baselines (docs/plan.md §12), in tests/screenshots/<project>/. On the Pixel 11 the page is
 // fullscreen first, as the installed app is, except for the fullscreen chip in a browser tab. Loading and error come
@@ -75,7 +86,7 @@ test.describe("the Pixel 11", () => {
   test("loading", async ({ page }) => {
     await page.route("**/api/cards", () => {});
     await page.goto("/");
-    await expect(page.getByText("shuffling…")).toBeVisible();
+    await expect(shuffling(page)).toBeVisible();
     await page.evaluate(() => document.fonts.load('1em "Shantell Sans"'));
     await expect(page).toHaveScreenshot("loading.png");
   });

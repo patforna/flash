@@ -25,16 +25,24 @@ const LOADING_AFTER_MS = 200;
 export function App() {
   useWakeLock();
   const deck = useDeckQuery();
+  const late = useElapsed(LOADING_AFTER_MS);
   if (deck.data && deck.data.cards.length > 0) return <Reader deck={deck.data} />;
+  // The card on the stack while there is nothing to read, read out as it shows.
+  const message = say(deck, late);
   return (
-    <Desk>
-      <Message deck={deck} />
+    <Desk announce={message ? [message.title, message.hint].filter(Boolean).join(" ") : ""}>
+      {message && (
+        <StillStage>
+          <MessageCard {...message} />
+        </StillStage>
+      )}
     </Desk>
   );
 }
 
-// The desk (docs/plan.md §2): the panel's column, the wordmark at its foot, and the stage beside it.
-function Desk({ panel, children }: { panel?: ReactNode; children: ReactNode }) {
+// The desk (docs/plan.md §2): the panel's column, the wordmark at its foot, and the stage beside it; and the app's one
+// live region, which reads out `announce` as it changes.
+function Desk({ panel, announce, children }: { panel?: ReactNode; announce: string; children: ReactNode }) {
   return (
     <main className={styles.shell}>
       <div className={styles.panel}>
@@ -42,20 +50,10 @@ function Desk({ panel, children }: { panel?: ReactNode; children: ReactNode }) {
         <Wordmark />
       </div>
       {children}
+      <p className={styles.announcer} aria-live="polite">
+        {announce}
+      </p>
     </main>
-  );
-}
-
-// The card on the stack while there is nothing to read.
-function Message({ deck }: { deck: UseQueryResult<Deck, Error> }) {
-  const late = useElapsed(LOADING_AFTER_MS);
-  const message = say(deck, late);
-  return (
-    message && (
-      <StillStage>
-        <MessageCard {...message} />
-      </StillStage>
-    )
   );
 }
 
@@ -89,6 +87,7 @@ function Reader({ deck }: { deck: Deck }) {
   }, [deck]);
   return (
     <Desk
+      announce={whereYouAre(view)}
       panel={
         <TopicPanel
           topics={deck.topics}
@@ -122,10 +121,6 @@ function Reader({ deck }: { deck: Deck }) {
         }
         onFullscreen={toggleFullscreen}
       />
-      {/* The cards remount on every move, so they can't announce it: this region stays and speaks for them. */}
-      <p className={styles.announcer} aria-live="polite">
-        {whereYouAre(view)}
-      </p>
     </Desk>
   );
 }
@@ -139,7 +134,7 @@ function ticked<A extends unknown[]>(change: (...args: A) => void): (...args: A)
   };
 }
 
-// "Card 7 of 16", or what the end card says.
+// "Card 7 of 16", or what the end card says. The cards remount on every move, so they can't announce it themselves.
 function whereYouAre(view: DeckView): string {
   if (view.current !== "end") return `Card ${view.position} of ${view.total}`;
   const { title, hint } = endCardText(view.total);

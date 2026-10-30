@@ -152,8 +152,11 @@ export const question = (page: Page, role: "prev" | "current" | "next" = "curren
 // The side the card on top shows ("front" or "back"), from its flipper.
 export const flipper = (page: Page): Locator => layer(page).locator("[data-side]");
 
-// The app's one live region: "Card 7 of 16", or what the end card says.
+// The app's one live region: "Card 7 of 16", what the end card says, or what the loading or error card says.
 export const announcer = (page: Page): Locator => page.locator("[aria-live]");
+
+// The loading card's "shuffling…" on the card itself, not its echo in the live region.
+export const shuffling = (page: Page): Locator => page.getByText("shuffling…").and(page.locator(":not([aria-live])"));
 
 // Every question of the deck as the reader sees it: the server's HTML through the browser's own parser.
 export async function questions(page: Page): Promise<string[]> {

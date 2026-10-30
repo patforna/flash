@@ -10,6 +10,7 @@ import {
   layer,
   question,
   settled,
+  shuffling,
   tap,
   test,
 } from "./helpers";
@@ -76,7 +77,7 @@ test.describe("axe", () => {
     // Held: neither the preload nor the app's own request is ever answered.
     await page.route("**/api/cards", () => {});
     await page.goto("/");
-    await expect(page.getByText("shuffling…")).toBeVisible();
+    await expect(shuffling(page)).toBeVisible();
     expect(await axe(page)).toEqual([]);
   });
 

@@ -23,7 +23,7 @@ Reading:
 - Multi-select with OR, nothing selected meaning all: studying two topics together is normal, and "nothing = all" removes the empty state. AND was rejected.
 - Wrapped sticker chips, not one tab per row: all 13 seed topics fit in 6 rows without scrolling.
 - Counts only on All and in each chip's accessible name: a count widens every chip by about 20 px and costs rows.
-- One live region in the app reads out where you are ("Card 7 of 16", or the end card's text): the cards remount on every move, so a live region inside one never announces.
+- One live region in the app reads out where you are ("Card 7 of 16", or the end card's text), and before there is a deck what the loading or error card says: the cards remount on every move, so a live region inside one never announces. It lives in the desk, which every state renders, and mounts empty.
 - Topics in the file's order, coloured by declared index mod 8: the author groups related topics, the order never shifts, and neighbours never share a colour.
 - The buttons for keyboards and screen readers never leave as the cards change, so focus never falls back to the page: Previous is `aria-disabled` on a pass's first card (a commit with nowhere to go does nothing), and on the end card the third button reads "Shuffle again" (plan §4 has no such label).
 - Tap flips; swipe left is next, right is previous within the pass; keys add vim's `h j k l` as in Patric's plant-selection, `s` to reshuffle and `f` for fullscreen.

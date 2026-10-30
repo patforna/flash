@@ -10,6 +10,7 @@
 // [x] colours by the topic's declared index, on the chips and the card
 // [x] the end card closes the pass
 // [x] a live region says where you are: "Card 1 of 3", the end card's text
+// [x] …and, before there is a deck, what the loading and error cards say
 // [x] haptics as next or previous is decided, on a reshuffle, the end card's reshuffle and a chip toggle; never on a
 //     flip
 // [x] the fullscreen chip leads the panel; f toggles fullscreen
@@ -83,6 +84,9 @@ function layer(role: "prev" | "current" | "next"): HTMLElement {
 const question = (el: HTMLElement) => el.querySelector("h2")?.textContent;
 const side = (el: HTMLElement) => el.querySelector("[data-side]")?.getAttribute("data-side");
 
+// Text on the card, not its echo in the live region.
+const onCard = { ignore: "[aria-live], script, style" };
+
 // Every Web Animation the stage starts, so a move can land at once.
 let animations: FakeAnimation[] = [];
 
@@ -126,10 +130,32 @@ describe("loading", () => {
     renderApp();
 
     act(() => vi.advanceTimersByTime(199));
-    expect(screen.queryByText("shuffling…")).toBeNull();
+    expect(screen.queryByText("shuffling…", onCard)).toBeNull();
 
     act(() => vi.advanceTimersByTime(1));
-    expect(screen.getByText("shuffling…")).toBeTruthy();
+    expect(screen.getByText("shuffling…", onCard)).toBeTruthy();
+  });
+});
+
+describe("the live region while there is nothing to read", () => {
+  const live = () => document.querySelectorAll("[aria-live]");
+
+  test("is there from the start, empty, and reads out the loading card when it shows", () => {
+    vi.useFakeTimers();
+    serve(() => new Promise(() => {}));
+    renderApp();
+    expect([...live()].map((region) => region.textContent)).toEqual([""]);
+
+    act(() => vi.advanceTimersByTime(200));
+    expect([...live()].map((region) => region.textContent)).toEqual(["shuffling…"]);
+  });
+
+  test("reads out the error card once every try has failed", async () => {
+    serve(async () => new Response("down", { status: 503 }));
+    renderApp();
+
+    await screen.findByRole("button", { name: "Can't reach the deck. Tap to try again" });
+    expect([...live()].map((region) => region.textContent)).toEqual(["Can't reach the deck. Tap to try again"]);
   });
 });
 
@@ -150,7 +176,7 @@ describe("an unreachable deck", () => {
 
     fireEvent.click(retry);
 
-    expect(await screen.findByText("shuffling…")).toBeTruthy();
+    expect(await screen.findByText("shuffling…", onCard)).toBeTruthy();
     expect(screen.queryByRole("button", { name: "Can't reach the deck. Tap to try again" })).toBeNull();
     expect(fetchMock).toHaveBeenCalledTimes(4);
   });
@@ -161,7 +187,7 @@ describe("an empty deck", () => {
     serve(async () => json({ ...deck, cards: [] }));
     renderApp();
 
-    expect(await screen.findByText("No cards here.")).toBeTruthy();
+    expect(await screen.findByText("No cards here.", onCard)).toBeTruthy();
   });
 });
 
