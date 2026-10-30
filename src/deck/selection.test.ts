@@ -4,7 +4,7 @@
 // - [x] loadSelection reads the JSON array under flash:v1:topics
 // - [x] loadSelection drops unknown labels
 // - [x] loadSelection gives the empty set for nothing stored, invalid JSON or a non-array
-// - [ ] loadSelection gives the empty set for a throwing storage or no storage
+// - [x] loadSelection gives the empty set for a throwing storage or no storage
 // - [ ] saveSelection writes the JSON array under flash:v1:topics
 // - [ ] saveSelection swallows a throwing storage and does nothing without one
 
@@ -40,5 +40,15 @@ describe("loadSelection", () => {
 
   it.each([null, "{", "null", '"Redis"', '{"Redis":true}'])("gives the empty set when it holds %j", (value) => {
     expect(loadSelection(holding(value), known)).toEqual(new Set());
+  });
+
+  it("gives the empty set when the storage throws or there is none", () => {
+    const blocked = {
+      getItem: (): string | null => {
+        throw new DOMException("The operation is insecure.", "SecurityError");
+      },
+    };
+    expect(loadSelection(blocked, known)).toEqual(new Set());
+    expect(loadSelection(null, known)).toEqual(new Set());
   });
 });
