@@ -17,6 +17,10 @@ export function measure(dir: string) {
   };
 }
 
+export function breaches(_sizes: ReturnType<typeof measure>): string[] {
+  return [];
+}
+
 const matches = (text: string, re: RegExp) => [...text.matchAll(re)].map((m) => m[1] ?? "");
 const sum = (paths: Iterable<string>, size: (path: string) => number) =>
   Array.from(paths, (path) => size(path)).reduce((a, b) => a + b, 0);

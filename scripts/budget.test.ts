@@ -2,7 +2,7 @@ import { afterAll, expect, test } from "bun:test";
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
-import { measure } from "./budget";
+import { breaches, measure } from "./budget";
 
 // To do:
 // [x] an empty build measures zero
@@ -10,7 +10,8 @@ import { measure } from "./budget";
 // [x] CSS: the gzipped size of the stylesheets index.html references
 // [x] fonts: the raw size of every woff2 file
 // [x] precache: the raw size of every file sw.js precaches, each counted once
-// [ ] breaches: none at the limits; one line per budget exceeded, with the size and the limit
+// [x] breaches: none at the limits
+// [ ] breaches: one line per budget exceeded, with the size and the limit
 // [ ] table: one aligned row per budget, with the size, the limit and the share used
 // [ ] the command: within budget it prints the table and exits 0
 // [ ] the command: over budget it prints the breaches and exits 1
@@ -95,4 +96,8 @@ test("precache is the raw size of every file sw.js precaches, each counted once"
     "workbox-1.js": new Uint8Array(22_000),
   });
   expect(measure(dir).precache).toBe(html("").length + 400 + 200_000);
+});
+
+test("nothing breaches at the limits", () => {
+  expect(breaches({ js: 100_000, css: 12_000, fonts: 240_000, precache: 700_000 })).toEqual([]);
 });
