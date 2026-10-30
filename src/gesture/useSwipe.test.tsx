@@ -226,3 +226,30 @@ describe("following the finger", () => {
     expect(layer("next").style.transform).toBe("");
   });
 });
+
+// A drag left at 2.5 px/ms to dx −160 (short of 168 px, but fast): the fling has 800 px to go.
+function flick(stage: HTMLElement, layer: (role: string) => HTMLElement) {
+  const finger = press(stage, layer("current"), 700, 200);
+  for (let i = 1; i <= 8; i++) finger.move(700 - 20 * i, 200);
+  finger.up();
+}
+
+describe("releasing", () => {
+  test("past the threshold flings the card off at its release speed, the card underneath rising with it", () => {
+    const { stage, layer, animations } = setup();
+    flick(stage, layer);
+    const [fling, rise] = animations;
+    expect(fling?.el).toBe(layer("current"));
+    expect(fling?.keyframes).toEqual([
+      { transform: "translateX(-160px) rotate(-4.8deg)" },
+      { transform: "translateX(-960px) rotate(-10deg)" },
+    ]);
+    expect(fling?.options).toEqual({ duration: 320, easing: "cubic-bezier(0.2, 0.2, 0.3, 1)", fill: "forwards" });
+    expect(rise?.el).toBe(layer("next"));
+    expect(rise?.keyframes).toEqual([
+      { transform: "scale(0.9983) translateY(0.381px)" },
+      { transform: "scale(1) translateY(0px)" },
+    ]);
+    expect(rise?.options).toEqual({ duration: 320, easing: "cubic-bezier(0.2, 0.2, 0.3, 1)" });
+  });
+});
