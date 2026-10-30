@@ -15,7 +15,7 @@ export function deal(
   const order = shuffle(pool, rng);
   const k = order.findIndex((id) => id === keep);
   if (k > 0) swap(order, 0, k);
-  if (order.length > 1 && order[0] === avoidFirst) swap(order, 0, 1);
+  if (order.length > 1 && order[0] === avoidFirst) swap(order, 0, 1 + Math.floor(rng() * (order.length - 1)));
   return { order, index: 0, side: "front" };
 }
 

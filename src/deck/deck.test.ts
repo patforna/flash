@@ -9,7 +9,7 @@
 // - [x] deal: a shuffled pass of the pool at index 0, front up
 // - [x] deal: keep puts that id first; ignored when it isn't in the pool
 // - [x] deal: avoidFirst never starts the pass with that id when there are at least 2 cards
-// - [ ] deal: avoidFirst moves it to any other position
+// - [x] deal: avoidFirst moves it to any other position
 // - [ ] deal: avoidFirst keeps a lone card
 // - [ ] next: one forward, front up; past the last card the end card; a no-op on the end card
 // - [ ] prev: one back, front up; a no-op at 0; from the end card the last card
@@ -100,5 +100,16 @@ describe("deal", () => {
     const rng = mulberry32(7);
     const orders = new Set(Array.from({ length: 20 }, () => deal(["a", "b"], rng, { avoidFirst: "a" }).order.join("")));
     expect(orders).toEqual(new Set(["ba"]));
+  });
+
+  it("moves avoidFirst to a random other position", () => {
+    const rng = mulberry32(8);
+    const places = Array.from({ length: 600 }, () => deal(["a", "b", "c", "d"], rng, { avoidFirst: "a" }).order.indexOf("a"));
+    const count = (k: number) => places.filter((p) => p === k).length;
+    // About 200 each; always swapping with the second card would put about 300 there.
+    for (const k of [1, 2, 3]) {
+      expect(count(k)).toBeGreaterThan(150);
+      expect(count(k)).toBeLessThan(250);
+    }
   });
 });
