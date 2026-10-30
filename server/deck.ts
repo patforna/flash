@@ -1,4 +1,4 @@
-import { parse } from "smol-toml";
+import { parse, TomlError } from "smol-toml";
 import type { z } from "zod";
 import { type CardsFile, CardsFileSchema, LIMITS } from "../shared/schema";
 import type { Card, Deck } from "../shared/types";
@@ -27,7 +27,7 @@ export function slug(text: string): string {
 
 // Parses, validates and renders the deck, or throws a DeckError listing every problem.
 export function loadDeck(toml: string): Deck {
-  const data = parse(toml);
+  const data = parseToml(toml);
   const issues = CardsFileSchema.safeParse(data, { reportInput: true }).error?.issues ?? [];
   // An unknown key stops no check; a missing or mistyped field skips the checks of the card or list that holds it.
   const intact = (...path: PropertyKey[]) =>
@@ -75,6 +75,17 @@ export function loadDeck(toml: string): Deck {
   if (problems.length > 0) throw new DeckError(problems.sort(([a], [b]) => a - b).map(([, text]) => text));
   const content = { topics: file.topics, cards: rendered };
   return { version: version(content), ...content };
+}
+
+function parseToml(toml: string) {
+  try {
+    return parse(toml);
+  } catch (error) {
+    if (!(error instanceof TomlError)) throw error;
+    // The message's first line, after smol-toml's prefix; the rest repeats the source around the error.
+    const reason = error.message.split("\n", 1)[0]?.replace("Invalid TOML document: ", "");
+    throw new DeckError([`line ${error.line}, column ${error.column}: ${reason}`]);
+  }
 }
 
 function explain(issue: z.core.$ZodIssue): string[] {

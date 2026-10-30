@@ -3,7 +3,7 @@
 // [x] loadDeck turns a minimal deck into its declared topics and cards, ids slugged from the questions
 // [x] the version: 12 base64url characters, stable for the same deck, different when a card changes
 // [x] loadDeck reports every problem at once, naming the card: undeclared topic, duplicate question, long question, unknown key
-// [ ] a TOML syntax error is one problem with its line and column
+// [x] a TOML syntax error is one problem with its line and column
 // [ ] shape: unknown top-level key, missing field, wrong type; a misspelt key doesn't stop the other cards' checks
 // [ ] declared topics: 1–30, 1–20 characters, the pattern, no trailing space, no repeats, each used
 // [ ] cards: 1–500
@@ -114,6 +114,12 @@ answer = "Dead tuples."
       'card 2 "what-does-redis-do": question duplicates card 1',
       'card 3 "why-would-anyone-write-a-question-this-long-one-that-runs-right": question is 101 characters (max 100)',
       'card 4 "which-key-is-misspelt": unknown key "topic"',
+    ]);
+  });
+
+  test("reports a TOML syntax error with its line and column", () => {
+    expect(problemsOf('topics = ["Redis"]\n\n[[card]]\nquestion = What is Redis?\n')).toEqual([
+      "line 4, column 12: invalid value",
     ]);
   });
 });
