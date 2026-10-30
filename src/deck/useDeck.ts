@@ -16,7 +16,7 @@ function start(deck: Deck, selected: ReadonlySet<string>, rng: Rng): State {
 
 export function useDeck(
   deck: Deck,
-  { rng = Math.random, storage = null }: { rng?: Rng; storage?: Storage | null } = {},
+  { rng = Math.random, storage = localStorage }: { rng?: Rng; storage?: Storage | null } = {},
 ): DeckView {
   const [state, setState] = useState(() => start(deck, loadSelection(storage, deck.topics), rng));
   if (state.deck.version !== deck.version) {

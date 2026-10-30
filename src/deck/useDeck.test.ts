@@ -17,7 +17,7 @@
 // - [ ] localStorage by default; a blocked localStorage is ignored
 
 import { act, renderHook } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import type { Card, Deck } from "../../shared/types";
 import type { DeckView, Rng } from "./types";
 import { useDeck } from "./useDeck";
@@ -212,5 +212,20 @@ describe("useDeck", () => {
     for (const name of ["flip", "goNext", "goPrev", "reshuffle", "toggleTopic", "clearTopics"] as const) {
       expect(result.current[name], name).toBe(before[name]);
     }
+  });
+});
+
+describe("useDeck without an injected storage", () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+    localStorage.clear();
+  });
+
+  it("reads and saves the selection in localStorage", () => {
+    localStorage.setItem("flash:v1:topics", '["Queues"]');
+    const { result } = renderHook(() => useDeck(deck, { rng: mulberry32(2) }), { reactStrictMode: true });
+    expect(result.current.selected).toEqual(new Set(["Queues"]));
+    act(() => result.current.toggleTopic("Redis"));
+    expect(localStorage.getItem("flash:v1:topics")).toBe('["Queues","Redis"]');
   });
 });
