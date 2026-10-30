@@ -6,7 +6,7 @@
 // [x] each chip's accessible name carries its count, "1 card" for one
 // [x] the lead comes first
 // [x] tapping All calls onAll; tapping a topic calls onToggle with its label
-// [ ] each chip carries its colour, and a fixed tilt within ±1.5° that differs from its neighbours'
+// [x] each chip carries its colour, and a fixed tilt within ±1.5° that differs from its neighbours'
 import { configure, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
@@ -86,5 +86,28 @@ describe("TopicPanel", () => {
     await user.click(screen.getByRole("button", { name: /^All/ }));
     expect(onToggle.mock.calls).toEqual([["Queues"]]);
     expect(onAll).toHaveBeenCalledOnce();
+  });
+
+  it("gives each chip its colour, All the chalk's", () => {
+    renderPanel();
+    expect(screen.getAllByRole("button").map((chip) => chip.style.getPropertyValue("--sticker"))).toEqual([
+      "var(--chalk)",
+      "var(--s-pink)",
+      "var(--s-marigold)",
+      "var(--s-mint)",
+      "var(--s-sky)",
+    ]);
+  });
+
+  it("tilts each chip by a fixed angle within ±1.5°, unlike its neighbours", () => {
+    const tilts = () =>
+      screen.getAllByRole("button").map((chip) => Number.parseFloat(chip.style.getPropertyValue("--tilt")));
+    const { unmount } = renderPanel();
+    const first = tilts();
+    unmount();
+    renderPanel({ selected: new Set(["Redis", "Queues"]) });
+    expect(tilts()).toEqual(first);
+    expect(first.every((tilt) => tilt !== 0 && Math.abs(tilt) <= 1.5)).toBe(true);
+    expect(first.slice(1).every((tilt, i) => tilt !== first[i])).toBe(true);
   });
 });

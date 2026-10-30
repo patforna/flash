@@ -1,0 +1,10 @@
+/* The topic panel (docs/plan.md §3): sticker chips on the desk, wrapping, tapped only. */
+
+.panel {
+  display: flex;
+  flex-wrap: wrap;
+}
+
+.chip {
+  position: relative;
+}

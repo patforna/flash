@@ -1,4 +1,5 @@
-import type { ReactNode } from "react";
+import type { CSSProperties, ReactNode } from "react";
+import styles from "./panel.module.css";
 
 export interface TopicPanelProps {
   topics: readonly string[];
@@ -11,25 +12,59 @@ export interface TopicPanelProps {
   lead?: ReactNode;
 }
 
-export function TopicPanel({ topics, counts, total, selected, onToggle, onAll, lead }: TopicPanelProps) {
+// The lead (the fullscreen chip, when there is one), All, then the topics in the deck's order. Nothing selected is All.
+export function TopicPanel({ topics, counts, total, selected, onToggle, onAll, colourOf, lead }: TopicPanelProps) {
   return (
-    <fieldset aria-label="Topics">
+    <fieldset aria-label="Topics" className={styles.panel}>
       {lead}
-      <button type="button" aria-pressed={selected.size === 0} aria-label={`All, ${cards(total)}`} onClick={onAll}>
-        All · {total}
-      </button>
-      {topics.map((topic) => (
-        <button
+      <Chip
+        label={`All · ${total}`}
+        name={`All, ${cards(total)}`}
+        colour="var(--chalk)"
+        place={0}
+        pressed={selected.size === 0}
+        onClick={onAll}
+      />
+      {topics.map((topic, i) => (
+        <Chip
           key={topic}
-          type="button"
-          aria-pressed={selected.has(topic)}
-          aria-label={`${topic}, ${cards(counts.get(topic) ?? 0)}`}
+          label={topic}
+          name={`${topic}, ${cards(counts.get(topic) ?? 0)}`}
+          colour={colourOf(topic)}
+          place={i + 1}
+          pressed={selected.has(topic)}
           onClick={() => onToggle(topic)}
-        >
-          {topic}
-        </button>
+        />
       ))}
     </fieldset>
+  );
+}
+
+// A selected chip is tilted like a stuck-on sticker, by a fixed angle from its place in the panel.
+const TILTS = [-1.5, 1, -0.5, 1.5, -1, 0.5, 1.25];
+
+interface ChipProps {
+  label: string;
+  name: string;
+  colour: string;
+  place: number;
+  pressed: boolean;
+  onClick(): void;
+}
+
+function Chip({ label, name, colour, place, pressed, onClick }: ChipProps) {
+  const style = { "--sticker": colour, "--tilt": `${TILTS[place % TILTS.length]}deg` } as CSSProperties;
+  return (
+    <button
+      type="button"
+      className={styles.chip}
+      style={style}
+      aria-pressed={pressed}
+      aria-label={name}
+      onClick={onClick}
+    >
+      {label}
+    </button>
   );
 }
 
