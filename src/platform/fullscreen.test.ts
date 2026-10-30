@@ -8,7 +8,7 @@ import { canFullscreen, toggleFullscreen } from "./fullscreen";
 // [x] canFullscreen: false while something is fullscreen
 // [x] toggleFullscreen: requests fullscreen on the document element, without navigation UI
 // [x] toggleFullscreen: then locks the orientation to landscape, once fullscreen has been entered
-// [ ] toggleFullscreen: exits when fullscreen
+// [x] toggleFullscreen: exits when fullscreen
 // [ ] toggleFullscreen: swallows a SecurityError, a NotSupportedError and a missing API
 
 // happy-dom has no Fullscreen API and no screen.orientation: each test defines what it needs, removed afterwards.
@@ -92,5 +92,15 @@ describe("toggleFullscreen", () => {
     entered.resolve();
     await toggled;
     expect(lock).toHaveBeenCalledWith("landscape");
+  });
+
+  it("exits when fullscreen", async () => {
+    const { request, exit } = fullscreenApi();
+    enterFullscreen();
+
+    await toggleFullscreen();
+
+    expect(exit).toHaveBeenCalled();
+    expect(request).not.toHaveBeenCalled();
   });
 });
