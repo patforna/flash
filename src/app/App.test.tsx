@@ -11,7 +11,7 @@
 // [x] colours by the topic's declared index, on the chips and the card
 // [x] the end card closes the pass
 // [x] a live region says where you are: "Card 1 of 3", the end card's text
-// [x] …and, before there is a deck, what the loading and error cards say
+// [x] …and, before there is a deck, what the loading and error cards say; the same region once the deck arrives
 // [x] haptics as next or previous is decided, on a reshuffle, the end card's reshuffle and a chip toggle; never on a
 //     flip
 // [x] the fullscreen chip leads the panel; f toggles fullscreen
@@ -149,6 +149,17 @@ describe("the live region while there is nothing to read", () => {
 
     act(() => vi.advanceTimersByTime(200));
     expect([...live()].map((region) => region.textContent)).toEqual(["shuffling…"]);
+  });
+
+  test("outlives the deck's arrival, so the region that read out the loading card says where you are", async () => {
+    inFileOrder();
+    serve(() => new Promise((resolve) => setTimeout(() => resolve(json(deck)), 250)));
+    renderApp();
+    await waitFor(() => expect([...live()].map((region) => region.textContent)).toEqual(["shuffling…"]));
+    const region = live()[0];
+
+    await waitFor(() => expect(region?.textContent).toBe("Card 1 of 3"));
+    expect([...live()]).toEqual([region]);
   });
 
   test("reads out the error card once every try has failed", async () => {

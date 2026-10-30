@@ -1,5 +1,6 @@
 import type { UseQueryResult } from "@tanstack/react-query";
 import { type ReactNode, useEffect, useMemo, useState } from "react";
+import { createPortal } from "react-dom";
 import type { Deck } from "../../shared/types";
 import { useDeckQuery } from "../api/useDeckQuery";
 import { CardView } from "../card/CardView";
@@ -26,12 +27,24 @@ export function App() {
   useWakeLock();
   const deck = useDeckQuery();
   const late = useElapsed(LOADING_AFTER_MS);
-  // After the loading card, the first card is dealt onto the stack: shuffling, then dealing.
-  if (deck.data && deck.data.cards.length > 0) return <Reader deck={deck.data} dealt={late} />;
-  // The card on the stack while there is nothing to read, read out as it shows.
+  // The app's one live region, rendered once and empty at first: a region that mounts with its text isn't read out,
+  // and the stage changes when the deck arrives. Whatever the desk shows writes into it.
+  const [live, setLive] = useState<HTMLElement | null>(null);
+  const reading = deck.data && deck.data.cards.length > 0;
+  return (
+    <main className={styles.shell}>
+      {/* After the loading card, the first card is dealt onto the stack: shuffling, then dealing. */}
+      {reading ? <Reader deck={deck.data} dealt={late} live={live} /> : <Waiting deck={deck} late={late} live={live} />}
+      <p ref={setLive} className={styles.announcer} aria-live="polite" />
+    </main>
+  );
+}
+
+// The card on the stack while there is nothing to read, read out as it shows.
+function Waiting({ deck, late, live }: { deck: UseQueryResult<Deck, Error>; late: boolean; live: HTMLElement | null }) {
   const message = say(deck, late);
   return (
-    <Desk announce={message ? [message.title, message.hint].filter(Boolean).join(" ") : ""}>
+    <Desk live={live} announce={message ? [message.title, message.hint].filter(Boolean).join(" ") : ""}>
       {message && (
         <StillStage>
           <MessageCard {...message} />
@@ -41,20 +54,25 @@ export function App() {
   );
 }
 
-// The desk (docs/plan.md §2): the panel's column, the wordmark at its foot, and the stage beside it; and the app's one
-// live region, which reads out `announce` as it changes.
-function Desk({ panel, announce, children }: { panel?: ReactNode; announce: string; children: ReactNode }) {
+interface DeskProps {
+  panel?: ReactNode;
+  live: HTMLElement | null;
+  announce: string;
+  children: ReactNode;
+}
+
+// The desk (docs/plan.md §2): the panel's column, the wordmark at its foot, and the stage beside it. `announce` is read
+// out through the live region, `live`, as it changes.
+function Desk({ panel, live, announce, children }: DeskProps) {
   return (
-    <main className={styles.shell}>
+    <>
       <div className={styles.panel}>
         {panel}
         <Wordmark />
       </div>
       {children}
-      <p className={styles.announcer} aria-live="polite">
-        {announce}
-      </p>
-    </main>
+      {live && createPortal(announce, live)}
+    </>
   );
 }
 
@@ -77,7 +95,7 @@ function say(deck: UseQueryResult<Deck, Error>, late: boolean): MessageCardProps
 // Where each layer's card sits in the pass, from the card on top.
 const OFFSET = { prev: -1, current: 0, next: 1 } as const;
 
-function Reader({ deck, dealt }: { deck: Deck; dealt: boolean }) {
+function Reader({ deck, dealt, live }: { deck: Deck; dealt: boolean; live: HTMLElement | null }) {
   const view = useDeck(deck);
   useFirstCardMark();
   const counts = useMemo(() => countTopics(deck), [deck]);
@@ -88,6 +106,7 @@ function Reader({ deck, dealt }: { deck: Deck; dealt: boolean }) {
   }, [deck]);
   return (
     <Desk
+      live={live}
       announce={whereYouAre(view)}
       panel={
         <TopicPanel
