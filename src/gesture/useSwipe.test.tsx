@@ -1,23 +1,23 @@
 // To do:
-// [ ] a tap calls onTap; a long hold doesn't; never after a drag
-// [ ] a horizontal drag writes translate and rotate on the current layer
-// [ ] the card underneath scales and rises with progress
-// [ ] a right drag shows the previous layer, following from −(cardRect.right + 80)
-// [ ] a right drag without a previous card rubber-bands the current one
-// [ ] zero React commits during a drag
-// [ ] a release past the threshold flings at the release speed (fill: forwards only here); the card underneath rises
-// [ ] onCommit once the fling finishes; then the fling is cancelled and inline styles cleared
-// [ ] a commit to the previous card slides it in to 0
-// [ ] a cancel animates back with the cancel timing and leaves nothing filling
-// [ ] a vertical drag and a pointercancel do nothing; a pointercancel mid-drag cancels
-// [ ] only the first pointer counts; a pointer that went down off the card, on a button or with another button is ignored
-// [ ] a pointerdown during a commit finishes it, completing the commit (flushSync) before reading layers() again
-// [ ] a pointerdown during a cancel or a deal finishes it
-// [ ] reduced motion: no rotation while following; opacity-only animations
-// [ ] commit(dir): the same fling from rest on MOTION.commitEase; not where can() forbids, nor while a pointer is down
-// [ ] tap(): completes a running commit, then onTap
-// [ ] deal(): drops a running commit; translateY(14px) → 0 and opacity 0 → 1 over 220 ms
-// [ ] a horizontal drag finishes a running flip
+// [x] a tap calls onTap; a long hold doesn't; never after a drag
+// [x] a horizontal drag writes translate and rotate on the current layer
+// [x] the card underneath scales and rises with progress
+// [x] a right drag shows the previous layer, following from −(cardRect.right + 80); changing direction hands over
+// [x] a right drag without a previous card rubber-bands the current one
+// [x] zero React commits during a drag
+// [x] a release past the threshold flings at the release speed (fill: forwards only here); the card underneath rises
+// [x] onCommit once the fling finishes; then the fling is cancelled and inline styles cleared
+// [x] a commit to the previous card slides it in to 0
+// [x] a cancel animates back with the cancel timing and leaves nothing filling
+// [x] a vertical drag and a pointercancel do nothing; a pointercancel mid-drag cancels
+// [x] only the first pointer counts; a pointer that went down off the card, on a button or with another button is ignored
+// [x] a pointerdown during a commit finishes it, completing the commit (flushSync) before reading layers() again
+// [x] a pointerdown during a cancel or a deal finishes it
+// [x] reduced motion: no rotation while following; opacity-only animations
+// [x] commit(dir): the same fling from rest on MOTION.commitEase; not where can() forbids, nor while a pointer is down
+// [x] tap(): completes a running commit, then onTap
+// [x] deal(): drops a running commit; translateY(14px) → 0 and opacity 0 → 1 over 220 ms
+// [x] a horizontal drag finishes a running flip
 import { act, render } from "@testing-library/react";
 import { Profiler, useRef, useState } from "react";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
@@ -225,6 +225,19 @@ describe("following the finger", () => {
     const finger = press(stage, layer("current"), 700, 200);
     for (const x of [690, 660, 600, 520, 450, 600, 760]) finger.move(x, 200);
     expect(renders()).toBe(before);
+  });
+
+  test("changing direction mid-drag hands over between the cards", () => {
+    const { stage, layer } = setup();
+    const finger = press(stage, layer("current"), 400, 200);
+    finger.move(550, 200);
+    finger.move(350, 200);
+    expect(inline(layer("prev"))).toEqual({ transform: "", visibility: "" });
+    expect(layer("current").style.transform).toBe("translateX(-50px) rotate(-1.5deg)");
+    finger.move(450, 200);
+    expect(layer("current").style.transform).toBe("");
+    expect(layer("next").style.transform).toBe("");
+    expect(inline(layer("prev"))).toEqual({ transform: "translateX(-910px)", visibility: "visible" });
   });
 
   test("with no previous card, a right drag only gives a little, like a rubber band", () => {

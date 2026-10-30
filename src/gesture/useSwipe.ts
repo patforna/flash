@@ -31,10 +31,16 @@ interface Run {
 }
 
 const FLING_TILT = 10; // degrees, as a flung card leaves
+const IN_PLACE = "translateX(0px) rotate(0deg)"; // the card on top at rest, spelt out for keyframes
 
 const sample = (e: PointerEvent): Sample => ({ t: e.timeStamp, x: e.clientX, y: e.clientY });
 const tilt = (dx: number) => Math.min(GESTURE.tiltMax, Math.max(-GESTURE.tiltMax, dx * GESTURE.tiltPerPx));
 const fixed = (n: number) => Math.round(n * 1e4) / 1e4;
+// Back to the resting style of its role, from the stylesheet.
+const rest = (el: HTMLElement) => {
+  el.style.removeProperty("transform");
+  el.style.removeProperty("visibility");
+};
 // Where a card rests once it has gone, 80 px past the screen's left edge, and where the previous card comes back from.
 const gone = (card: DOMRect) => -(card.right + 80);
 // The card underneath, from resting (p = 0) to in place (p = 1).
@@ -101,20 +107,20 @@ function swipe(stage: RefObject<HTMLElement | null>, options: RefObject<SwipeOpt
   }
 
   function clear() {
-    for (const el of touched) {
-      el.style.removeProperty("transform");
-      el.style.removeProperty("visibility");
-    }
+    for (const el of touched) rest(el);
     touched.clear();
   }
 
   function follow(g: Gesture, dx: number) {
     const { layers, rect } = g;
     if (dx > 0 && layers.prev) {
+      rest(layers.current);
+      if (layers.next) rest(layers.next);
       show(layers.prev);
       write(layers.prev, `translateX(${gone(rect) + dx}px)`);
       return;
     }
+    if (layers.prev) rest(layers.prev);
     const x = dx > 0 ? rubberBand(dx) : dx;
     const deg = options.current.reducedMotion() ? 0 : tilt(x);
     write(layers.current, `translateX(${fixed(x)}px) rotate(${fixed(deg)}deg)`);
@@ -131,7 +137,7 @@ function swipe(stage: RefObject<HTMLElement | null>, options: RefObject<SwipeOpt
     }
     const to = gone(rect);
     const timing = { duration: flingDuration(dx - to, vx), easing: easing ?? flingEasing(dx - to, vx) };
-    const from = current.style.transform || "translateX(0px) rotate(0deg)";
+    const from = current.style.transform || IN_PLACE;
     const animations = [
       animate(current, [{ transform: from }, { transform: `translateX(${to}px) rotate(${-FLING_TILT}deg)` }], {
         ...timing,
@@ -183,14 +189,14 @@ function swipe(stage: RefObject<HTMLElement | null>, options: RefObject<SwipeOpt
     if (options.current.reducedMotion()) return clear();
     const timing = { duration: MOTION.cancelMs, easing: MOTION.cancelEase };
     const animations: Animation[] = [];
-    for (const [el, rest] of [
-      [g.layers.current, "translateX(0px) rotate(0deg)"],
+    for (const [el, home] of [
+      [g.layers.current, IN_PLACE],
       [g.layers.next, underneath(0)],
     ] as const) {
-      if (!el?.style.transform) continue;
-      const from = el.style.transform;
-      el.style.removeProperty("transform");
-      animations.push(animate(el, [{ transform: from }, { transform: rest }], timing));
+      const from = el?.style.transform;
+      if (!el || !from) continue;
+      rest(el);
+      animations.push(animate(el, [{ transform: from }, { transform: home }], timing));
     }
     const { prev } = g.layers;
     if (prev?.style.visibility === "visible") {
