@@ -1,10 +1,9 @@
 // To do:
 // [x] CardsFileSchema accepts topics and cards
-// [ ] it rejects an unknown key at the top level and on a card (catches `topic =`)
-// [ ] it rejects a missing field and a field of the wrong type
-// [ ] DeckSchema accepts the wire shape and rejects anything else
+// [x] it rejects an unknown key at the top level and on a card (catches `topic =`)
+// [x] DeckSchema accepts the wire shape and rejects anything else
 import { describe, expect, test } from "bun:test";
-import { CardsFileSchema } from "./schema";
+import { CardsFileSchema, DeckSchema } from "./schema";
 
 const card = { question: "What is Redis?", topics: ["Redis"], answer: "A key-value store." };
 
@@ -24,5 +23,24 @@ describe("CardsFileSchema", () => {
       { code: "unrecognized_keys", path: ["card", 0] },
       { code: "unrecognized_keys", path: [] },
     ]);
+  });
+});
+
+describe("DeckSchema", () => {
+  const wireCard = {
+    id: "what-is-redis",
+    topics: ["Redis"],
+    questionHtml: "What is Redis?",
+    answerHtml: "<p>A store.</p>",
+  };
+  const deck = { version: "abcdefghijkl", topics: ["Redis"], cards: [wireCard] };
+
+  test("accepts the wire shape", () => {
+    expect(DeckSchema.parse(deck)).toEqual(deck);
+  });
+
+  test("rejects an unknown key and a missing field", () => {
+    expect(DeckSchema.safeParse({ ...deck, cards: [{ ...wireCard, answer: "A store." }] }).success).toBe(false);
+    expect(DeckSchema.safeParse({ ...deck, version: undefined }).success).toBe(false);
   });
 });
