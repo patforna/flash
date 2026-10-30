@@ -38,7 +38,12 @@ export function useDeck(
   }, [storage, selected]);
   // Every action reads the deck from the state, never from a render, so they keep their identity.
   const actions = useMemo(() => {
-    const move = (f: (s: State) => Pass) => setState((s) => ({ ...s, pass: f(s) }));
+    // A move that changes nothing keeps the state, so React skips the render.
+    const move = (f: (s: State) => Pass) =>
+      setState((s) => {
+        const pass = f(s);
+        return pass === s.pass ? s : { ...s, pass };
+      });
     const again = (s: State) => reshuffle(s.pass, poolFor(s.deck.cards, s.selected), rng);
     const choose = (s: State, selected: ReadonlySet<string>): State => ({
       ...s,

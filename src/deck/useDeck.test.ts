@@ -15,6 +15,7 @@
 // - [x] the same version in a new object changes nothing
 // - [x] the callbacks keep their identity across renders
 // - [x] localStorage by default; a blocked localStorage is ignored
+// - [x] a move that changes nothing doesn't render again
 
 import { act, renderHook } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
@@ -228,6 +229,20 @@ describe("useDeck", () => {
     for (const name of ["flip", "goNext", "goPrev", "reshuffle", "toggleTopic", "clearTopics"] as const) {
       expect(result.current[name], name).toBe(before[name]);
     }
+  });
+
+  it("doesn't render again for a move that changes nothing, like going back from the first card", () => {
+    let renders = 0;
+    const { result } = renderHook(
+      () => {
+        renders++;
+        return useDeck(deck, { rng: mulberry32(4), storage: null });
+      },
+      { reactStrictMode: true },
+    );
+    const before = renders;
+    act(() => result.current.goPrev());
+    expect(renders).toBe(before);
   });
 });
 
