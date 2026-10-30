@@ -2,7 +2,7 @@
 // [x] slug: lowercase ASCII words joined by "-"; accents dropped; at most 64 characters, never ending in "-"
 // [x] loadDeck turns a minimal deck into its declared topics and cards, ids slugged from the questions
 // [x] the version: 12 base64url characters, stable for the same deck, different when a card changes
-// [x] loadDeck reports every problem at once, naming the card: undeclared topic, duplicate question, long question, unknown key
+// [x] every problem at once, naming the card: undeclared topic, duplicate question, long question, unknown key
 // [x] a TOML syntax error is one problem with its line and column
 // [x] shape: unknown top-level key, missing field, wrong type; a misspelt key doesn't stop the other cards' checks
 // [x] declared topics: 1–30, 1–20 characters, the pattern, no trailing space, no repeats, each used

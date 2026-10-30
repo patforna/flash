@@ -1,5 +1,5 @@
 // To do:
-// [ ] serves the API
+// [x] serves the API
 // [x] serves index.html at / and /index.html, revalidated on every use
 // [x] serves hashed assets as immutable for a year
 // [x] serves the service worker, its helpers, the manifest and the icons, revalidated on every use

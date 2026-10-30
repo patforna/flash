@@ -14,7 +14,7 @@ export const LIMITS = {
   codeLine: 46,
 } as const;
 
-// The shape of cards/cards.toml. Strict, so a misspelt key (`topic =`) fails; the limits and rules are server/deck.ts's.
+// The shape of cards/cards.toml, strict so that a misspelt key (`topic =`) fails. The limits and rules: server/deck.ts.
 export const CardsFileSchema = z.strictObject({
   topics: z.array(z.string()),
   card: z.array(z.strictObject({ question: z.string(), topics: z.array(z.string()), answer: z.string() })),

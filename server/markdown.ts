@@ -74,7 +74,7 @@ function render(src: string, allowed: ReadonlySet<string>) {
     .replaceAll("<br />\n", "\n")
     .replace(TOKEN, (_: string, slash: string, name: string, attrs: string, text: string | undefined) => {
       if (text !== undefined) {
-        // Code keeps its lines; in a paragraph or an item, each line is a line on the card; between blocks, it goes.
+        // Code keeps its lines; in a paragraph or an item each line is a card line; whitespace between blocks goes.
         if (open.includes("pre")) return text;
         if (!open.some((t) => t === "p" || t === "li")) return "";
         const lines = text.replaceAll("\n", "<br>");
