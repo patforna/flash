@@ -8,7 +8,7 @@
 // [x] raw HTML is escaped text, not an error; tables, strikethrough, task lists and autolinks stay text
 // [x] rejects a heading (ATX and setext), a link, an image, a block quote, a rule and emphasis, each with its reason
 // [x] rejects a loose list, a list inside a list and a code block inside a list item
-// [ ] rejects an unclosed fence, caught on the source
+// [x] rejects an unclosed fence, caught on the source
 // [ ] reports every reason at once, each once
 // [ ] renderQuestion: plain text without the outer <p>; inline code, bold and arrows
 // [ ] renderQuestion rejects a second line, block markup and emphasis
@@ -81,4 +81,11 @@ describe("renderAnswer", () => {
   ])("rejects %p: a list item holds one or more lines of text only", (src, reason) => {
     expect(renderAnswer(src)).toEqual({ problems: [reason] });
   });
+
+  test.each(["Code:\n```sql\nSELECT 1", "Code:\n~~~\nSELECT 1", "```\na\n```\n\n```\nb"])(
+    "rejects an unclosed fence, counted on the source: %p",
+    (src) => {
+      expect(renderAnswer(src)).toEqual({ problems: ["an unclosed code fence (``` or ~~~)"] });
+    },
+  );
 });

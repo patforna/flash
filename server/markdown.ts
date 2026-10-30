@@ -9,6 +9,9 @@ const OPTIONS = {
   autolinks: false,
 };
 
+// A line that opens or closes a fenced code block (a backtick fence's info string has no backticks).
+const FENCE = /^ {0,3}(?:`{3,}[^`]*|~{3,}.*)$/;
+
 // Bun escapes `<` in text and attribute values, so every `<` in its output starts a tag.
 const TOKEN = /<(\/?)([a-z][a-z0-9]*)([^>]*)>|([^<]+)/g;
 
@@ -41,6 +44,10 @@ type Rendered = { html: string } | { problems: string[] };
 
 export function renderAnswer(src: string): Rendered {
   const problems = new Set<string>();
+  // Bun silently closes an open fence at the end; an odd number of fence lines means one was never closed.
+  if (src.split("\n").filter((line) => FENCE.test(line)).length % 2 === 1) {
+    problems.add("an unclosed code fence (``` or ~~~)");
+  }
   const open: string[] = [];
   // A hard break comes out as `<br />` plus the line's own newline: one break, like a soft one.
   const html = Bun.markdown
