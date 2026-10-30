@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-export const CardsFileSchema = z.object({
+export const CardsFileSchema = z.strictObject({
   topics: z.array(z.string()),
-  card: z.array(z.object({ question: z.string(), topics: z.array(z.string()), answer: z.string() })),
+  card: z.array(z.strictObject({ question: z.string(), topics: z.array(z.string()), answer: z.string() })),
 });
