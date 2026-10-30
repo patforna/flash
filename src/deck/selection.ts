@@ -8,6 +8,10 @@ export function toggle(selected: ReadonlySet<string>, label: string): Set<string
 }
 
 export function loadSelection(s: Pick<Storage, "getItem"> | null, known: readonly string[]): Set<string> {
-  const stored: unknown[] = JSON.parse(s?.getItem(KEY) ?? "[]");
-  return new Set(known.filter((t) => stored.includes(t)));
+  try {
+    const stored: unknown = JSON.parse(s?.getItem(KEY) ?? "[]");
+    return new Set(Array.isArray(stored) ? known.filter((t) => stored.includes(t)) : []);
+  } catch {
+    return new Set();
+  }
 }
