@@ -9,10 +9,14 @@ export function canFullscreen(): boolean {
 }
 
 export async function toggleFullscreen(): Promise<void> {
-  if (document.fullscreenElement) {
-    await document.exitFullscreen();
-    return;
+  try {
+    if (document.fullscreenElement) {
+      await document.exitFullscreen();
+      return;
+    }
+    await document.documentElement.requestFullscreen({ navigationUI: "hide" });
+    await screen.orientation.lock("landscape");
+  } catch {
+    // Refused or unsupported: the page simply stays as it is.
   }
-  await document.documentElement.requestFullscreen({ navigationUI: "hide" });
-  await screen.orientation.lock("landscape");
 }

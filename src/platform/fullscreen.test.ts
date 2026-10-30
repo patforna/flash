@@ -103,4 +103,11 @@ describe("toggleFullscreen", () => {
     expect(exit).toHaveBeenCalled();
     expect(request).not.toHaveBeenCalled();
   });
+
+  it("swallows a refused request (SecurityError)", async () => {
+    const { request } = fullscreenApi();
+    request.mockRejectedValue(new DOMException("Not allowed", "SecurityError"));
+
+    await expect(toggleFullscreen()).resolves.toBeUndefined();
+  });
 });
