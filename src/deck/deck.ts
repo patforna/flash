@@ -19,6 +19,10 @@ export function deal(
   return { order, index: 0, side: "front" };
 }
 
+export function next(p: Pass): Pass {
+  return { ...p, index: p.index + 1, side: "front" };
+}
+
 // Fisher–Yates, on a copy.
 export function shuffle<T>(xs: readonly T[], rng: Rng): T[] {
   const out = [...xs];

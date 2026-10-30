@@ -21,11 +21,13 @@
 
 import { describe, expect, it } from "vitest";
 import type { Card } from "../../shared/types";
-import { deal, poolFor, shuffle } from "./deck";
-import type { Rng } from "./types";
+import { deal, next, poolFor, shuffle } from "./deck";
+import type { Pass, Rng, Side } from "./types";
 
 const card = (id: string, ...topics: string[]): Card => ({ id, topics, questionHtml: id, answerHtml: id });
 const cards = [card("a", "Redis"), card("b", "Postgres"), card("c", "Redis", "Queues"), card("d", "Queues")];
+// A pass of three cards; index 3 is the end card.
+const at = (index: number, side: Side = "front"): Pass => ({ order: ["a", "b", "c"], index, side });
 
 // A seeded generator, so every run shuffles the same way.
 function mulberry32(seed: number): Rng {
@@ -115,5 +117,11 @@ describe("deal", () => {
 
   it("keeps a lone card even when it is avoidFirst", () => {
     expect(deal(["a"], mulberry32(9), { avoidFirst: "a" }).order).toEqual(["a"]);
+  });
+});
+
+describe("next", () => {
+  it("moves one card forward, front up", () => {
+    expect(next(at(0, "back"))).toEqual(at(1));
   });
 });
