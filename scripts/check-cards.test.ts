@@ -1,6 +1,6 @@
 // To do:
 // [x] a valid deck: prints "ok: N cards, M topics, version V" and exits 0
-// [ ] --version, before or after the path, prints only the version: the one the server reports
+// [x] --version, before or after the path, prints only the version: the one the server reports
 // [ ] a bad deck: prints every problem on its own line to stderr and exits 1, with --version too
 // [ ] an unreadable file or no path: says so and exits 1
 import { describe, expect, test } from "bun:test";
@@ -26,5 +26,12 @@ describe("check-cards", () => {
       stderr: "",
       code: 0,
     });
+  });
+
+  test.each([
+    ["--version", fixture],
+    [fixture, "--version"],
+  ])("prints only the version, the one the server reports, for %s %s", async (first, second) => {
+    expect(await check(first, second)).toEqual({ stdout: `${version}\n`, stderr: "", code: 0 });
   });
 });
