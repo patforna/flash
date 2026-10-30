@@ -11,12 +11,20 @@
 // [x] useFit: "scroll" when no step fits
 // [x] useFit: measures once per key, not on every render (a flip re-renders the card; measuring forces layout)
 // [x] useFit: measures again when its key changes
+// [x] useFit: a key measured before takes its step at once, with no measuring (a card remounts on every move)
 import { configure, render, screen, waitFor } from "@testing-library/react";
 import { useLayoutEffect, useRef } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { chooseStep, useFit } from "./fit";
 
 configure({ reactStrictMode: true });
+
+// A step, once measured, holds for its key for the rest of the page load: each test measures under keys of its own.
+let tests = 0;
+beforeEach(() => {
+  tests++;
+});
+const key = (name: string) => `${name}-${tests}`;
 
 describe("chooseStep", () => {
   it("chooses step 0, the largest type, when it fits", () => {
@@ -88,13 +96,13 @@ describe("useFit", () => {
 
   it("measures before paint once the fonts are in", () => {
     const seen: (string | undefined)[] = [];
-    render(<Face fitKey="vacuum" onLayout={(fit) => seen.push(fit)} />);
+    render(<Face fitKey={key("vacuum")} onLayout={(fit) => seen.push(fit)} />);
     expect(seen[0]).toBe("0");
   });
 
   it("keeps the content hidden until the fonts have loaded, then measures", async () => {
     const fonts = stubFonts([]);
-    render(<Face fitKey="vacuum" />);
+    render(<Face fitKey={key("vacuum")} />);
     const face = screen.getByTestId("face");
     expect(face.dataset.fit).toBeUndefined();
     expect(fonts.load).toHaveBeenCalledWith(expect.stringContaining("Shantell Sans"));
@@ -103,7 +111,7 @@ describe("useFit", () => {
 
   it("waits for the code font too", async () => {
     const fonts = stubFonts(["Shantell Sans"]);
-    render(<Face fitKey="vacuum" />);
+    render(<Face fitKey={key("vacuum")} />);
     const face = screen.getByTestId("face");
     expect(face.dataset.fit).toBeUndefined();
     expect(fonts.load).toHaveBeenCalledWith(expect.stringContaining("Monaspace Radon"));
@@ -111,24 +119,24 @@ describe("useFit", () => {
   });
 
   it("steps the type down while a part overflows its box", () => {
-    render(<Face fitKey="shard" overflow={{ until: 2, axis: "down" }} />);
+    render(<Face fitKey={key("shard")} overflow={{ until: 2, axis: "down" }} />);
     const face = screen.getByTestId("face");
     expect(face.dataset.fit).toBe("2");
     expect(face.dataset.step).toBe("2");
   });
 
   it("also steps down while a part overflows across, as a code line wider than its column does", () => {
-    render(<Face fitKey="skip-locked" overflow={{ until: 1, axis: "across", by: 3 }} />);
+    render(<Face fitKey={key("skip-locked")} overflow={{ until: 1, axis: "across", by: 3 }} />);
     expect(screen.getByTestId("face").dataset.fit).toBe("1");
   });
 
   it("lets a highlight hang its 2 units of padding past the column's edge: that is no overflow", () => {
-    render(<Face fitKey="hash-ring" overflow={{ until: 1, axis: "across", by: 2 }} />);
+    render(<Face fitKey={key("hash-ring")} overflow={{ until: 1, axis: "across", by: 2 }} />);
     expect(screen.getByTestId("face").dataset.fit).toBe("0");
   });
 
   it('falls back to "scroll" when even the smallest step overflows', () => {
-    render(<Face fitKey="too-long" overflow={{ until: 3, axis: "down" }} />);
+    render(<Face fitKey={key("too-long")} overflow={{ until: 3, axis: "down" }} />);
     const face = screen.getByTestId("face");
     expect(face.dataset.fit).toBe("scroll");
     expect(face.dataset.step).toBe("scroll");
@@ -136,15 +144,26 @@ describe("useFit", () => {
 
   it("measures once per key, not on every render", () => {
     const fonts = stubFonts(BOTH);
-    const { rerender } = render(<Face fitKey="vacuum" />);
+    const { rerender } = render(<Face fitKey={key("vacuum")} />);
     const checks = fonts.check.mock.calls.length;
-    rerender(<Face fitKey="vacuum" />);
+    rerender(<Face fitKey={key("vacuum")} />);
     expect(fonts.check.mock.calls.length).toBe(checks);
   });
 
+  it("takes the step a key was measured at before, at once: a card mounts again whenever it changes layers", () => {
+    const first = render(<Face fitKey={key("shard")} overflow={{ until: 2, axis: "down" }} />);
+    first.unmount();
+    const fonts = stubFonts([]);
+    const seen: (string | undefined)[] = [];
+    render(<Face fitKey={key("shard")} onLayout={(fit) => seen.push(fit)} />);
+    expect(seen[0]).toBe("2");
+    expect(screen.getByTestId("face").dataset.step).toBe("2");
+    expect(fonts.load).not.toHaveBeenCalled();
+  });
+
   it("measures again when its key changes", () => {
-    const { rerender } = render(<Face fitKey="vacuum" />);
-    rerender(<Face fitKey="shard" overflow={{ until: 2, axis: "down" }} />);
+    const { rerender } = render(<Face fitKey={key("vacuum")} />);
+    rerender(<Face fitKey={key("shard")} overflow={{ until: 2, axis: "down" }} />);
     const face = screen.getByTestId("face");
     expect(face.dataset.fit).toBe("2");
     expect(face.dataset.step).toBe("2");

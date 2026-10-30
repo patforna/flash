@@ -18,8 +18,8 @@ export interface CardViewProps {
 export function CardView({ card, side, position, total, colourOf }: CardViewProps) {
   const front = useRef<HTMLDivElement>(null);
   const back = useRef<HTMLDivElement>(null);
-  useFit(front, STEPS, card.id);
-  useFit(back, STEPS, card.id);
+  useFit(front, STEPS, `${card.id}/front`);
+  useFit(back, STEPS, `${card.id}/back`);
   const colours = card.topics.map(colourOf);
   return (
     <div className={styles.frame}>
