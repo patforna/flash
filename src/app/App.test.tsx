@@ -13,7 +13,7 @@
 // [ ] the wake lock is asked for on the first input
 // [ ] performance mark flash:first-card once the fonts are in and the first card is on screen, once per page load
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { StrictMode } from "react";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import type { Deck } from "../../shared/types";
@@ -145,5 +145,12 @@ describe("reading", () => {
 
     expect(side(layer("current"))).toBe("back");
     expect(side(layer("next"))).toBe("front");
+  });
+
+  test("counts each card's place in the pass on both its faces: 1 / 3 on top, 2 / 3 underneath", async () => {
+    await reading();
+
+    expect(within(layer("current")).getAllByText("1 / 3")).toHaveLength(2);
+    expect(within(layer("next")).getAllByText("2 / 3")).toHaveLength(2);
   });
 });

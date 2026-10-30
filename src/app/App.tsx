@@ -22,6 +22,9 @@ export function App() {
   return late ? <MessageCard title="shuffling…" /> : null;
 }
 
+// Where each layer's card sits in the pass, from the card on top.
+const OFFSET = { prev: -1, current: 0, next: 1 } as const;
+
 function Reader({ deck }: { deck: Deck }) {
   const view = useDeck(deck);
   return (
@@ -33,7 +36,7 @@ function Reader({ deck }: { deck: Deck }) {
             key={card.id}
             card={card}
             side={role === "current" ? view.side : "front"}
-            position={view.position}
+            position={view.position + OFFSET[role]}
             total={view.total}
             colourOf={() => ""}
           />
