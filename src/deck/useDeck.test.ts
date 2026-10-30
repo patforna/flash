@@ -3,7 +3,7 @@
 // - [x] goNext walks the pass, every card once, then the end card
 // - [x] next is the card after this one, "end" after the last card and null on the end card; prev the card before
 // - [x] goPrev goes back a card; from the end card to the last card
-// - [ ] flip turns the card over; landing on any card shows its front
+// - [x] flip turns the card over; landing on any card shows its front
 // - [ ] goNext on the end card reshuffles, never starting with the last card seen
 // - [ ] reshuffle deals a new pass, never starting with the card on screen
 // - [ ] the first render deals a pass of the stored selection
@@ -96,5 +96,16 @@ describe("useDeck", () => {
     const seen = walk(result);
     act(() => result.current.goPrev());
     expect(result.current).toMatchObject({ current: { id: seen.at(-1) }, position: 5 });
+  });
+
+  it("turns the card over with flip, and shows the front of every card it lands on", () => {
+    const { result } = setup();
+    act(() => result.current.flip());
+    expect(result.current.side).toBe("back");
+    act(() => result.current.goNext());
+    expect(result.current.side).toBe("front");
+    act(() => result.current.flip());
+    act(() => result.current.goPrev());
+    expect(result.current.side).toBe("front");
   });
 });
