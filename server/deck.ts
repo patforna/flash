@@ -26,5 +26,11 @@ export function loadDeck(toml: string): Deck {
       answerHtml: "html" in answer ? answer.html : "",
     };
   });
-  return { version: "", topics: file.topics, cards };
+  const content = { topics: file.topics, cards };
+  return { version: version(content), ...content };
+}
+
+// The ETag and what /healthz reports: the first 12 characters of the base64url SHA-256 of the deck's JSON.
+function version(content: Omit<Deck, "version">): string {
+  return new Bun.CryptoHasher("sha256").update(JSON.stringify(content)).digest("base64url").slice(0, 12);
 }

@@ -1,7 +1,7 @@
 // To do:
 // [x] slug: lowercase ASCII words joined by "-"; accents dropped; at most 64 characters, never ending in "-"
 // [x] loadDeck turns a minimal deck into its declared topics and cards, ids slugged from the questions
-// [ ] the version: 12 base64url characters, stable for the same deck, different when a card changes
+// [x] the version: 12 base64url characters, stable for the same deck, different when a card changes
 // [ ] loadDeck reports every problem at once, naming the card: undeclared topic, duplicate question, long question, unknown key
 // [ ] a TOML syntax error is one problem with its line and column
 // [ ] shape: unknown top-level key, missing field, wrong type; a misspelt key doesn't stop the other cards' checks
@@ -68,5 +68,14 @@ answer = "Dead tuples."
         answerHtml: "<p>Dead tuples.</p>",
       },
     ]);
+  });
+
+  test("versions the deck: the first 12 characters of the base64url SHA-256 of its JSON", () => {
+    const toml = 'topics = ["Redis"]\n[[card]]\nquestion = "What is Redis?"\ntopics = ["Redis"]\nanswer = "A store."';
+    const { version, topics, cards } = loadDeck(toml);
+    const sha = new Bun.CryptoHasher("sha256").update(JSON.stringify({ topics, cards })).digest("base64url");
+
+    expect(version).toBe(sha.slice(0, 12));
+    expect(loadDeck(toml.replace("A store.", "A cache.")).version).not.toBe(version);
   });
 });
