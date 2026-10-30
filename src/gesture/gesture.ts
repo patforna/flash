@@ -18,9 +18,13 @@ export interface Sample {
   y: number;
 }
 
+const withinSlop = (a: Sample, b: Sample) => Math.hypot(b.x - a.x, b.y - a.y) < GESTURE.slop;
+
 export function classify(start: Sample, now: Sample): "pending" | "horizontal" | "vertical" {
-  const dx = now.x - start.x;
-  const dy = now.y - start.y;
-  if (Math.hypot(dx, dy) < GESTURE.slop) return "pending";
-  return Math.abs(dx) >= GESTURE.axisRatio * Math.abs(dy) ? "horizontal" : "vertical";
+  if (withinSlop(start, now)) return "pending";
+  return Math.abs(now.x - start.x) >= GESTURE.axisRatio * Math.abs(now.y - start.y) ? "horizontal" : "vertical";
+}
+
+export function isTap(start: Sample, end: Sample): boolean {
+  return withinSlop(start, end) && end.t - start.t <= GESTURE.tapMaxMs;
 }
