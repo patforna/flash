@@ -1,6 +1,16 @@
 import { readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 
+// docs/plan.md §12, in bytes. A kB is 1000 bytes, as Vite reports sizes.
+const BUDGETS = [
+  { key: "js", label: "JS (gzip)", limit: 100_000 },
+  { key: "css", label: "CSS (gzip)", limit: 12_000 },
+  { key: "fonts", label: "fonts", limit: 240_000 },
+  { key: "precache", label: "precache", limit: 700_000 },
+] as const;
+
+export type Sizes = ReturnType<typeof measure>;
+
 export function measure(dir: string) {
   const html = readFileSync(join(dir, "index.html"), "utf8");
   const sw = readFileSync(join(dir, "sw.js"), "utf8");
@@ -17,9 +27,13 @@ export function measure(dir: string) {
   };
 }
 
-export function breaches(_sizes: ReturnType<typeof measure>): string[] {
-  return [];
+export function breaches(sizes: Sizes): string[] {
+  return BUDGETS.filter((b) => sizes[b.key] > b.limit).map(
+    (b) => `${b.label}: ${kB(sizes[b.key])}, over the ${b.limit / 1000} kB budget`,
+  );
 }
+
+const kB = (bytes: number) => `${(bytes / 1000).toFixed(2)} kB`;
 
 const matches = (text: string, re: RegExp) => [...text.matchAll(re)].map((m) => m[1] ?? "");
 const sum = (paths: Iterable<string>, size: (path: string) => number) =>

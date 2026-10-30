@@ -11,7 +11,7 @@ import { breaches, measure } from "./budget";
 // [x] fonts: the raw size of every woff2 file
 // [x] precache: the raw size of every file sw.js precaches, each counted once
 // [x] breaches: none at the limits
-// [ ] breaches: one line per budget exceeded, with the size and the limit
+// [x] breaches: one line per budget exceeded, with the size and the limit
 // [ ] table: one aligned row per budget, with the size, the limit and the share used
 // [ ] the command: within budget it prints the table and exits 0
 // [ ] the command: over budget it prints the breaches and exits 1
@@ -100,4 +100,12 @@ test("precache is the raw size of every file sw.js precaches, each counted once"
 
 test("nothing breaches at the limits", () => {
   expect(breaches({ js: 100_000, css: 12_000, fonts: 240_000, precache: 700_000 })).toEqual([]);
+});
+
+test("each budget exceeded gives one line with its size and its limit", () => {
+  expect(breaches({ js: 104_210, css: 12_000, fonts: 241_000, precache: 750_000 })).toEqual([
+    "JS (gzip): 104.21 kB, over the 100 kB budget",
+    "fonts: 241.00 kB, over the 240 kB budget",
+    "precache: 750.00 kB, over the 700 kB budget",
+  ]);
 });
