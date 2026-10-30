@@ -3,8 +3,9 @@
 // [x] GET /api/cards returns the deck with its ETag and no-cache
 // [x] a matching If-None-Match gets 304 and no body, weak and listed tags included
 // [x] HEAD answers like GET
-// [ ] contract: the /api/cards body parses with the wire schema
+// [x] contract: the /api/cards body parses with the wire schema
 import { describe, expect, test } from "bun:test";
+import { DeckSchema } from "../shared/schema";
 import { createApi } from "./api";
 import { loadDeck } from "./deck";
 
@@ -61,5 +62,13 @@ describe("HEAD", () => {
     expect(head.headers.get("Cache-Control")).toBe(get.headers.get("Cache-Control"));
     expect(head.headers.get("Content-Type")).toBe(get.headers.get("Content-Type"));
     expect(await head.text()).toBe("");
+  });
+});
+
+describe("contract", () => {
+  test("the /api/cards body is the wire deck, exactly", async () => {
+    const res = await api.request("/api/cards");
+
+    expect(DeckSchema.parse(await res.json())).toEqual(deck);
   });
 });
