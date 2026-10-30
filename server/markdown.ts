@@ -12,9 +12,16 @@ const OPTIONS = {
 // Bun escapes `<` in text and attribute values, so every `<` in its output starts a tag.
 const TOKEN = /<(\/?)([a-z][a-z0-9]*)([^>]*)>|([^<]+)/g;
 
+const ANSWER_TAGS = new Set(["p", "br", "ul", "ol", "li", "strong", "code", "pre"]);
+
+function reason(tag: string): string {
+  return /^h[1-6]$/.test(tag) ? "a heading (a line starting with #, or a line underlined with --- or ===)" : `<${tag}>`;
+}
+
 type Rendered = { html: string } | { problems: string[] };
 
 export function renderAnswer(src: string): Rendered {
+  const problems = new Set<string>();
   const open: string[] = [];
   // A hard break comes out as `<br />` plus the line's own newline: one break, like a soft one.
   const html = Bun.markdown
@@ -33,9 +40,10 @@ export function renderAnswer(src: string): Rendered {
         open.pop();
         return `</${name}>`;
       }
+      if (!ANSWER_TAGS.has(name)) problems.add(reason(name));
       open.push(name);
       // Every attribute goes but the start of a numbered list (`code` loses its `class="language-…"`).
       return `<${name}${name === "ol" ? (attrs.match(/ start="\d+"/)?.[0] ?? "") : ""}>`;
     });
-  return { html };
+  return problems.size > 0 ? { problems: [...problems] } : { html };
 }

@@ -57,4 +57,10 @@ describe("renderAnswer", () => {
         "<p>| a | b |<br>|---|---|</p><p>~~gone~~ https://x.dev</p><ul><li>[ ] task</li></ul>",
     });
   });
+
+  test.each(["# Title", "Title\n---", "Title\n==="])("rejects a heading with its reason: %p", (src) => {
+    expect(renderAnswer(src)).toEqual({
+      problems: ["a heading (a line starting with #, or a line underlined with --- or ===)"],
+    });
+  });
 });
