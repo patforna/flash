@@ -1,5 +1,6 @@
 import { type ReactNode, useEffect, useLayoutEffect, useRef } from "react";
 import type { Card } from "../../shared/types";
+import { useShortcuts } from "../app/useShortcuts";
 import type { DeckView } from "../deck/types";
 import { useSwipe } from "../gesture/useSwipe";
 import styles from "./stage.module.css";
@@ -18,7 +19,7 @@ const ROLES = ["next", "current", "prev"] as const;
 const keyOf = (card: Card | "end") => (card === "end" ? "end" : card.id);
 const reducedMotion = () => matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-export function CardStage({ view, renderCard }: CardStageProps) {
+export function CardStage({ view, renderCard, onFullscreen }: CardStageProps) {
   const stage = useRef<HTMLDivElement>(null);
   const layers = useRef<Record<Role, HTMLDivElement | null>>({ next: null, current: null, prev: null });
 
@@ -39,6 +40,14 @@ export function CardStage({ view, renderCard }: CardStageProps) {
       else view.goPrev();
     },
     reducedMotion,
+  });
+
+  useShortcuts({
+    flip: swipe.tap,
+    next: () => swipe.commit("next"),
+    prev: () => swipe.commit("prev"),
+    reshuffle: () => view.reshuffle(),
+    fullscreen: onFullscreen,
   });
 
   // While a flip runs (data-flipping), the card underneath shows blank paper: edge-on, the flipping card hides little.

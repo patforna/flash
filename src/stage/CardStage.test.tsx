@@ -335,3 +335,24 @@ describe("buttons", () => {
     expect(screen.queryByRole("button", { name: "Show answer" })).toBeNull();
   });
 });
+
+describe("shortcuts", () => {
+  test("→ and ← go as a swipe does", async () => {
+    const { layer, calls } = setup({ start: 1 });
+    fireEvent.keyDown(document.body, { key: "ArrowRight" });
+    expect(animations[0]?.el).toBe(layer("current"));
+    await land();
+    fireEvent.keyDown(document.body, { key: "ArrowLeft" });
+    await land();
+    expect(calls).toEqual(["goNext", "goPrev"]);
+  });
+
+  test("Space flips, s reshuffles, f asks for fullscreen", () => {
+    const { calls, onFullscreen } = setup();
+    fireEvent.keyDown(document.body, { key: " " });
+    fireEvent.keyDown(document.body, { key: "s" });
+    fireEvent.keyDown(document.body, { key: "f" });
+    expect(calls).toEqual(["flip", "reshuffle"]);
+    expect(onFullscreen).toHaveBeenCalledOnce();
+  });
+});
