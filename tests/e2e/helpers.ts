@@ -108,6 +108,23 @@ export async function settled(page: Page): Promise<void> {
   );
 }
 
+// Every property the running animations and transitions touch, sorted: [] when nothing moves.
+export function animated(page: Page): Promise<string[]> {
+  return page.evaluate(() => {
+    const properties = new Set<string>();
+    for (const animation of document.getAnimations()) {
+      if (animation instanceof CSSTransition) properties.add(animation.transitionProperty);
+      if (!(animation.effect instanceof KeyframeEffect)) continue;
+      for (const keyframe of animation.effect.getKeyframes()) {
+        for (const property of Object.keys(keyframe)) {
+          if (!["offset", "computedOffset", "easing", "composite"].includes(property)) properties.add(property);
+        }
+      }
+    }
+    return [...properties].sort();
+  });
+}
+
 // The first card is on screen, written in its fonts (the app's performance mark).
 export async function firstCard(page: Page): Promise<void> {
   await page.waitForFunction(() => performance.getEntriesByName("flash:first-card").length > 0);
