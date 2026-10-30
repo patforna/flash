@@ -10,7 +10,7 @@
 // - [x] deal: keep puts that id first; ignored when it isn't in the pool
 // - [x] deal: avoidFirst never starts the pass with that id when there are at least 2 cards
 // - [x] deal: avoidFirst moves it to any other position
-// - [ ] deal: avoidFirst keeps a lone card
+// - [x] deal: avoidFirst keeps a lone card
 // - [ ] next: one forward, front up; past the last card the end card; a no-op on the end card
 // - [ ] prev: one back, front up; a no-op at 0; from the end card the last card
 // - [ ] flip toggles the side; a no-op on the end card (it has no back)
@@ -111,5 +111,9 @@ describe("deal", () => {
       expect(count(k)).toBeGreaterThan(150);
       expect(count(k)).toBeLessThan(250);
     }
+  });
+
+  it("keeps a lone card even when it is avoidFirst", () => {
+    expect(deal(["a"], mulberry32(9), { avoidFirst: "a" }).order).toEqual(["a"]);
   });
 });
