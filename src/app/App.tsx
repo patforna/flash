@@ -9,6 +9,7 @@ import { useDeck } from "../deck/useDeck";
 import { colourFor } from "../panel/colours";
 import { TopicPanel } from "../panel/TopicPanel";
 import { toggleFullscreen } from "../platform/fullscreen";
+import { tick } from "../platform/haptics";
 import { CardStage } from "../stage/CardStage";
 import styles from "./App.module.css";
 
@@ -50,7 +51,7 @@ function Reader({ deck }: { deck: Deck }) {
         colourOf={colourOf}
       />
       <CardStage
-        view={view}
+        view={{ ...view, goNext: ticked(view.goNext), goPrev: ticked(view.goPrev), reshuffle: ticked(view.reshuffle) }}
         renderCard={(card, role) =>
           card === "end" ? (
             <EndCard key="end" total={view.total} />
@@ -73,6 +74,15 @@ function Reader({ deck }: { deck: Deck }) {
       </p>
     </>
   );
+}
+
+// A move that lands with a buzz. The stage moves only once a card has landed (a tap on the end card deals the next
+// pass); a flip never buzzes.
+function ticked(move: () => void): () => void {
+  return () => {
+    tick();
+    move();
+  };
 }
 
 // "Card 7 of 16", or what the end card says.

@@ -7,7 +7,7 @@
 // [x] a chip toggles its topic, All clears the selection
 // [x] colours by the topic's declared index, on the chips and the card
 // [x] the end card closes the pass
-// [ ] a live region says where you are: "Card 1 of 3", the end card's text
+// [x] a live region says where you are: "Card 1 of 3", the end card's text
 // [ ] haptics on next, previous, reshuffle, the end card's reshuffle and a chip toggle; never on a flip
 // [ ] the fullscreen chip leads the panel; f toggles fullscreen
 // [ ] the wake lock is asked for on the first input
@@ -82,13 +82,14 @@ const side = (el: HTMLElement) => el.querySelector("[data-side]")?.getAttribute(
 // Every Web Animation the stage starts, so a move can land at once.
 let animations: FakeAnimation[] = [];
 
-// Moves on as the Next button does, landing once the card has flown.
-async function goNext() {
-  fireEvent.click(screen.getByRole("button", { name: "Next" }));
+// Moves as the Next and Previous buttons do, landing once the card has flown.
+async function go(name: "Next" | "Previous") {
+  fireEvent.click(screen.getByRole("button", { name }));
   await act(async () => {
     for (const animation of animations) animation.finish();
   });
 }
+const goNext = () => go("Next");
 
 beforeEach(() => {
   animations = [];
@@ -253,5 +254,32 @@ describe("announcements", () => {
     for (let i = 0; i < 3; i++) await goNext();
 
     expect(live()?.textContent).toBe("That's all 3. Tap or swipe to shuffle again.");
+  });
+});
+
+describe("haptics", () => {
+  // A phone: a coarse pointer and a vibration motor.
+  function phone() {
+    vi.spyOn(navigator, "maxTouchPoints", "get").mockReturnValue(5);
+    const vibrate = vi.fn(() => true);
+    Object.defineProperty(navigator, "vibrate", { configurable: true, value: vibrate });
+    return vibrate;
+  }
+
+  afterEach(() => {
+    Reflect.deleteProperty(navigator, "vibrate");
+  });
+
+  test("an 8 ms tick as each move lands, next, previous or a reshuffle; none for a flip", async () => {
+    const vibrate = phone();
+    await reading();
+
+    fireEvent.click(screen.getByRole("button", { name: "Show answer" }));
+    expect(vibrate).not.toHaveBeenCalled();
+    await goNext();
+    await go("Previous");
+    fireEvent.keyDown(document.body, { key: "s" });
+
+    expect(vibrate.mock.calls).toEqual([[8], [8], [8]]);
   });
 });
