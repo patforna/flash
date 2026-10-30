@@ -38,9 +38,17 @@ afterEach(() => {
   for (const [target, key] of defined.splice(0)) Reflect.deleteProperty(target, key);
 });
 
+function renderChip() {
+  return render(<FullscreenChip />, { reactStrictMode: true });
+}
+
+function chip() {
+  return screen.queryByRole("button", { name: "Full screen" });
+}
+
 describe("FullscreenChip", () => {
   it("renders nothing where fullscreen isn't available", () => {
-    const { container } = render(<FullscreenChip />, { reactStrictMode: true });
+    const { container } = renderChip();
 
     expect(container.innerHTML).toBe("");
   });
@@ -48,15 +56,14 @@ describe("FullscreenChip", () => {
   it("is a Full screen button, its icon hidden from assistive technology, in a tab that can go fullscreen", () => {
     fullscreenTab();
 
-    render(<FullscreenChip />, { reactStrictMode: true });
+    renderChip();
 
-    const button = screen.getByRole("button", { name: "Full screen" });
-    expect(button.querySelector("svg")?.getAttribute("aria-hidden")).toBe("true");
+    expect(chip()?.querySelector("svg")?.getAttribute("aria-hidden")).toBe("true");
   });
 
   it("goes fullscreen when clicked", () => {
     const request = fullscreenTab();
-    render(<FullscreenChip />, { reactStrictMode: true });
+    renderChip();
 
     fireEvent.click(screen.getByRole("button", { name: "Full screen" }));
 
@@ -65,12 +72,12 @@ describe("FullscreenChip", () => {
 
   it("hides once fullscreen and returns when fullscreen ends", () => {
     fullscreenTab();
-    render(<FullscreenChip />, { reactStrictMode: true });
+    renderChip();
 
     fullscreenChange(document.documentElement);
-    expect(screen.queryByRole("button", { name: "Full screen" })).toBeNull();
+    expect(chip()).toBeNull();
 
     fullscreenChange(null);
-    expect(screen.queryByRole("button", { name: "Full screen" })).not.toBeNull();
+    expect(chip()).not.toBeNull();
   });
 });
