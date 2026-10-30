@@ -505,4 +505,13 @@ describe("commit(dir), for keys and buttons", () => {
     act(() => swipe().commit("next"));
     expect(animations).toEqual([]);
   });
+
+  test("a second commit before the first lands completes the first, then flings the new card", () => {
+    const { layer, animations, onCommit, swipe } = setup();
+    act(() => swipe().commit("next"));
+    act(() => swipe().commit("next"));
+    expect(onCommit).toHaveBeenCalledExactlyOnceWith("next");
+    expect(animations[0]?.playState).toBe("idle");
+    expect(animations[2]?.el).toBe(layer("current"));
+  });
 });
