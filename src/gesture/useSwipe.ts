@@ -303,6 +303,7 @@ function swipe(stage: RefObject<HTMLElement | null>, options: RefObject<SwipeOpt
   }
 
   function deal() {
+    if (gesture) return;
     abort();
     const layers = options.current.layers();
     if (!layers) return;

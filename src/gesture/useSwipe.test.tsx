@@ -517,6 +517,15 @@ describe("deal(), when the view brings a new card", () => {
     expect(inline(next)).toEqual({ transform: "", visibility: "" });
   });
 
+  test("leaves a drag in progress alone: the new card simply follows the finger", () => {
+    const { stage, layer, animations, swipe } = setup();
+    const finger = press(stage, layer("current"), 700, 200);
+    finger.move(650, 200);
+    act(() => swipe().deal());
+    expect(animations).toEqual([]);
+    expect(layer("current").style.transform).toBe("translateX(-50px) rotate(-1.5deg)");
+  });
+
   test("a pointerdown mid-deal finishes it", () => {
     const { stage, layer, animations, swipe } = setup();
     act(() => swipe().deal());
