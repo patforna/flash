@@ -44,7 +44,7 @@ export function loadDeck(toml: string): Deck {
 
   for (const issue of issues) {
     const [, card] = issue.path;
-    if (typeof card === "number") for (const text of describe(issue)) report(card, text);
+    if (typeof card === "number") for (const text of explain(issue)) report(card, text);
   }
 
   const seen = new Map<string, number>();
@@ -77,7 +77,7 @@ export function loadDeck(toml: string): Deck {
   return { version: version(content), ...content };
 }
 
-function describe(issue: z.core.$ZodIssue): string[] {
+function explain(issue: z.core.$ZodIssue): string[] {
   return issue.code === "unrecognized_keys" ? issue.keys.map((key) => `unknown key "${key}"`) : [issue.message];
 }
 

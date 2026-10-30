@@ -100,7 +100,8 @@ answer = "Dead tuples."
   });
 
   test("reports every problem at once, naming the card", () => {
-    const long = "Why would anyone write a question this long, one that runs right past the limit of one hundred chars?";
+    const long =
+      "Why would anyone write a question this long, one that runs right past the limit of one hundred chars?";
     const toml = file([
       card({ question: "What does Redis do?", topics: ["Redis", "Kafka"] }),
       card({ question: "what does REDIS do?" }),
