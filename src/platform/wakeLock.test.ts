@@ -8,7 +8,7 @@ import { useWakeLock } from "./wakeLock";
 // [x] requests a screen lock on the first keydown
 // [x] keeps the one lock while input continues
 // [x] releases it after five minutes without input
-// [ ] releases it after idleMs without input; each input restarts the countdown
+// [x] releases it after idleMs without input; each input restarts the countdown
 // [ ] acquires it again on the next input
 // [ ] requests it again when the page becomes visible, if it was held
 // [ ] a refused request is not an error
@@ -78,6 +78,20 @@ describe("useWakeLock", () => {
     fireEvent.pointerDown(document.body);
 
     await vi.advanceTimersByTimeAsync(5 * 60_000 - 1);
+    expect(sentinels[0]?.release).not.toHaveBeenCalled();
+
+    await vi.advanceTimersByTimeAsync(1);
+    expect(sentinels[0]?.release).toHaveBeenCalled();
+  });
+
+  it("releases it after idleMs without input, each input restarting the countdown", async () => {
+    const { sentinels } = wakeLockApi();
+    renderHook(() => useWakeLock(1000), { reactStrictMode: true });
+    fireEvent.pointerDown(document.body);
+    await vi.advanceTimersByTimeAsync(600);
+    fireEvent.keyDown(document.body, { key: "ArrowRight" });
+
+    await vi.advanceTimersByTimeAsync(999);
     expect(sentinels[0]?.release).not.toHaveBeenCalled();
 
     await vi.advanceTimersByTimeAsync(1);
