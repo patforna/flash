@@ -1,8 +1,9 @@
 import type { Card } from "../../shared/types";
 import type { Rng } from "./types";
 
-export function poolFor(cards: readonly Card[], _selected: ReadonlySet<string>): string[] {
-  return cards.map((c) => c.id);
+export function poolFor(cards: readonly Card[], selected: ReadonlySet<string>): string[] {
+  const pool = selected.size === 0 ? cards : cards.filter((c) => c.topics.some((t) => selected.has(t)));
+  return pool.map((c) => c.id);
 }
 
 // Fisher–Yates, on a copy.
