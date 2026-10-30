@@ -20,7 +20,7 @@ export function deal(
 }
 
 export function next(p: Pass): Pass {
-  return { ...p, index: p.index + 1, side: "front" };
+  return p.index < p.order.length ? { ...p, index: p.index + 1, side: "front" } : p;
 }
 
 // Fisher–Yates, on a copy.
