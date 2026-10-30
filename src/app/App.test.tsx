@@ -17,6 +17,7 @@ import { act, fireEvent, render, screen, waitFor, within } from "@testing-librar
 import { StrictMode } from "react";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import type { Deck } from "../../shared/types";
+import { FakeAnimation } from "../gesture/testing";
 import { App } from "./App";
 
 const deck: Deck = {
@@ -77,7 +78,24 @@ function layer(role: "prev" | "current" | "next"): HTMLElement {
 const question = (el: HTMLElement) => el.querySelector("h2")?.textContent;
 const side = (el: HTMLElement) => el.querySelector("[data-side]")?.getAttribute("data-side");
 
+// Every Web Animation the stage starts, so a move can land at once.
+let animations: FakeAnimation[] = [];
+
+// Moves on as the Next button does, landing once the card has flown.
+async function goNext() {
+  fireEvent.click(screen.getByRole("button", { name: "Next" }));
+  await act(async () => {
+    for (const animation of animations) animation.finish();
+  });
+}
+
 beforeEach(() => {
+  animations = [];
+  vi.spyOn(Element.prototype, "animate").mockImplementation(function (this: Element, keyframes, options) {
+    const animation = new FakeAnimation(this, keyframes as Keyframe[], options as KeyframeAnimationOptions);
+    animations.push(animation);
+    return animation as unknown as Animation;
+  });
   // happy-dom has no document.fonts: the fonts count as loaded.
   Object.defineProperty(document, "fonts", {
     configurable: true,
@@ -152,5 +170,13 @@ describe("reading", () => {
 
     expect(within(layer("current")).getAllByText("1 / 3")).toHaveLength(2);
     expect(within(layer("next")).getAllByText("2 / 3")).toHaveLength(2);
+  });
+
+  test("closes the pass with the end card, which counts the cards read", async () => {
+    await reading();
+
+    for (let i = 0; i < 3; i++) await goNext();
+
+    expect(within(layer("current")).getByText("That's all 3.")).toBeTruthy();
   });
 });

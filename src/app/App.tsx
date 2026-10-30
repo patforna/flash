@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import type { Deck } from "../../shared/types";
 import { useDeckQuery } from "../api/useDeckQuery";
 import { CardView } from "../card/CardView";
+import { EndCard } from "../card/EndCard";
 import { MessageCard } from "../card/MessageCard";
 import { useDeck } from "../deck/useDeck";
 import { toggleFullscreen } from "../platform/fullscreen";
@@ -31,7 +32,9 @@ function Reader({ deck }: { deck: Deck }) {
     <CardStage
       view={view}
       renderCard={(card, role) =>
-        card === "end" ? null : (
+        card === "end" ? (
+          <EndCard key="end" total={view.total} />
+        ) : (
           <CardView
             key={card.id}
             card={card}
