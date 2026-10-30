@@ -247,6 +247,21 @@ describe("flipping", () => {
     }
   });
 
+  test("…read with its unit, as the build's minifier writes the token (.38s)", () => {
+    vi.useFakeTimers();
+    try {
+      const { stage, layer } = setup();
+      stage.style.setProperty("--flip-duration", ".38s");
+      press(stage, layer("current"), 700, 200).up(80);
+      act(() => vi.advanceTimersByTime(379));
+      expect(stage.hasAttribute("data-flipping")).toBe(true);
+      act(() => vi.advanceTimersByTime(1));
+      expect(stage.hasAttribute("data-flipping")).toBe(false);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   test("under reduced motion, for the cross-fade's duration", () => {
     vi.useFakeTimers();
     vi.spyOn(window, "matchMedia").mockImplementation(

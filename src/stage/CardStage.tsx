@@ -18,6 +18,8 @@ const ROLES = ["next", "current", "prev"] as const;
 
 const keyOf = (card: Card | "end") => (card === "end" ? "end" : card.id);
 const reducedMotion = () => matchMedia("(prefers-reduced-motion: reduce)").matches;
+// A CSS time in ms, whichever unit it is written in: the build's minifier turns 380ms into .38s.
+const ms = (time: string) => Number.parseFloat(time) * (/ms\s*$/.test(time) ? 1 : 1000) || 0;
 
 export function CardStage({ view, renderCard, onFullscreen }: CardStageProps) {
   const stage = useRef<HTMLDivElement>(null);
@@ -71,7 +73,7 @@ export function CardStage({ view, renderCard, onFullscreen }: CardStageProps) {
       const duration = getComputedStyle(el).getPropertyValue(
         reducedMotion() ? "--flip-fade-duration" : "--flip-duration",
       );
-      flipEnd.current = setTimeout(stopFlip, parseFloat(duration) || 0);
+      flipEnd.current = setTimeout(stopFlip, ms(duration));
     }
     shown.current = { key, side: view.side };
     landing.current = null;
