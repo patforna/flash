@@ -10,7 +10,7 @@
 // [x] a card's topics: 1–3, declared, no repeats
 // [x] question: 8–100 characters after trimming, one line, inline markup only, unique ignoring case
 // [x] answer: 1–520 characters after trimming, at most 12 lines, code lines at most 46 characters, no tabs, markup
-// [ ] characters the fonts don't cover fail, named with their code point
+// [x] characters the fonts don't cover fail, named with their code point
 // [ ] ids unique: different questions with the same slug
 // [ ] the fixture deck loads cleanly
 import { describe, expect, test } from "bun:test";
@@ -249,5 +249,19 @@ answer = "Dead tuples."
     const toml = file([card({ answer: `Code:\n\`\`\`\n${fits}\n${over}\n\`\`\`\nOutside code, ${over} wraps.` })]);
 
     expect(problemsOf(toml)).toEqual(['card 1 "what-is-redis-for": code on answer line 4 is 47 characters (max 46)']);
+  });
+
+  test("fails what neither font covers, naming each character once with its code point", () => {
+    const toml = file([
+      card({ question: "Why 😀 and 😀 again?", answer: "Fine: → ≤ é ü.\nNot: 漢字." }),
+      card({ question: "Which question has\ta tab?" }),
+    ]);
+
+    expect(problemsOf(toml)).toEqual([
+      'card 1 "why-and-again": question has "😀" (U+1F600), which neither font covers',
+      'card 1 "why-and-again": answer has "漢" (U+6F22), which neither font covers',
+      'card 1 "why-and-again": answer has "字" (U+5B57), which neither font covers',
+      'card 2 "which-question-has-a-tab": question has a tab',
+    ]);
   });
 });

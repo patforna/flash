@@ -1,5 +1,6 @@
 import { parse, TomlError } from "smol-toml";
 import type { z } from "zod";
+import { isCovered } from "../shared/glyphs";
 import { type CardsFile, CardsFileSchema, LIMITS } from "../shared/schema";
 import type { Card, Deck } from "../shared/types";
 import { FENCE, renderAnswer, renderQuestion } from "./markdown";
@@ -93,6 +94,8 @@ function readCard(raw: CardsFile["card"][number], declared: readonly string[] | 
   }
   const questionHtml = renderQuestion(question);
   if ("problems" in questionHtml) problems.push(...questionHtml.problems.map((reason) => `question has ${reason}`));
+  if (question.includes("\t")) problems.push("question has a tab");
+  for (const character of uncovered(question)) problems.push(`question has ${character}, which neither font covers`);
   const { topics } = raw;
   if (topics.length === 0) problems.push("has no topics");
   if (topics.length > LIMITS.cardTopics) problems.push(`has ${topics.length} topics (max ${LIMITS.cardTopics})`);
@@ -115,6 +118,7 @@ function readCard(raw: CardsFile["card"][number], declared: readonly string[] | 
   });
   const answerHtml = renderAnswer(answer);
   if ("problems" in answerHtml) problems.push(...answerHtml.problems.map((reason) => `answer has ${reason}`));
+  for (const character of uncovered(answer)) problems.push(`answer has ${character}, which neither font covers`);
   const card: Card = {
     id: slug(question),
     topics,
@@ -122,6 +126,13 @@ function readCard(raw: CardsFile["card"][number], declared: readonly string[] | 
     answerHtml: "html" in answerHtml ? answerHtml.html : "",
   };
   return { card, problems };
+}
+
+// Each character neither font covers, once, with its code point: `"😀" (U+1F600)`. Line breaks and tabs have rules of
+// their own.
+function uncovered(text: string): string[] {
+  const missing = new Set([...text].filter((c) => c !== "\n" && c !== "\t" && !isCovered(c.codePointAt(0) ?? 0)));
+  return [...missing].map((c) => `"${c}" (U+${(c.codePointAt(0) ?? 0).toString(16).toUpperCase().padStart(4, "0")})`);
 }
 
 const LABEL = /^[A-Za-z0-9][A-Za-z0-9 &+./-]*$/;
