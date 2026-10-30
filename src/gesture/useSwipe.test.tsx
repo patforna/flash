@@ -571,3 +571,20 @@ describe("deal(), when the view brings a new card", () => {
     expect(animations[0]?.playState).toBe("finished");
   });
 });
+
+describe("a flip still turning", () => {
+  test("is left to turn by a press (a tap reverses it), and finished once a drag is recognised", () => {
+    const { stage, layer } = setup();
+    const flipper = document.createElement("div");
+    flipper.dataset.side = "back";
+    layer("current").append(flipper);
+    const turning = { finish: vi.fn() };
+    flipper.getAnimations = () => [turning as unknown as Animation];
+    const finger = press(stage, layer("current"), 700, 200);
+    finger.move(695, 200);
+    expect(turning.finish).not.toHaveBeenCalled();
+    finger.move(690, 200);
+    finger.move(650, 200);
+    expect(turning.finish).toHaveBeenCalledOnce();
+  });
+});

@@ -222,7 +222,15 @@ function swipe(stage: RefObject<HTMLElement | null>, options: RefObject<SwipeOpt
     const g = own(e);
     if (!g) return;
     g.samples.push(sample(e));
-    if (g.axis === "pending") g.axis = classify(g.start, sample(e));
+    if (g.axis === "pending") {
+      g.axis = classify(g.start, sample(e));
+      // A card dragged mid-flip would travel edge-on: the flip (the card's [data-side] transition) ends now.
+      if (g.axis === "horizontal") {
+        for (const turning of g.layers.current.querySelector("[data-side]")?.getAnimations({ subtree: true }) ?? []) {
+          turning.finish();
+        }
+      }
+    }
     if (g.axis === "horizontal") follow(g, e.clientX - g.start.x);
   };
 
