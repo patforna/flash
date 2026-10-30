@@ -28,7 +28,10 @@ const fixed = (n: number) => Math.round(n * 1e4) / 1e4;
 // The card underneath, from resting (p = 0) to in place (p = 1).
 const underneath = (p: number) => `scale(${fixed(0.965 + 0.035 * p)}) translateY(${fixed(8 * (1 - p))}px)`;
 
-export function useSwipe(stage: RefObject<HTMLElement | null>, o: SwipeOptions): { commit(dir: "next" | "prev"): void } {
+export function useSwipe(
+  stage: RefObject<HTMLElement | null>,
+  o: SwipeOptions,
+): { commit(dir: "next" | "prev"): void } {
   const options = useRef(o);
   useLayoutEffect(() => {
     options.current = o;

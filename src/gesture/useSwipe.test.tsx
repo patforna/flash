@@ -19,7 +19,7 @@
 // [ ] deal(): drops a running commit; translateY(14px) → 0 and opacity 0 → 1 over 220 ms
 // [ ] a horizontal drag finishes a running flip
 import { act, render } from "@testing-library/react";
-import { useRef, useState } from "react";
+import { Profiler, useRef, useState } from "react";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import { type SwipeOptions, useSwipe } from "./useSwipe";
 
@@ -65,52 +65,59 @@ class FakeAnimation {
   }
 }
 
-function setup(options: Partial<SwipeOptions> = {}, { prev = true } = {}) {
+// A stage with real layer elements. Each commit brings new ones, as a new card would.
+function Stage({ options, prev }: { options: SwipeOptions; prev: boolean }) {
+  const stage = useRef<HTMLDivElement>(null);
+  const [commits, setCommits] = useState(0);
+  useSwipe(stage, {
+    ...options,
+    layers: () => {
+      const find = (role: string) => stage.current?.querySelector<HTMLElement>(`[data-role="${role}"]`) ?? null;
+      const current = find("current");
+      return current && { current, next: find("next"), prev: prev ? find("prev") : null };
+    },
+    onCommit: (dir) => {
+      options.onCommit(dir);
+      setCommits((n) => n + 1);
+    },
+  });
+  return (
+    <div ref={stage} data-testid="stage">
+      {(["next", "current", "prev"] as const).map((role) => (
+        <div key={`${role}-${commits}`} data-role={role} />
+      ))}
+    </div>
+  );
+}
+
+function setup(overrides: Partial<SwipeOptions> = {}, { prev = true } = {}) {
   const animations: FakeAnimation[] = [];
-  const onTap = vi.fn();
-  const onCommit = vi.fn();
-
-  function Stage() {
-    const stage = useRef<HTMLDivElement>(null);
-    const [commits, setCommits] = useState(0);
-    useSwipe(stage, {
-      layers: () => {
-        const find = (role: string) => stage.current?.querySelector<HTMLElement>(`[data-role="${role}"]`) ?? null;
-        const current = find("current");
-        return current && { current, next: find("next"), prev: prev ? find("prev") : null };
-      },
-      can: () => ({ prev: true, next: true }),
-      onTap,
-      onCommit: (dir) => {
-        onCommit(dir);
-        setCommits((n) => n + 1);
-      },
-      reducedMotion: () => false,
-      animate: (el, keyframes, opts) => {
-        const animation = new FakeAnimation(el, keyframes, opts);
-        animations.push(animation);
-        return animation as unknown as Animation;
-      },
-      ...options,
-    });
-    // Each commit brings new layer elements, as a new card would.
-    return (
-      <div ref={stage} data-testid="stage">
-        {(["next", "current", "prev"] as const).map((role) => (
-          <div key={`${role}-${commits}`} data-role={role} />
-        ))}
-      </div>
-    );
-  }
-
-  const view = render(<Stage />);
+  const options: SwipeOptions = {
+    layers: () => null,
+    can: () => ({ prev: true, next: true }),
+    onTap: vi.fn(),
+    onCommit: vi.fn(),
+    reducedMotion: () => false,
+    animate: (el, keyframes, opts) => {
+      const animation = new FakeAnimation(el, keyframes, opts);
+      animations.push(animation);
+      return animation as unknown as Animation;
+    },
+    ...overrides,
+  };
+  let renders = 0;
+  const view = render(
+    <Profiler id="stage" onRender={() => renders++}>
+      <Stage options={options} prev={prev} />
+    </Profiler>,
+  );
   const stage = view.getByTestId("stage");
   const layer = (role: string) => {
     const el = stage.querySelector<HTMLElement>(`[data-role="${role}"]`);
     if (!el) throw new Error(`no ${role} layer`);
     return el;
   };
-  return { stage, layer, animations, onTap, onCommit };
+  return { stage, layer, animations, onTap: options.onTap, onCommit: options.onCommit, renders: () => renders };
 }
 
 // A finger (or mouse) going down on `target` at (x, y) at time `t` ms; later events go to the stage, as captured.
@@ -201,6 +208,14 @@ describe("following the finger", () => {
     expect(layer("prev").style.transform).toBe("translateX(-760px)");
     expect(layer("current").style.transform).toBe("");
     expect(layer("next").style.transform).toBe("");
+  });
+
+  test("makes no React commits", () => {
+    const { stage, layer, renders } = setup();
+    const before = renders();
+    const finger = press(stage, layer("current"), 700, 200);
+    for (const x of [690, 660, 600, 520, 450, 600, 760]) finger.move(x, 200);
+    expect(renders()).toBe(before);
   });
 
   test("with no previous card, a right drag only gives a little, like a rubber band", () => {
