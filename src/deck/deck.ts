@@ -24,7 +24,7 @@ export function next(p: Pass): Pass {
 }
 
 export function prev(p: Pass): Pass {
-  return { ...p, index: p.index - 1, side: "front" };
+  return p.index > 0 ? { ...p, index: p.index - 1, side: "front" } : p;
 }
 
 // Fisher–Yates, on a copy.
