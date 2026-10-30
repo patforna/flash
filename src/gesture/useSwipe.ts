@@ -273,11 +273,15 @@ function swipe(stage: RefObject<HTMLElement | null>, options: RefObject<SwipeOpt
     abort();
     const layers = options.current.layers();
     if (!layers) return;
-    const keyframes = [
-      { transform: "translateY(14px)", opacity: 0 },
-      { transform: "translateY(0px)", opacity: 1 },
-    ];
-    play([animate(layers.current, keyframes, { duration: MOTION.dealMs, easing: MOTION.dealEase })], null);
+    const fade = options.current.reducedMotion();
+    const keyframes = fade
+      ? [{ opacity: 0 }, { opacity: 1 }]
+      : [
+          { transform: "translateY(14px)", opacity: 0 },
+          { transform: "translateY(0px)", opacity: 1 },
+        ];
+    const timing = fade ? { duration: MOTION.fadeMs } : { duration: MOTION.dealMs, easing: MOTION.dealEase };
+    play([animate(layers.current, keyframes, timing)], null);
   }
 
   return { listen, settle, commit, tap, deal };

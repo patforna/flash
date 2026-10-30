@@ -451,6 +451,14 @@ describe("reduced motion", () => {
     expect(inline(layer("prev"))).toEqual({ transform: "translateX(0px)", visibility: "visible" });
   });
 
+  test("a deal fades in, in place", () => {
+    const { layer, animations, swipe } = setup({ reducedMotion });
+    act(() => swipe().deal());
+    expect(animations.map((a) => [a.el, a.keyframes, a.options])).toEqual([
+      [layer("current"), [{ opacity: 0 }, { opacity: 1 }], { duration: 140 }],
+    ]);
+  });
+
   test("a cancel puts everything back at once", () => {
     const { stage, layer, animations } = setup({ reducedMotion });
     const finger = press(stage, layer("current"), 400, 200);
