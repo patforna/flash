@@ -248,4 +248,15 @@ describe("flipping", () => {
       vi.useRealTimers();
     }
   });
+
+  test("a new card isn't a flip, and ends one still running", async () => {
+    const { stage, layer } = setup();
+    stage.style.setProperty("--flip-duration", "10s");
+    press(stage, layer("current"), 700, 200).up(80);
+    expect(stage.hasAttribute("data-flipping")).toBe(true);
+    flick(stage, layer);
+    await land();
+    expect(layer("current").textContent).toBe("b?");
+    expect(stage.hasAttribute("data-flipping")).toBe(false);
+  });
 });

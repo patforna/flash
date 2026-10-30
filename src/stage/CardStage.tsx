@@ -46,7 +46,8 @@ export function CardStage({ view, renderCard }: CardStageProps) {
   useLayoutEffect(() => {
     const key = keyOf(view.current);
     const el = stage.current;
-    if (el && key === shown.current.key && view.side !== shown.current.side) {
+    if (key !== shown.current.key) stopFlip();
+    else if (el && view.side !== shown.current.side) {
       el.setAttribute("data-flipping", "");
       clearTimeout(flipEnd.current);
       const duration = getComputedStyle(el).getPropertyValue(
