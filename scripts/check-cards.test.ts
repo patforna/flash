@@ -2,7 +2,7 @@
 // [x] a valid deck: prints "ok: N cards, M topics, version V" and exits 0
 // [x] --version, before or after the path, prints only the version: the one the server reports
 // [x] a bad deck: prints every problem on its own line to stderr and exits 1, with --version too
-// [ ] an unreadable file or no path: says so and exits 1
+// [x] an unreadable file or no path: says so and exits 1
 import { afterAll, describe, expect, test } from "bun:test";
 import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
@@ -60,5 +60,19 @@ describe("check-cards", () => {
 
     expect(await check(bad)).toEqual(failed);
     expect(await check("--version", bad)).toEqual(failed);
+  });
+
+  test("says when it can't read the file, and fails", async () => {
+    const missing = join(dir, "missing.toml");
+
+    expect(await check(missing)).toEqual({ stdout: "", stderr: `can't read ${missing} (ENOENT)\n`, code: 1 });
+    expect(await check(dir)).toEqual({ stdout: "", stderr: `can't read ${dir} (EISDIR)\n`, code: 1 });
+  });
+
+  test("shows its usage without exactly one path, and fails", async () => {
+    const usage = { stdout: "", stderr: "usage: bun scripts/check-cards.ts [--version] <file>\n", code: 1 };
+
+    expect(await check("--version")).toEqual(usage);
+    expect(await check(fixture, fixture)).toEqual(usage);
   });
 });
