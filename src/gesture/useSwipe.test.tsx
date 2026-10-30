@@ -421,4 +421,14 @@ describe("reduced motion", () => {
     press(stage, layer("current"), 700, 200).move(650, 200);
     expect(layer("current").style.transform).toBe("translateX(-50px) rotate(0deg)");
   });
+  test("a commit cross-fades: the card fades out over the next one, already in place", async () => {
+    const { stage, layer, animations, onCommit } = setup({ reducedMotion });
+    flick(stage, layer);
+    expect(animations.map((a) => [a.el, a.keyframes, a.options])).toEqual([
+      [layer("current"), [{ opacity: 1 }, { opacity: 0 }], { duration: 140, fill: "forwards" }],
+    ]);
+    expect(layer("next").style.transform).toBe("scale(1) translateY(0px)");
+    await act(async () => animations[0]?.finish());
+    expect(onCommit).toHaveBeenCalledExactlyOnceWith("next");
+  });
 });

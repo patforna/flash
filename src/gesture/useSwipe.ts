@@ -111,6 +111,11 @@ function swipe(stage: RefObject<HTMLElement | null>, options: RefObject<SwipeOpt
 
   function fling(g: Gesture, dx: number, vx: number) {
     const { current, next } = g.layers;
+    if (options.current.reducedMotion()) {
+      if (next) write(next, underneath(1));
+      const fade = animate(current, [{ opacity: 1 }, { opacity: 0 }], { duration: MOTION.fadeMs, fill: "forwards" });
+      return play([fade], "next");
+    }
     const to = gone(g.rect);
     const timing = { duration: flingDuration(dx - to, vx), easing: flingEasing(dx - to, vx) };
     const animations = [
