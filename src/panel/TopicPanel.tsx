@@ -11,11 +11,11 @@ export interface TopicPanelProps {
   lead?: ReactNode;
 }
 
-export function TopicPanel({ topics, counts, total, selected, lead }: TopicPanelProps) {
+export function TopicPanel({ topics, counts, total, selected, onToggle, onAll, lead }: TopicPanelProps) {
   return (
     <fieldset aria-label="Topics">
       {lead}
-      <button type="button" aria-pressed={selected.size === 0} aria-label={`All, ${cards(total)}`}>
+      <button type="button" aria-pressed={selected.size === 0} aria-label={`All, ${cards(total)}`} onClick={onAll}>
         All · {total}
       </button>
       {topics.map((topic) => (
@@ -24,6 +24,7 @@ export function TopicPanel({ topics, counts, total, selected, lead }: TopicPanel
           type="button"
           aria-pressed={selected.has(topic)}
           aria-label={`${topic}, ${cards(counts.get(topic) ?? 0)}`}
+          onClick={() => onToggle(topic)}
         >
           {topic}
         </button>

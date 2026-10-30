@@ -5,10 +5,11 @@
 // [x] the topics follow All in the given order, each pressed while selected
 // [x] each chip's accessible name carries its count, "1 card" for one
 // [x] the lead comes first
-// [ ] tapping All calls onAll; tapping a topic calls onToggle with its label
+// [x] tapping All calls onAll; tapping a topic calls onToggle with its label
 // [ ] each chip carries its colour, and a fixed tilt within ±1.5° that differs from its neighbours'
 import { configure, render, screen } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import userEvent from "@testing-library/user-event";
+import { describe, expect, it, vi } from "vitest";
 import { colourFor } from "./colours";
 import { TopicPanel, type TopicPanelProps } from "./TopicPanel";
 
@@ -74,5 +75,16 @@ describe("TopicPanel", () => {
     renderPanel({ lead: <button type="button">Full screen</button> });
     const chips = screen.getAllByRole("button").map((chip) => chip.textContent);
     expect(chips.slice(0, 2)).toEqual(["Full screen", "All · 65"]);
+  });
+
+  it("calls onAll for All and onToggle with the label for a topic", async () => {
+    const onAll = vi.fn();
+    const onToggle = vi.fn();
+    renderPanel({ selected: new Set(["Redis"]), onAll, onToggle });
+    const user = userEvent.setup();
+    await user.click(screen.getByRole("button", { name: /^Queues/ }));
+    await user.click(screen.getByRole("button", { name: /^All/ }));
+    expect(onToggle.mock.calls).toEqual([["Queues"]]);
+    expect(onAll).toHaveBeenCalledOnce();
   });
 });
