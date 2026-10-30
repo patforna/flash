@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { FullscreenChip } from "./FullscreenChip";
 
@@ -6,7 +6,7 @@ import { FullscreenChip } from "./FullscreenChip";
 // [x] renders nothing where fullscreen isn't available
 // [x] in a tab that can go fullscreen: a "Full screen" button with an icon hidden from assistive technology
 // [x] goes fullscreen when clicked
-// [ ] hides once fullscreen and returns when fullscreen ends (fullscreenchange)
+// [x] hides once fullscreen and returns when fullscreen ends (fullscreenchange)
 // [ ] hides when the display mode stops being a browser tab (the query's change event)
 
 // happy-dom has no Fullscreen API: each test defines what it needs, removed afterwards.
@@ -24,6 +24,14 @@ function fullscreenTab() {
   define(document, "fullscreenElement", null);
   define(document.documentElement, "requestFullscreen", request);
   return request;
+}
+
+// What the browser does on entering or leaving fullscreen.
+function fullscreenChange(element: Element | null) {
+  define(document, "fullscreenElement", element);
+  act(() => {
+    document.dispatchEvent(new Event("fullscreenchange"));
+  });
 }
 
 afterEach(() => {
@@ -53,5 +61,16 @@ describe("FullscreenChip", () => {
     fireEvent.click(screen.getByRole("button", { name: "Full screen" }));
 
     expect(request).toHaveBeenCalledWith({ navigationUI: "hide" });
+  });
+
+  it("hides once fullscreen and returns when fullscreen ends", () => {
+    fullscreenTab();
+    render(<FullscreenChip />, { reactStrictMode: true });
+
+    fullscreenChange(document.documentElement);
+    expect(screen.queryByRole("button", { name: "Full screen" })).toBeNull();
+
+    fullscreenChange(null);
+    expect(screen.queryByRole("button", { name: "Full screen" })).not.toBeNull();
   });
 });
