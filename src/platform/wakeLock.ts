@@ -16,7 +16,7 @@ export function useWakeLock(idleMs = 300_000): void {
       idle = setTimeout(release, idleMs);
     };
     const onVisibilityChange = () => {
-      if (document.visibilityState === "visible") lock = wakeLock.request("screen");
+      if (lock && document.visibilityState === "visible") lock = wakeLock.request("screen");
     };
     window.addEventListener("pointerdown", onInput, true);
     window.addEventListener("keydown", onInput, true);

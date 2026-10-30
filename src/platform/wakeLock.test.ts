@@ -10,7 +10,7 @@ import { useWakeLock } from "./wakeLock";
 // [x] releases it after five minutes without input
 // [x] releases it after idleMs without input; each input restarts the countdown
 // [x] acquires it again on the next input
-// [ ] requests it again when the page becomes visible, if it was held
+// [x] requests it again when the page becomes visible, if it was held
 // [ ] a refused request is not an error
 // [ ] cleans up on unmount: releases the lock, stops listening, leaves no timer
 
@@ -125,5 +125,19 @@ describe("useWakeLock", () => {
     pageBecomes("visible");
 
     expect(request).toHaveBeenCalledTimes(2);
+  });
+
+  it("asks for nothing when the page becomes visible, unless it was held", async () => {
+    const { request } = wakeLockApi();
+    renderHook(() => useWakeLock(1000), { reactStrictMode: true });
+    pageBecomes("hidden");
+    pageBecomes("visible");
+    expect(request).not.toHaveBeenCalled();
+
+    fireEvent.pointerDown(document.body);
+    await vi.advanceTimersByTimeAsync(1000);
+    pageBecomes("hidden");
+    pageBecomes("visible");
+    expect(request).toHaveBeenCalledTimes(1);
   });
 });
