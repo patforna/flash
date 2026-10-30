@@ -8,8 +8,11 @@ const LOADING_AFTER_MS = 200;
 export function App() {
   const deck = useDeckQuery();
   const late = useElapsed(LOADING_AFTER_MS);
-  if (deck.isError)
-    return <MessageCard title="Can't reach the deck." hint="Tap to try again" tone="error" onTap={() => {}} />;
+  // Tapping the error card asks again (nothing else does: no refetch on focus or reconnect); it shuffles meanwhile.
+  if (deck.isError && !deck.isFetching) {
+    const retry = () => void deck.refetch();
+    return <MessageCard title="Can't reach the deck." hint="Tap to try again" tone="error" onTap={retry} />;
+  }
   return late ? <MessageCard title="shuffling…" /> : null;
 }
 

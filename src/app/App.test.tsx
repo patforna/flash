@@ -13,7 +13,7 @@
 // [ ] the wake lock is asked for on the first input
 // [ ] performance mark flash:first-card once the fonts are in and the first card is on screen, once per page load
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { act, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen } from "@testing-library/react";
 import { StrictMode } from "react";
 import { afterEach, describe, expect, test, vi } from "vitest";
 import { App } from "./App";
@@ -63,5 +63,18 @@ describe("an unreachable deck", () => {
 
     expect(await screen.findByRole("button", { name: "Can't reach the deck. Tap to try again" })).toBeTruthy();
     expect(fetchMock).toHaveBeenCalledTimes(3);
+  });
+
+  test("tapping the error card fetches again, the loading card showing meanwhile", async () => {
+    const fetchMock = serve(async () => new Response("down", { status: 503 }));
+    renderApp();
+    const retry = await screen.findByRole("button", { name: "Can't reach the deck. Tap to try again" });
+    fetchMock.mockImplementation(() => new Promise(() => {}));
+
+    fireEvent.click(retry);
+
+    expect(await screen.findByText("shuffling…")).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "Can't reach the deck. Tap to try again" })).toBeNull();
+    expect(fetchMock).toHaveBeenCalledTimes(4);
   });
 });
