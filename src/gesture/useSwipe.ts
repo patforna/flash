@@ -1,6 +1,6 @@
 import { type RefObject, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { flushSync } from "react-dom";
-import { flingDuration, flingEasing } from "../motion/timing";
+import { flingDuration, flingEasing, MOTION } from "../motion/timing";
 import { classify, GESTURE, isTap, release, rubberBand, type Sample, velocityX } from "./gesture";
 
 export interface SwipeOptions {
@@ -62,9 +62,10 @@ function swipe(stage: RefObject<HTMLElement | null>, options: RefObject<SwipeOpt
   }
 
   function complete(run: Run) {
-    if (running !== run || !run.dir) return;
-    const dir = run.dir;
+    if (running !== run) return;
     running = null;
+    const { dir } = run;
+    if (!dir) return;
     settling = run;
     flushSync(() => options.current.onCommit(dir));
   }
@@ -128,6 +129,22 @@ function swipe(stage: RefObject<HTMLElement | null>, options: RefObject<SwipeOpt
     );
   }
 
+  // Each moved card animates from where it is to its resting style, which it has again as soon as this starts.
+  function springBack(g: Gesture) {
+    const timing = { duration: MOTION.cancelMs, easing: MOTION.cancelEase };
+    const animations: Animation[] = [];
+    for (const [el, rest] of [
+      [g.layers.current, "translateX(0px) rotate(0deg)"],
+      [g.layers.next, underneath(0)],
+    ] as const) {
+      if (!el?.style.transform) continue;
+      const from = el.style.transform;
+      el.style.removeProperty("transform");
+      animations.push(animate(el, [{ transform: from }, { transform: rest }], timing));
+    }
+    play(animations, null);
+  }
+
   const down = (e: PointerEvent) => {
     const layers = options.current.layers();
     if (!layers) return;
@@ -153,6 +170,7 @@ function swipe(stage: RefObject<HTMLElement | null>, options: RefObject<SwipeOpt
     const decision = release(dx, vx, g.rect.width, options.current.can());
     if (decision === "next") fling(g, dx, vx);
     if (decision === "prev") slideIn(g, dx, vx);
+    if (decision === "cancel") springBack(g);
   };
 
   function listen() {

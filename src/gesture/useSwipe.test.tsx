@@ -284,3 +284,34 @@ describe("committing", () => {
     expect(onCommit).toHaveBeenCalledExactlyOnceWith("prev");
   });
 });
+
+describe("cancelling", () => {
+  const cancel = { duration: 260, easing: "cubic-bezier(0.3, 1.25, 0.5, 1)" };
+
+  test("a short, slow drag springs back to rest, ending at the resting style with nothing filling", async () => {
+    const { stage, layer, animations, onCommit } = setup();
+    const current = layer("current");
+    const next = layer("next");
+    const finger = press(stage, current, 700, 200);
+    finger.move(650, 200, 50);
+    finger.up(100);
+    expect(animations.map((a) => [a.el, a.keyframes, a.options])).toEqual([
+      [
+        current,
+        [{ transform: "translateX(-50px) rotate(-1.5deg)" }, { transform: "translateX(0px) rotate(0deg)" }],
+        cancel,
+      ],
+      [
+        next,
+        [{ transform: "scale(0.9754) translateY(5.619px)" }, { transform: "scale(0.965) translateY(8px)" }],
+        cancel,
+      ],
+    ]);
+    expect(inline(current)).toEqual({ transform: "", visibility: "" });
+    expect(inline(next)).toEqual({ transform: "", visibility: "" });
+    await act(async () => {
+      for (const animation of animations) animation.finish();
+    });
+    expect(onCommit).not.toHaveBeenCalled();
+  });
+});
