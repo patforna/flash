@@ -57,4 +57,24 @@ describe("useShortcuts", () => {
     expect(fireEvent.keyDown(document.body, { key: "l", [modifier]: true })).toBe(true);
     expect(h.next).not.toHaveBeenCalled();
   });
+
+  test("nothing fires on auto-repeat", () => {
+    const { h } = setup();
+    fireEvent.keyDown(document.body, { key: "ArrowRight", repeat: true });
+    expect(h.next).not.toHaveBeenCalled();
+  });
+
+  test.each([
+    ["an input", "input"],
+    ["a textarea", "textarea"],
+    ["a contenteditable", "div"],
+  ])("nothing fires while typing in %s", (_, tag) => {
+    const { h } = setup();
+    const field = document.createElement(tag);
+    if (tag === "div") field.setAttribute("contenteditable", "");
+    document.body.append(field);
+    fireEvent.keyDown(field, { key: "s" });
+    expect(h.reshuffle).not.toHaveBeenCalled();
+    field.remove();
+  });
 });

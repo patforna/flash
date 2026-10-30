@@ -26,11 +26,14 @@ const KEYS: Record<string, keyof Handlers> = {
   f: "fullscreen",
 };
 
+const typing = (target: EventTarget | null) =>
+  target instanceof Element && target.closest('input, textarea, [contenteditable]:not([contenteditable="false"])') !== null;
+
 export function useShortcuts(h: Handlers): void {
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       const action = KEYS[e.key];
-      if (!action || e.altKey || e.ctrlKey || e.metaKey) return;
+      if (!action || e.repeat || e.altKey || e.ctrlKey || e.metaKey || typing(e.target)) return;
       e.preventDefault();
       h[action]();
     };
