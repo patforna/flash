@@ -9,8 +9,8 @@
 // - [x] the first render deals a pass of the stored selection
 // - [x] toggleTopic keeps the card on screen, on the same side, when it still matches; the pass is the new pool
 // - [x] toggleTopic deals afresh, front up, when the card on screen no longer matches
-// - [ ] toggleTopic and clearTopics persist the selection
-// - [ ] clearTopics returns to every card; with nothing selected it changes nothing
+// - [x] toggleTopic and clearTopics persist the selection
+// - [x] clearTopics returns to every card; with nothing selected it changes nothing
 // - [ ] a new deck (a different version) keeps the selection, drops unknown topics and deals afresh
 // - [ ] the same version in a new object changes nothing
 // - [ ] the callbacks keep their identity across renders
@@ -173,5 +173,13 @@ describe("useDeck", () => {
     expect(result.current).toMatchObject({ current: shown, position: 1, total: 5 });
     expect(result.current.selected).toEqual(new Set());
     expect(storage.getItem("flash:v1:topics")).toBe("[]");
+  });
+
+  it("changes nothing with clearTopics when nothing is selected, so the pass isn't reshuffled", () => {
+    const { result } = setup();
+    act(() => result.current.goNext());
+    const { prev, current, next } = result.current;
+    act(() => result.current.clearTopics());
+    expect(result.current).toMatchObject({ prev, current, next, position: 2 });
   });
 });

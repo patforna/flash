@@ -41,6 +41,6 @@ export function useDeck(
     goPrev: () => move((s) => prev(s.pass)),
     reshuffle: () => move(again),
     toggleTopic: (label) => setState((s) => choose(s, toggle(s.selected, label))),
-    clearTopics: () => setState((s) => choose(s, new Set())),
+    clearTopics: () => setState((s) => (s.selected.size > 0 ? choose(s, new Set()) : s)),
   };
 }
