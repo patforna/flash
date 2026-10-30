@@ -227,6 +227,8 @@ describe("following the finger", () => {
   });
 });
 
+const inline = (el: HTMLElement) => ({ transform: el.style.transform, visibility: el.style.visibility });
+
 // A drag left at 2.5 px/ms to dx −160 (short of 168 px, but fast): the fling has 800 px to go.
 function flick(stage: HTMLElement, layer: (role: string) => HTMLElement) {
   const finger = press(stage, layer("current"), 700, 200);
@@ -251,5 +253,21 @@ describe("releasing", () => {
       { transform: "scale(1) translateY(0px)" },
     ]);
     expect(rise?.options).toEqual({ duration: 320, easing: "cubic-bezier(0.2, 0.2, 0.3, 1)" });
+  });
+});
+
+describe("committing", () => {
+  test("commits once the fling finishes, then lets go of it and clears what it wrote", async () => {
+    const { stage, layer, animations, onCommit } = setup();
+    const before = { current: layer("current"), next: layer("next") };
+    flick(stage, layer);
+    expect(onCommit).not.toHaveBeenCalled();
+    await act(async () => {
+      for (const animation of animations) animation.finish();
+    });
+    expect(onCommit).toHaveBeenCalledExactlyOnceWith("next");
+    expect(animations.map((a) => a.playState)).toEqual(["idle", "idle"]);
+    expect(inline(before.current)).toEqual({ transform: "", visibility: "" });
+    expect(inline(before.next)).toEqual({ transform: "", visibility: "" });
   });
 });
