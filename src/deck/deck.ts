@@ -38,6 +38,10 @@ export function reshuffle(p: Pass, pool: readonly string[], rng: Rng): Pass {
   return deal(pool, rng, { avoidFirst: p.order[atEnd(p) ? p.index - 1 : p.index] });
 }
 
+export function reselect(p: Pass, pool: readonly string[], rng: Rng): Pass {
+  return { ...deal(pool, rng, { keep: p.order[p.index] }), side: p.side };
+}
+
 // Fisher–Yates, on a copy.
 export function shuffle<T>(xs: readonly T[], rng: Rng): T[] {
   const out = [...xs];
