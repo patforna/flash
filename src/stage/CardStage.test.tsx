@@ -1,6 +1,7 @@
 // To do:
 // [x] a layer per role through renderCard, each with data-role and a lift inside; the previous and next layers inert
-// [x] the blank cards behind show while at least 2, and at least 3, cards remain after the current one
+// [x] the blank cards behind show while at least 2, and at least 3, cards remain after the current one; both under
+//     the end card
 // [x] a tap flips the card; on the end card it goes next (which reshuffles)
 // [x] onMove as each move is decided: a release, a key, a button, a tap on the end card; never a flip
 // [x] a swipe commits through the view once its animation finishes; the new card is at rest before paint
@@ -148,7 +149,11 @@ describe("layers", () => {
 
   test("the blank cards behind thin out: two while 3 cards remain after this one, one while 2 do, then none", () => {
     const blanks = (start: number) => setup({ start }).stage.querySelectorAll("[data-shown]").length;
-    expect([0, 1, 2, 3, 4].map(blanks)).toEqual([2, 1, 0, 0, 0]);
+    expect([0, 1, 2, 3].map(blanks)).toEqual([2, 1, 0, 0]);
+  });
+
+  test("the end card lies on the pass it closes: both blank cards under it, ready to shuffle", () => {
+    expect(setup({ start: 4 }).stage.querySelectorAll("[data-shown]")).toHaveLength(2);
   });
 });
 

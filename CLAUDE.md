@@ -45,6 +45,7 @@ Look and motion:
 - "Midnight desk": paper card, marker question, ballpoint answer on ruled lines, highlighter bold, riso-bright stickers. Quality from restraint, funk from colour and the bouncy hand.
 - Shantell Sans, the full variable file with its informality and bounce axes, and Monaspace Radon for code: Caveat's small x-height needs 26 px or more, Kalam and Bricolage look dated, and Shantell's weight-only file drops the axes that make it look handwritten.
 - The card being read stays upright; only the blank cards peeking behind it tilt: crisp text.
+- The end card lies on both blank cards, the pass it closes, ready to shuffle (plan §7 thins the stack to none): alone on the near-black desk it read as a pale rectangle, and no shadow shows there.
 - List markers in the answer's margin are in `--pen-pink` (#d02a68, 4.9:1 on paper), not plan §7's sticker pink (2.4:1): a numbered list's numerals are text. Text contrast is tested over the tokens (`src/styles/contrast.test.ts`), since axe can't see it on this page.
 - Bold and inline code broken over two lines are sliced, not cloned as plan §7 has it (`box-decoration-break`): in Chromium a cloned inline turns `text-wrap: pretty` off for its whole block, which then ends on a lone word, as 7 backs of the real deck did. The fit allows a highlight's 2u of end padding past the column, which had pushed two backs to step 1 over one invisible pixel.
 - The card is designed in card units (600 × 360, `--u`, the `frame` has `container-type: size`): it lays out identically at any size.

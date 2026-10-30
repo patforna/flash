@@ -100,8 +100,9 @@ export function CardStage({ view, renderCard, onFullscreen, onMove, dealFirst = 
     return () => clearTimeout(flipEnd.current);
   }, []);
 
-  // The stack thins as the pass runs out: the cards after the current one, beyond the one underneath it.
-  const remaining = view.total - view.position;
+  // The stack thins as the pass runs out: the cards after the current one, beyond the one underneath it. The end card
+  // lies on the whole pass it closes, ready to shuffle; on the bare desk it read as a pale rectangle.
+  const remaining = view.current === "end" ? Number.POSITIVE_INFINITY : view.total - view.position;
   return (
     <div
       ref={stage}
