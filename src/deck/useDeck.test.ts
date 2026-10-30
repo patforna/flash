@@ -1,6 +1,6 @@
 // To do:
 // - [x] the first render deals a pass of the whole deck: card 1 of 5, front up, nothing before it
-// - [ ] goNext walks the pass, every card once, then the end card
+// - [x] goNext walks the pass, every card once, then the end card
 // - [ ] next is the card after this one, "end" after the last card and null on the end card; prev the card before
 // - [ ] goPrev goes back a card; from the end card to the last card
 // - [ ] flip turns the card over; landing on any card shows its front
@@ -16,10 +16,10 @@
 // - [ ] the callbacks keep their identity across renders
 // - [ ] localStorage by default; a blocked localStorage is ignored
 
-import { renderHook } from "@testing-library/react";
+import { act, renderHook } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import type { Card, Deck } from "../../shared/types";
-import type { Rng } from "./types";
+import type { DeckView, Rng } from "./types";
 import { useDeck } from "./useDeck";
 
 const card = (id: string, ...topics: string[]): Card => ({ id, topics, questionHtml: id, answerHtml: id });
@@ -49,11 +49,29 @@ function setup({ stored }: { stored?: string } = {}) {
   return { ...hook, storage };
 }
 
+// Steps through the pass with goNext from the card on screen; the ids of the cards seen before the end card.
+function walk(result: { current: DeckView }): string[] {
+  const ids: string[] = [];
+  for (let n = 0; n < 20; n++) {
+    const view = result.current;
+    if (view.current === "end") break;
+    ids.push(view.current.id);
+    act(() => view.goNext());
+  }
+  return ids;
+}
+
 describe("useDeck", () => {
   it("deals a pass of the whole deck on the first render", () => {
     const { result } = setup();
     expect(result.current).toMatchObject({ prev: null, side: "front", position: 1, total: 5, topics: deck.topics });
     expect(result.current.selected).toEqual(new Set());
     expect(deck.cards).toContain(result.current.current);
+  });
+
+  it("walks the pass with goNext, every card once, then the end card", () => {
+    const { result } = setup();
+    expect(walk(result).toSorted()).toEqual(["a", "b", "c", "d", "e"]);
+    expect(result.current).toMatchObject({ current: "end", position: 6, total: 5 });
   });
 });
