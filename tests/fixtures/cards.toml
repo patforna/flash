@@ -79,14 +79,13 @@ Browser -> load balancer -> stateless app servers -> Redis -> database.
 - Answer 302 to count every click; 301 lets browsers cache the redirect.
 '''
 
-# Near the limits: 12 lines and about 500 characters, so it needs a smaller fit step.
+# Near the limits: 11 lines and about 500 characters, so it needs the smallest fit step.
 [[card]]
 question = "How do you choose a shard key?"
 topics = ["Sharding", "Postgres"]
 answer = '''
 Pick the key that most of your queries filter on;
 it must also spread **reads, writes and data** evenly.
-
 - High cardinality: many distinct key values.
 - Even frequency: no hot key, such as a celebrity.
 - With ranges, not monotonic: new ids hit one shard.

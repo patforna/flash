@@ -138,7 +138,7 @@ test.describe("the fixture deck, which uses every kind of markup", () => {
     const walked = await walk(page);
     annotate(walked);
     expect(walked.problems).toEqual([]);
-    // Its 12-line answer needs the smallest step.
+    // Its 11-line answer needs the smallest step.
     expect(walked.fits.map((f) => f[1])).toContain("2");
   });
 });

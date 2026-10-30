@@ -69,6 +69,7 @@ Data:
 
 - A card is `question`, `topics` and `answer`, as Patric specified. Its id derives from the question: ids would only matter for spaced repetition, which is out of scope. No version key in the file: nothing would read it.
 - Validation is strict and reports every problem at once; the server refuses to start on a bad deck.
+- An answer has at most 11 lines, not plan §9's 12: the smallest fit step holds 11.5 rules, so a 12-line answer passed `cards:check` and could only scroll, which the fit test fails at ship time.
 - Corrections of the source notes live in TOML comments and `docs/seed.md`, never on a card: commentary about the source is not study material. The notes' stubs get no cards.
 - The deck's version (the first 12 characters of the base64url SHA-256 of its canonical JSON) is the ETag and what `/healthz` reports, so a deploy can confirm what it shipped.
 
@@ -149,7 +150,7 @@ docs/                      original-request.md, plan.md, cards.md, seed.md
 - `bun run cards:check` and `bun run budget`; `bun run verify` runs `cards:check`, `typecheck`, `lint`, `test`, `build`, `budget` and `e2e`, in that order.
 - `scripts/deploy-do.test.ts` needs `shellcheck` on the path. It only checks the script's syntax, lint and usage: never run the script with a subcommand from a test.
 - Playwright projects: `pixel11` (923 × 412, DPR 2.625, touch), `portrait` (412 × 923) and `laptop` (1280 × 800, fine pointer); en-GB, Europe/Zurich. `perf` is the Pixel 11 again, for `perf.spec.ts` alone, after the other three: timings taken while other specs share the CPU are noise. Selecting it (`--project perf`) runs the whole suite first. Port 4173 serves `tests/fixtures/cards.toml` and is the base URL; 4174 serves `cards/cards.toml` (`test.use({ baseURL: "http://127.0.0.1:4174" })`), for the fit test. Service workers are blocked unless a spec sets `test.use({ serviceWorkers: "allow" })`. Screenshots go to `tests/screenshots/<project>/<name>.png`, so names are unique across specs; `animations: "disabled"`, `caret: "hide"` and `maxDiffPixelRatio: 0.001` are the defaults.
-- The fixture deck: 9 cards, 7 topics (Redis, Postgres, Queues, Consistency, Sharding, Real-time, Case studies; Consistency has one card, Postgres and Queues three). It covers every markup feature; one card has three topics, one question is exactly 100 characters, and the shard-key answer (498 characters, 12 lines) needs fit step 2. Its 64-character ids rely on `slug()` truncating. Keep it valid by every rule.
+- The fixture deck: 9 cards, 7 topics (Redis, Postgres, Queues, Consistency, Sharding, Real-time, Case studies; Consistency has one card, Postgres and Queues three). It covers every markup feature; one card has three topics, one question is exactly 100 characters, and the shard-key answer (497 characters, 11 lines) needs fit step 2. Its 64-character ids rely on `slug()` truncating. Keep it valid by every rule.
 
 ## Shipping cards versus code
 

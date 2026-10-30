@@ -49,7 +49,7 @@ Do the job in that transaction, then mark it done.
 - **Cards**: 1–500 `[[card]]` tables, each with exactly `question`, `topics` and `answer`. Any other key fails, which catches a typo such as `topic =`.
 - **`question`**: 8–100 characters once trimmed, on one line, with inline markup only (`code` and `**bold**`). No two questions may be the same, ignoring case.
 - **A card's `topics`**: 1–3 of the declared labels, no repeats.
-- **`answer`**: 1–520 characters once trimmed and at most 12 lines, counting blank lines and code lines. Code lines are at most 46 characters. No tabs.
+- **`answer`**: 1–520 characters once trimmed and at most 11 lines, counting blank lines and code lines: the most the smallest writing holds. Code lines are at most 46 characters. No tabs.
 - **Characters**: only those the two fonts have (the list is `shared/glyphs.ts`). Anything else fails, naming the character and its code point.
 - **Id**: each card's id comes from its question: lowercase ASCII words joined by `-`, at most 64 characters. Two questions that make the same id fail.
 

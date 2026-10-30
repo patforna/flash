@@ -10,7 +10,7 @@ export const LIMITS = {
   questionMin: 8,
   questionMax: 100,
   answerMax: 520,
-  answerLines: 12,
+  answerLines: 11, // what the smallest fit step holds
   codeLine: 46,
 } as const;
 
