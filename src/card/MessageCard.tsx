@@ -7,9 +7,9 @@ export interface MessageCardProps {
   onTap?(): void;
 }
 
-export function MessageCard({ title, hint }: MessageCardProps) {
+export function MessageCard({ title, hint, tone = "pencil" }: MessageCardProps) {
   return (
-    <div>
+    <div data-tone={tone}>
       <span className={styles.title}>{title}</span>
       {hint && (
         <>

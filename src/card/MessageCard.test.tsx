@@ -1,7 +1,7 @@
 // To do:
 // [x] shows the title alone when there is no hint
 // [x] shows the hint under the title
-// [ ] writes in pencil by default, in red ink for an error
+// [x] writes in pencil by default, in red ink for an error
 // [ ] the whole card is one button when it can be tapped, named by its words
 // [ ] sits on the same frame and face as a card
 import { configure, render, screen } from "@testing-library/react";
@@ -20,5 +20,14 @@ describe("MessageCard", () => {
     render(<MessageCard title="Can't reach the deck." hint="Tap to try again" />);
     expect(screen.getByText("Can't reach the deck.")).toBeTruthy();
     expect(screen.getByText("Tap to try again")).toBeTruthy();
+  });
+
+  it.each([
+    [undefined, "pencil"],
+    ["pencil", "pencil"],
+    ["error", "error"],
+  ] as const)("with tone %s writes in %s", (tone, ink) => {
+    const { container } = render(<MessageCard title="No cards here." tone={tone} />);
+    expect(container.querySelector<HTMLElement>("[data-tone]")?.dataset.tone).toBe(ink);
   });
 });
