@@ -42,7 +42,21 @@ export default defineConfig({
           {
             urlPattern: ({ url }) => url.pathname === "/api/cards",
             handler: "NetworkFirst",
-            options: { cacheName: "flash-deck", networkTimeoutSeconds: 2, expiration: { maxEntries: 1 } },
+            options: {
+              cacheName: "flash-deck",
+              networkTimeoutSeconds: 2,
+              expiration: { maxEntries: 1 },
+              // NetworkFirst falls back to its cache only when the network fails: an HTTP error (Caddy's 502 while the
+              // server is down) would reach the app as is. Thrown here, it counts as a failure.
+              plugins: [
+                {
+                  fetchDidSucceed: async ({ response }) => {
+                    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                    return response;
+                  },
+                },
+              ],
+            },
           },
         ],
       },

@@ -118,6 +118,26 @@ test("reads offline once the deck has been fetched under the service worker", as
   await expect(questionShown(page, questions)).toBeVisible();
 });
 
+test("reads the deck the worker cached when the server answers with an error (Caddy's 502 while the app is down)", async ({
+  page,
+  context,
+}) => {
+  const questions = await deckQuestions(page);
+  await page.goto("/");
+  await workerInControl(page);
+  await page.reload();
+  await expect(questionShown(page, questions)).toBeVisible();
+  await expect
+    .poll(() => page.evaluate(async () => (await caches.match("/api/cards", { ignoreVary: true })) !== undefined))
+    .toBe(true);
+
+  // The worker's requests go through the context's routes.
+  await context.route("**/api/cards", (route) => route.fulfill({ status: 502, body: "Bad Gateway" }));
+  await page.reload();
+
+  await expect(questionShown(page, questions)).toBeVisible();
+});
+
 test("the first load requests the deck once: the app takes the preloaded response", async ({ page }) => {
   const questions = await deckQuestions(page);
   const deckRequests: string[] = [];
