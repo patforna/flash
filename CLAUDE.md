@@ -195,4 +195,5 @@ docs/                      original-request.md, plan.md, cards.md, seed.md
 
 - 30 Oct 2026, integration (M2a): the seven packages merged and wired in `App`; `cards:check`, `typecheck`, `lint`, `test`, `build` and `budget` pass, and so does `tests/e2e/pwa.spec.ts`. The real deck has 66 cards in 13 topics; every card fits, two backs at step 1.
 - 30 Oct 2026, end to end (M2b): the Playwright suite in `tests/e2e/` (reading, topics, keyboard, fit, layout, a11y, perf, screens, pwa) and its baselines; `verify` passes end to end. The fit spec is `tests/e2e/fit.spec.ts`, which `deploy-do.sh cards` runs by name.
-- Next: the review (M3) and the first deploy (M4). Not deployed yet.
+- 30 Oct 2026, review (M3): five reviews (code, visual craft, brand, motion and performance, conformance) applied or rejected, each in its own commit; the departures from the plan are recorded above. Every card of the real deck fits at step 0 on both faces; `verify` passes end to end.
+- Next: the first deploy (M4). Not deployed yet.
