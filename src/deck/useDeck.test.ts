@@ -13,7 +13,7 @@
 // - [x] clearTopics returns to every card; with nothing selected it changes nothing
 // - [x] a new deck (a different version) keeps the selection, drops unknown topics and deals afresh
 // - [x] the same version in a new object changes nothing
-// - [ ] the callbacks keep their identity across renders
+// - [x] the callbacks keep their identity across renders
 // - [ ] localStorage by default; a blocked localStorage is ignored
 
 import { act, renderHook } from "@testing-library/react";
@@ -199,5 +199,18 @@ describe("useDeck", () => {
     const { prev, current } = result.current;
     rerender({ ...deck });
     expect(result.current).toMatchObject({ prev, current, position: 2 });
+  });
+
+  it("keeps its callbacks across renders, so the stage can hold on to them", () => {
+    const { result, rerender } = setup();
+    const before = result.current;
+    act(() => result.current.flip());
+    act(() => result.current.goNext());
+    act(() => result.current.toggleTopic("Redis"));
+    act(() => result.current.clearTopics());
+    rerender(deck);
+    for (const name of ["flip", "goNext", "goPrev", "reshuffle", "toggleTopic", "clearTopics"] as const) {
+      expect(result.current[name], name).toBe(before[name]);
+    }
   });
 });
