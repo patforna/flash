@@ -7,6 +7,7 @@ export interface SwipeOptions {
   layers(): { current: HTMLElement; next: HTMLElement | null; prev: HTMLElement | null } | null;
   can(): { prev: boolean; next: boolean };
   onTap(): void;
+  onDecide(dir: "next" | "prev"): void; // as a release, a key or a button commits, before anything flies
   onCommit(dir: "next" | "prev"): void; // after the animation finishes
   reducedMotion(): boolean;
   animate?: (el: Element, k: Keyframe[], o: KeyframeAnimationOptions) => Animation; // injectable
@@ -233,6 +234,7 @@ function swipe(stage: RefObject<HTMLElement | null>, options: RefObject<SwipeOpt
     finishRunning();
     const layers = options.current.layers();
     if (!layers || !options.current.can()[dir]) return;
+    options.current.onDecide(dir);
     finishFlip(layers.current);
     const rect = layers.current.getBoundingClientRect();
     (dir === "next" ? fling : slideIn)(layers, rect, 0, 0, MOTION.commitEase);
@@ -314,6 +316,7 @@ function swipe(stage: RefObject<HTMLElement | null>, options: RefObject<SwipeOpt
     const dx = e.clientX - g.start.x;
     const vx = velocityX(g.samples);
     const decision = release(dx, vx, g.rect.width, options.current.can());
+    if (decision !== "cancel") options.current.onDecide(decision);
     if (decision === "next") fling(g.layers, g.rect, dx, vx);
     if (decision === "prev") slideIn(g.layers, g.rect, dx, vx);
     if (decision === "cancel") springBack(g);

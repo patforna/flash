@@ -7,6 +7,7 @@
 // [x] zero React commits during a drag
 // [x] a release past the threshold flings at the release speed (fill: forwards only here), out to half a card past
 //     gone; the card underneath rises
+// [x] onDecide as a release, a key or a button commits, before anything flies; never on a cancel
 // [x] onCommit once the fling finishes; then the fling is cancelled and inline styles cleared
 // [x] a commit to the previous card slides it in to 0
 // [x] a cancel animates back with the cancel timing and leaves nothing filling
@@ -77,11 +78,13 @@ function Stage({ options, prev, next, held }: StageProps) {
 function setup(overrides: Partial<SwipeOptions> = {}, { prev = true, next = true } = {}) {
   const animations: FakeAnimation[] = [];
   const onTap = vi.fn();
+  const onDecide = vi.fn();
   const onCommit = vi.fn();
   const options: SwipeOptions = {
     layers: () => null,
     can: () => ({ prev: true, next: true }),
     onTap,
+    onDecide,
     onCommit,
     reducedMotion: () => false,
     animate: (el, keyframes, opts) => {
@@ -108,7 +111,7 @@ function setup(overrides: Partial<SwipeOptions> = {}, { prev = true, next = true
     if (!held.swipe) throw new Error("not rendered");
     return held.swipe;
   };
-  return { stage, layer, animations, onTap, onCommit, renders: () => renders, swipe };
+  return { stage, layer, animations, onTap, onDecide, onCommit, renders: () => renders, swipe };
 }
 
 describe("taps", () => {
@@ -222,6 +225,27 @@ describe("releasing", () => {
       { transform: "scale(1) translateY(0px)" },
     ]);
     expect(rise?.options).toEqual({ duration: 320, easing: "cubic-bezier(0.2, 0.145, 0.3, 1)" });
+  });
+});
+
+describe("deciding", () => {
+  test("a release past the threshold decides the move at once, before the card has flown; a cancel decides none", () => {
+    const { stage, layer, onDecide, onCommit } = setup();
+    flick(stage, layer);
+    expect(onDecide).toHaveBeenCalledExactlyOnceWith("next");
+    expect(onCommit).not.toHaveBeenCalled();
+    const finger = press(stage, layer("current"), 400, 200, 1000);
+    finger.move(450, 200, 50);
+    finger.up(100);
+    expect(onDecide).toHaveBeenCalledOnce();
+  });
+
+  test("so do a key and a button, where there is a card to go to", () => {
+    const { onDecide, swipe } = setup({ can: () => ({ prev: false, next: true }) });
+    act(() => swipe().commit("prev"));
+    expect(onDecide).not.toHaveBeenCalled();
+    act(() => swipe().commit("next"));
+    expect(onDecide).toHaveBeenCalledExactlyOnceWith("next");
   });
 });
 

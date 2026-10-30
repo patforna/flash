@@ -2,6 +2,7 @@
 // [x] a layer per role through renderCard, each with data-role and a lift inside; the previous and next layers inert
 // [x] the blank cards behind show while at least 2, and at least 3, cards remain after the current one
 // [x] a tap flips the card; on the end card it goes next (which reshuffles)
+// [x] onMove as each move is decided: a release, a key, a button, a tap on the end card; never a flip
 // [x] a swipe commits through the view once its animation finishes; the new card is at rest before paint
 // [x] data-state: idle, dragging, animating
 // [x] the press: data-pressed on the current layer from pointerdown to release, never a transform on it
@@ -49,11 +50,12 @@ interface Pass {
 interface ReaderProps {
   calls: string[];
   onFullscreen(): void;
+  onMove(): void;
   start: number;
   held: { view?: DeckView };
 }
 
-function Reader({ calls, onFullscreen, start, held }: ReaderProps) {
+function Reader({ calls, onFullscreen, onMove, start, held }: ReaderProps) {
   const [pass, setPass] = useState<Pass>({ order: ["a", "b", "c", "d"].map(card), index: start, side: "front" });
   const { order, index, side } = pass;
   const n = order.length;
@@ -96,6 +98,7 @@ function Reader({ calls, onFullscreen, start, held }: ReaderProps) {
         </div>
       )}
       onFullscreen={onFullscreen}
+      onMove={onMove}
     />
   );
 }
@@ -104,10 +107,12 @@ function Reader({ calls, onFullscreen, start, held }: ReaderProps) {
 function setup({ start = 0 } = {}) {
   const calls: string[] = [];
   const onFullscreen = vi.fn();
+  // Each move as it is decided, among the reader's calls.
+  const onMove = vi.fn(() => calls.push("move"));
   const held: { view?: DeckView } = {};
   const view = render(
     <StrictMode>
-      <Reader calls={calls} onFullscreen={onFullscreen} start={start} held={held} />
+      <Reader calls={calls} onFullscreen={onFullscreen} onMove={onMove} start={start} held={held} />
     </StrictMode>,
   );
   // The view as the reader last rendered it, for changes that come from elsewhere (keys, the topic panel).
@@ -153,10 +158,10 @@ describe("taps", () => {
     expect(layer("current").querySelector("[data-side]")?.getAttribute("data-side")).toBe("back");
   });
 
-  test("a tap on the end card goes next, which reshuffles", () => {
+  test("a tap on the end card is a move: it goes next, which reshuffles", () => {
     const { stage, layer, calls } = setup({ start: 4 });
     press(stage, layer("current"), 700, 200).up(80);
-    expect(calls).toEqual(["goNext"]);
+    expect(calls).toEqual(["move", "goNext"]);
   });
 });
 
@@ -173,12 +178,12 @@ const land = () =>
   });
 
 describe("swipes", () => {
-  test("a flick left goes next once the card has flown, the new card at rest before paint", async () => {
+  test("a flick left is a move as it is let go, and goes next once the card has flown, at rest before paint", async () => {
     const { stage, layer, calls } = setup();
     flick(stage, layer);
-    expect(calls).toEqual([]);
+    expect(calls).toEqual(["move"]);
     await land();
-    expect(calls).toEqual(["goNext"]);
+    expect(calls).toEqual(["move", "goNext"]);
     expect(layer("current").textContent).toBe("b?");
     expect(animations.map((a) => a.playState)).toEqual(["idle", "idle"]);
     for (const role of ["prev", "current", "next"])
@@ -332,7 +337,7 @@ describe("dealing", () => {
   test("swiping on from the end card deals the new pass at once, under the end card flying off", () => {
     const { stage, layer, calls } = setup({ start: 4 });
     flick(stage, layer);
-    expect(calls).toEqual(["goNext"]);
+    expect(calls).toEqual(["move", "goNext"]);
     expect(layer("current").textContent).toBe("b?");
     expect(animations.at(-1)?.el).toBe(layer("current"));
     expect(animations.at(-1)?.keyframes).toEqual(deal);
@@ -358,7 +363,7 @@ describe("buttons", () => {
     fireEvent.click(screen.getByRole("button", { name: "Previous" }));
     expect(animations.at(-1)?.el).toBe(layer("prev"));
     await land();
-    expect(calls).toEqual(["goNext", "goPrev"]);
+    expect(calls).toEqual(["move", "goNext", "move", "goPrev"]);
   });
 
   test('"Previous" is off on a pass\'s first card', () => {
@@ -381,7 +386,7 @@ describe("shortcuts", () => {
     await land();
     fireEvent.keyDown(document.body, { key: "ArrowLeft" });
     await land();
-    expect(calls).toEqual(["goNext", "goPrev"]);
+    expect(calls).toEqual(["move", "goNext", "move", "goPrev"]);
   });
 
   test("Space flips, s reshuffles, f asks for fullscreen", () => {

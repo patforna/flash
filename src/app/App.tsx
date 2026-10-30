@@ -104,7 +104,8 @@ function Reader({ deck }: { deck: Deck }) {
       }
     >
       <CardStage
-        view={{ ...view, goNext: ticked(view.goNext), goPrev: ticked(view.goPrev), reshuffle: ticked(view.reshuffle) }}
+        view={{ ...view, reshuffle: ticked(view.reshuffle) }}
+        onMove={() => tick()}
         renderCard={(card, role) =>
           card === "end" ? (
             <EndCard key="end" total={view.total} />
@@ -129,8 +130,8 @@ function Reader({ deck }: { deck: Deck }) {
   );
 }
 
-// A change that buzzes: a move as its card lands (the stage moves only then; a tap on the end card deals the next
-// pass), or a change of topics. A flip never buzzes.
+// A change that buzzes at once: a reshuffle, or a change of topics. The stage buzzes a move as it is decided (onMove),
+// before its card has flown. A flip never buzzes.
 function ticked<A extends unknown[]>(change: (...args: A) => void): (...args: A) => void {
   return (...args) => {
     tick();

@@ -10,7 +10,8 @@
 // [x] colours by the topic's declared index, on the chips and the card
 // [x] the end card closes the pass
 // [x] a live region says where you are: "Card 1 of 3", the end card's text
-// [x] haptics on next, previous, reshuffle, the end card's reshuffle and a chip toggle; never on a flip
+// [x] haptics as next or previous is decided, on a reshuffle, the end card's reshuffle and a chip toggle; never on a
+//     flip
 // [x] the fullscreen chip leads the panel; f toggles fullscreen
 // [x] the wake lock is asked for on the first input
 // [x] performance mark flash:first-card once the fonts are in and the first card is on screen, once per page load;
@@ -290,13 +291,18 @@ describe("haptics", () => {
     Reflect.deleteProperty(navigator, "vibrate");
   });
 
-  test("an 8 ms tick as each move lands, next, previous or a reshuffle; none for a flip", async () => {
+  test("an 8 ms tick as each move is decided, before its card has flown, and on a reshuffle; none for a flip", async () => {
     const vibrate = phone();
     await reading();
 
     fireEvent.click(screen.getByRole("button", { name: "Show answer" }));
     expect(vibrate).not.toHaveBeenCalled();
-    await goNext();
+    fireEvent.click(screen.getByRole("button", { name: "Next" }));
+    expect(vibrate.mock.calls).toEqual([[8]]);
+    await act(async () => {
+      for (const animation of animations) animation.finish();
+    });
+    expect(vibrate.mock.calls).toEqual([[8]]);
     await go("Previous");
     fireEvent.keyDown(document.body, { key: "s" });
 
