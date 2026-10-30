@@ -46,8 +46,9 @@ function Reader({ deck }: { deck: Deck }) {
         counts={counts}
         total={deck.cards.length}
         selected={view.selected}
-        onToggle={view.toggleTopic}
-        onAll={view.clearTopics}
+        onToggle={ticked(view.toggleTopic)}
+        // All with nothing selected changes nothing, so it doesn't buzz.
+        onAll={view.selected.size > 0 ? ticked(view.clearTopics) : view.clearTopics}
         colourOf={colourOf}
       />
       <CardStage
@@ -76,12 +77,12 @@ function Reader({ deck }: { deck: Deck }) {
   );
 }
 
-// A move that lands with a buzz. The stage moves only once a card has landed (a tap on the end card deals the next
-// pass); a flip never buzzes.
-function ticked(move: () => void): () => void {
-  return () => {
+// A change that buzzes: a move as its card lands (the stage moves only then; a tap on the end card deals the next
+// pass), or a change of topics. A flip never buzzes.
+function ticked<A extends unknown[]>(change: (...args: A) => void): (...args: A) => void {
+  return (...args) => {
     tick();
-    move();
+    change(...args);
   };
 }
 

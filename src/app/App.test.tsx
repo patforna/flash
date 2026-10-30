@@ -282,4 +282,29 @@ describe("haptics", () => {
 
     expect(vibrate.mock.calls).toEqual([[8], [8], [8]]);
   });
+
+  test("a tick as a tap on the end card deals a new pass", async () => {
+    const vibrate = phone();
+    await reading();
+    for (let i = 0; i < 3; i++) await goNext();
+    vibrate.mockClear();
+
+    fireEvent.keyDown(document.body, { key: " " });
+
+    expect(question(layer("current"))).not.toBeUndefined();
+    expect(vibrate.mock.calls).toEqual([[8]]);
+  });
+
+  test("a tick as a chip changes the selection; none from All when there is nothing to clear", async () => {
+    const vibrate = phone();
+    await reading();
+    const chip = (name: string) => within(screen.getByRole("group", { name: "Topics" })).getByRole("button", { name });
+
+    fireEvent.click(chip("All, 3 cards"));
+    expect(vibrate).not.toHaveBeenCalled();
+    fireEvent.click(chip("Redis, 2 cards"));
+    fireEvent.click(chip("All, 3 cards"));
+
+    expect(vibrate.mock.calls).toEqual([[8], [8]]);
+  });
 });
