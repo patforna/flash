@@ -1,4 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <title>flash</title>
   <!-- flash: an index card on the desk, a line of its writing highlighted. Colours are the app's tokens. -->
   <defs>
     <filter id="shadow" x="-20%" y="-20%" width="140%" height="160%">
