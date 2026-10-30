@@ -5,6 +5,7 @@ import { CardView } from "../card/CardView";
 import { EndCard } from "../card/EndCard";
 import { MessageCard } from "../card/MessageCard";
 import { useDeck } from "../deck/useDeck";
+import { colourFor } from "../panel/colours";
 import { TopicPanel } from "../panel/TopicPanel";
 import { toggleFullscreen } from "../platform/fullscreen";
 import { CardStage } from "../stage/CardStage";
@@ -30,6 +31,11 @@ const OFFSET = { prev: -1, current: 0, next: 1 } as const;
 function Reader({ deck }: { deck: Deck }) {
   const view = useDeck(deck);
   const counts = useMemo(() => countTopics(deck), [deck]);
+  // A topic's colour is its place in the deck's declared order, the same on its chip and on every card.
+  const colourOf = useMemo(() => {
+    const place = new Map(deck.topics.map((topic, i) => [topic, i]));
+    return (topic: string) => colourFor(place.get(topic) ?? 0);
+  }, [deck]);
   return (
     <>
       <TopicPanel
@@ -39,7 +45,7 @@ function Reader({ deck }: { deck: Deck }) {
         selected={view.selected}
         onToggle={view.toggleTopic}
         onAll={view.clearTopics}
-        colourOf={() => ""}
+        colourOf={colourOf}
       />
       <CardStage
         view={view}
@@ -53,7 +59,7 @@ function Reader({ deck }: { deck: Deck }) {
               side={role === "current" ? view.side : "front"}
               position={view.position + OFFSET[role]}
               total={view.total}
-              colourOf={() => ""}
+              colourOf={colourOf}
             />
           )
         }

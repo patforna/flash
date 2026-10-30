@@ -17,6 +17,7 @@ import { act, fireEvent, render, screen, waitFor, within } from "@testing-librar
 import { StrictMode } from "react";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import type { Deck } from "../../shared/types";
+import cardStyles from "../card/card.module.css";
 import { FakeAnimation } from "../gesture/testing";
 import { App } from "./App";
 
@@ -187,6 +188,7 @@ describe("topics", () => {
     within(screen.getByRole("group", { name: "Topics" }))
       .getAllByRole("button")
       .map((chip) => chip.getAttribute("aria-label"));
+  const chip = (name: string) => within(screen.getByRole("group", { name: "Topics" })).getByRole("button", { name });
 
   test("the panel offers All with the deck's total, then each topic in the deck's order with its count", async () => {
     await reading();
@@ -196,7 +198,6 @@ describe("topics", () => {
 
   test("a topic's chip narrows the pass to its cards; All widens it again, keeping the card on top", async () => {
     await reading();
-    const chip = (name: string) => within(screen.getByRole("group", { name: "Topics" })).getByRole("button", { name });
 
     fireEvent.click(chip("Queues, 1 card"));
     expect(chip("Queues, 1 card").getAttribute("aria-pressed")).toBe("true");
@@ -212,4 +213,22 @@ describe("topics", () => {
       2,
     ]);
   });
+
+  test("colours each topic by its place in the deck, on its chip and on every card carrying it", async () => {
+    await reading();
+
+    expect(["Redis, 2 cards", "Postgres, 1 card", "Queues, 1 card"].map((name) => sticker(chip(name)))).toEqual([
+      "var(--s-pink)",
+      "var(--s-marigold)",
+      "var(--s-mint)",
+    ]);
+    // The card underneath carries Postgres, then Redis: its band in Postgres's colour, a dot in each.
+    const front = layer("next").querySelector(`.${cardStyles.face}`);
+    expect(front?.querySelector<HTMLElement>(`.${cardStyles.band}`)?.style.backgroundColor).toBe("var(--s-marigold)");
+    expect(
+      Array.from(front?.querySelectorAll<HTMLElement>(`.${cardStyles.dot}`) ?? [], (dot) => dot.style.backgroundColor),
+    ).toEqual(["var(--s-marigold)", "var(--s-pink)"]);
+  });
 });
+
+const sticker = (chip: HTMLElement) => chip.style.getPropertyValue("--sticker");
