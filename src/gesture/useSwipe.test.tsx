@@ -343,6 +343,20 @@ describe("ignoring", () => {
     expect(onCommit).not.toHaveBeenCalled();
   });
 
+  test("only the first pointer counts", () => {
+    const { stage, layer, onTap } = setup();
+    const first = press(stage, layer("current"), 700, 200);
+    first.move(600, 200);
+    const second = press(stage, layer("current"), 500, 200, 20, { pointerId: 2, isPrimary: false });
+    second.move(530, 200);
+    second.up();
+    expect(layer("current").style.transform).toBe("translateX(-100px) rotate(-3deg)");
+    expect(inline(layer("prev"))).toEqual({ transform: "", visibility: "" });
+    first.move(550, 200);
+    expect(layer("current").style.transform).toBe("translateX(-150px) rotate(-4.5deg)");
+    expect(onTap).not.toHaveBeenCalled();
+  });
+
   test("a pointercancel mid-drag springs the card back", () => {
     const { stage, layer, animations } = setup();
     const finger = press(stage, layer("current"), 700, 200);

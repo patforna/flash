@@ -16,6 +16,7 @@ type Dir = "next" | "prev";
 type Layers = NonNullable<ReturnType<SwipeOptions["layers"]>>;
 
 interface Gesture {
+  pointer: number;
   start: Sample;
   samples: Sample[];
   axis: "pending" | "horizontal" | "vertical";
@@ -156,25 +157,32 @@ function swipe(stage: RefObject<HTMLElement | null>, options: RefObject<SwipeOpt
     play(animations, null);
   }
 
+  // The gesture this event belongs to: only the first pointer counts.
+  const own = (e: PointerEvent) => (gesture?.pointer === e.pointerId ? gesture : null);
+
   const down = (e: PointerEvent) => {
+    if (gesture) return;
     const layers = options.current.layers();
     if (!layers) return;
     const start = sample(e);
-    gesture = { start, samples: [start], axis: "pending", layers, rect: layers.current.getBoundingClientRect() };
+    const rect = layers.current.getBoundingClientRect();
+    gesture = { pointer: e.pointerId, start, samples: [start], axis: "pending", layers, rect };
   };
 
   const move = (e: PointerEvent) => {
-    if (!gesture) return;
-    gesture.samples.push(sample(e));
-    if (gesture.axis === "pending") gesture.axis = classify(gesture.start, sample(e));
-    if (gesture.axis === "horizontal") follow(gesture, e.clientX - gesture.start.x);
+    const g = own(e);
+    if (!g) return;
+    g.samples.push(sample(e));
+    if (g.axis === "pending") g.axis = classify(g.start, sample(e));
+    if (g.axis === "horizontal") follow(g, e.clientX - g.start.x);
   };
 
   const up = (e: PointerEvent) => {
-    const g = gesture;
+    const g = own(e);
+    if (!g) return;
     gesture = null;
-    if (g?.axis === "pending" && isTap(g.start, sample(e))) options.current.onTap();
-    if (g?.axis !== "horizontal") return;
+    if (g.axis === "pending" && isTap(g.start, sample(e))) options.current.onTap();
+    if (g.axis !== "horizontal") return;
     g.samples.push(sample(e));
     const dx = e.clientX - g.start.x;
     const vx = velocityX(g.samples);
@@ -185,10 +193,11 @@ function swipe(stage: RefObject<HTMLElement | null>, options: RefObject<SwipeOpt
   };
 
   // The browser took the pointer (a scroll, a system gesture): whatever moved goes back.
-  const cancel = () => {
-    const g = gesture;
+  const cancel = (e: PointerEvent) => {
+    const g = own(e);
+    if (!g) return;
     gesture = null;
-    if (g?.axis === "horizontal") springBack(g);
+    if (g.axis === "horizontal") springBack(g);
   };
 
   function listen() {
