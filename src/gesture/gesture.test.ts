@@ -80,4 +80,8 @@ describe("release", () => {
   test("a flick shorter than 24 px cancels, however fast", () => {
     expect(release(-23, -2, width, both)).toBe("cancel");
   });
+
+  test("a fling back against the drag cancels, however far the drag went", () => {
+    expect(release(-300, 0.45, width, both)).toBe("cancel");
+  });
 });

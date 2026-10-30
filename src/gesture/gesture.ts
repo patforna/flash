@@ -52,5 +52,6 @@ export function release(
 ): "next" | "prev" | "cancel" {
   const far = -dx / width >= GESTURE.commitFraction;
   const flung = -vx >= GESTURE.flingVelocity && -dx >= GESTURE.flingMinDx;
-  return far || flung ? "next" : "cancel";
+  const flungBack = vx >= GESTURE.flingVelocity;
+  return (far || flung) && !flungBack ? "next" : "cancel";
 }
