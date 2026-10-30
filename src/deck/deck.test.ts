@@ -15,7 +15,7 @@
 // - [x] prev: one back, front up; a no-op at 0; from the end card the last card
 // - [x] flip toggles the side; a no-op on the end card (it has no back)
 // - [x] reshuffle: a new pass of the pool that never starts with the current card
-// - [ ] reshuffle: on the end card, never starts with the last card
+// - [x] reshuffle: on the end card, never starts with the last card
 // - [ ] reselect: the current card, if still in the pool, first and on the same side
 // - [ ] reselect: otherwise, or from the end card, a fresh deal, front up
 
@@ -172,5 +172,11 @@ describe("reshuffle", () => {
     const rng = mulberry32(11);
     const orders = new Set(Array.from({ length: 40 }, () => reshuffle(at(1), ["a", "b", "c"], rng).order.join("")));
     expect(orders).toEqual(new Set(["abc", "acb", "cab", "cba"]));
+  });
+
+  it("from the end card, never starts the new pass with the last card", () => {
+    const rng = mulberry32(12);
+    const orders = new Set(Array.from({ length: 40 }, () => reshuffle(at(3), ["a", "b", "c"], rng).order.join("")));
+    expect(orders).toEqual(new Set(["abc", "acb", "bac", "bca"]));
   });
 });

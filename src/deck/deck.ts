@@ -33,8 +33,9 @@ export function prev(p: Pass): Pass {
   return p.index > 0 ? { ...p, index: p.index - 1, side: "front" } : p;
 }
 
+// A new pass that never starts with the card just seen: the current one, or the last one from the end card.
 export function reshuffle(p: Pass, pool: readonly string[], rng: Rng): Pass {
-  return deal(pool, rng, { avoidFirst: p.order[p.index] });
+  return deal(pool, rng, { avoidFirst: p.order[atEnd(p) ? p.index - 1 : p.index] });
 }
 
 // Fisher–Yates, on a copy.
