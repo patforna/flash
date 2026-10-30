@@ -2,10 +2,10 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { canFullscreen } from "./fullscreen";
 
 // To do:
-// [ ] canFullscreen: false where fullscreen isn't enabled
-// [ ] canFullscreen: true in a browser tab with fullscreen enabled and nothing fullscreen
-// [ ] canFullscreen: false outside a browser tab (the installed app)
-// [ ] canFullscreen: false while something is fullscreen
+// [x] canFullscreen: false where fullscreen isn't enabled
+// [x] canFullscreen: true in a browser tab with fullscreen enabled and nothing fullscreen
+// [x] canFullscreen: false outside a browser tab (the installed app)
+// [x] canFullscreen: false while something is fullscreen
 // [ ] toggleFullscreen: requests fullscreen on the document element, without navigation UI
 // [ ] toggleFullscreen: then locks the orientation to landscape, once fullscreen has been entered
 // [ ] toggleFullscreen: exits when fullscreen
@@ -46,6 +46,13 @@ describe("canFullscreen", () => {
     define(document, "fullscreenEnabled", true);
     define(document, "fullscreenElement", null);
     displayMode("fullscreen");
+
+    expect(canFullscreen()).toBe(false);
+  });
+
+  it("is false while something is fullscreen", () => {
+    define(document, "fullscreenEnabled", true);
+    define(document, "fullscreenElement", document.documentElement);
 
     expect(canFullscreen()).toBe(false);
   });
