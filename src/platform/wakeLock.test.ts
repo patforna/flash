@@ -1,10 +1,10 @@
 import { fireEvent, renderHook } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { useWakeLock } from "./wakeLock";
 
 // To do:
 // [x] does nothing where unsupported
-// [ ] requests a screen lock on the first pointerdown
+// [x] requests a screen lock on the first pointerdown
 // [ ] requests a screen lock on the first keydown
 // [ ] keeps the one lock while input continues
 // [ ] releases it after five minutes without input
@@ -14,10 +14,36 @@ import { useWakeLock } from "./wakeLock";
 // [ ] a refused request is not an error
 // [ ] cleans up on unmount: releases the lock, stops listening, leaves no timer
 
+// happy-dom has no Screen Wake Lock API: this one hands out sentinels and keeps them for the test to inspect.
+function wakeLockApi() {
+  const sentinels: { release: () => Promise<void> }[] = [];
+  const request = vi.fn(async () => {
+    const sentinel = { release: vi.fn(async () => {}) };
+    sentinels.push(sentinel);
+    return sentinel;
+  });
+  Object.defineProperty(navigator, "wakeLock", { configurable: true, value: { request } });
+  return { request, sentinels };
+}
+
+afterEach(() => {
+  Reflect.deleteProperty(navigator, "wakeLock");
+});
+
 describe("useWakeLock", () => {
   it("does nothing where unsupported", () => {
     renderHook(() => useWakeLock(), { reactStrictMode: true });
 
     expect(() => fireEvent.pointerDown(document.body)).not.toThrow();
+  });
+
+  it("requests a screen lock on the first pointerdown", () => {
+    const { request } = wakeLockApi();
+    renderHook(() => useWakeLock(), { reactStrictMode: true });
+    expect(request).not.toHaveBeenCalled();
+
+    fireEvent.pointerDown(document.body);
+
+    expect(request).toHaveBeenCalledWith("screen");
   });
 });
