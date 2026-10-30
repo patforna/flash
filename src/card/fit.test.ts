@@ -18,4 +18,8 @@ describe("chooseStep", () => {
   it("chooses the first smaller step that fits", () => {
     expect(chooseStep((step) => step >= 2, 3)).toBe(2);
   });
+
+  it('gives "scroll" when no step fits', () => {
+    expect(chooseStep(() => false, 3)).toBe("scroll");
+  });
 });
