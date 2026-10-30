@@ -293,8 +293,9 @@ function swipe(stage: RefObject<HTMLElement | null>, options: RefObject<SwipeOpt
   const move = (e: PointerEvent) => {
     const g = own(e);
     if (!g) return;
-    // A frame's move may stand for several touch samples; the velocity wants them all.
-    const coalesced = e.getCoalescedEvents();
+    // A frame's move may stand for several touch samples; the velocity wants them all. Browsers offer them in secure
+    // contexts only: over plain http away from localhost (the phone trying a laptop's build) the move's own sample does.
+    const coalesced = "getCoalescedEvents" in e ? e.getCoalescedEvents() : [];
     for (const c of coalesced.length ? coalesced : [e]) g.samples.push(sample(c));
     if (g.axis === "pending") {
       g.axis = classify(g.start, sample(e));

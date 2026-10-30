@@ -22,6 +22,7 @@
 // [x] tap(): completes a running commit, then onTap
 // [x] deal(): drops a running commit; translateY(14px) → 0 and opacity 0 → 1 over 220 ms
 // [x] a horizontal drag finishes a running flip
+// [x] no getCoalescedEvents (an insecure context): the move's own sample
 import { act, render } from "@testing-library/react";
 import { Profiler, useRef, useState } from "react";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
@@ -274,6 +275,24 @@ describe("committing", () => {
     ]);
     finger.up();
     expect(animations[0]?.keyframes.at(-1)).toEqual({ transform: "translateX(-1260px) rotate(-10deg)" });
+  });
+
+  test("follows and flings where the browser has no getCoalescedEvents (plain http, away from localhost)", () => {
+    // Chromium offers it in secure contexts only; happy-dom puts it on each event.
+    class Insecure extends PointerEvent {
+      constructor(type: string, init?: PointerEventInit) {
+        super(type, init);
+        delete (this as { getCoalescedEvents?: unknown }).getCoalescedEvents;
+      }
+    }
+    vi.stubGlobal("PointerEvent", Insecure);
+    try {
+      const { stage, layer, animations } = setup();
+      flick(stage, layer);
+      expect(animations[0]?.keyframes.at(-1)).toEqual({ transform: "translateX(-1260px) rotate(-10deg)" });
+    } finally {
+      vi.unstubAllGlobals();
+    }
   });
 
   test("a flick right slides the previous card in to its place, then commits", async () => {
