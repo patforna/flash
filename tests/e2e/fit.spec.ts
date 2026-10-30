@@ -1,9 +1,9 @@
 import type { Page } from "@playwright/test";
-import { announcer, expect, firstCard, flipper, settled, test } from "./helpers";
+import { announcer, expect, firstCard, flipper, insets, settled, test } from "./helpers";
 
-// Long answers (docs/plan.md §7 and §8): every card of the real deck fits both its faces without the last resort
-// (data-fit="scroll"), and every line written on a back sits on a rule. scripts/deploy-do.sh runs this file by name
-// before it ships a deck.
+// The real deck fits the screen. Long answers (docs/plan.md §7 and §8): every card fits both its faces without the
+// last resort (data-fit="scroll"), and every line written on a back sits on a rule. Topics (§3): every chip is in full
+// view in the panel. scripts/deploy-do.sh runs this file by name before it ships a deck.
 //
 // Under reduced motion the faces lie flat, unturned (the back fades in over the front), so both are measured in place
 // without turning the card: the layout is the same either way.
@@ -140,5 +140,45 @@ test.describe("the fixture deck, which uses every kind of markup", () => {
     expect(walked.problems).toEqual([]);
     // Its 11-line answer needs the smallest step.
     expect(walked.fits.map((f) => f[1])).toContain("2");
+  });
+});
+
+// Every chip in full view, none under the panel's fade, nothing to scroll. In a tab, so the fullscreen chip leads: the
+// fullest panel, with All and the 13 topics after it.
+test.describe("the real deck's topics", () => {
+  test.beforeEach(async ({ page }) => {
+    await page.goto("/");
+    await firstCard(page);
+    await settled(page);
+  });
+
+  async function inFullView(page: Page) {
+    const panel = page.getByRole("group", { name: "Topics" });
+    const chips = panel.getByRole("button");
+    await expect(chips).toHaveCount(15);
+    expect(await panel.evaluate((el) => el.scrollHeight <= el.clientHeight)).toBe(true);
+    const box = await panel.boundingBox();
+    if (!box) throw new Error("no panel");
+    const fade = 24;
+    for (const chip of await chips.all()) {
+      const b = await chip.boundingBox();
+      const name = (await chip.getAttribute("aria-label")) ?? "";
+      if (!b) throw new Error(`${name} has no box`);
+      expect(b.x, name).toBeGreaterThanOrEqual(box.x);
+      expect(b.y, name).toBeGreaterThanOrEqual(box.y);
+      expect(b.x + b.width, name).toBeLessThanOrEqual(box.x + box.width);
+      expect(b.y + b.height, `${name} clear of the fade`).toBeLessThanOrEqual(box.y + box.height - fade);
+    }
+  }
+
+  test("at 923 × 412 every chip is in full view, none under the panel's fade, nothing to scroll", async ({ page }) => {
+    await inFullView(page);
+  });
+
+  test("so they are with a 40 px camera cutout, which shortens the panel with the card", async ({ page }) => {
+    await insets(page, { left: 40 });
+    await expect.poll(() => page.locator("main").evaluate((el) => getComputedStyle(el).paddingLeft)).toBe("48px");
+    await settled(page);
+    await inFullView(page);
   });
 });

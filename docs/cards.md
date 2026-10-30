@@ -137,7 +137,7 @@ card 12 "what-does-redis-do-by-default-when-memory-is-full": answer is 611 chara
 
 The server refuses to start with the same list, so a broken deck never goes live.
 
-`scripts/deploy-do.sh cards` ships the deck alone, never code: it runs the check, then the fit test (every card of the real deck fits without scrolling), uploads the file, restarts the server and confirms that https://flash.patforna.com/healthz reports the new deck's version, which `bun scripts/check-cards.ts --version cards/cards.toml` prints.
+`scripts/deploy-do.sh cards` ships the deck alone, never code: it runs the check, then the fit test (every card of the real deck fits without scrolling, and every topic chip in the panel), uploads the file, restarts the server and confirms that https://flash.patforna.com/healthz reports the new deck's version, which `bun scripts/check-cards.ts --version cards/cards.toml` prints.
 
 ## The seed deck
 

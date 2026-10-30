@@ -155,7 +155,7 @@ docs/                      original-request.md, plan.md, cards.md, seed.md
 
 ## Shipping cards versus code
 
-- **Cards**: edit `cards/cards.toml`, `bun run cards:check`, commit and push, then `scripts/deploy-do.sh cards`: the check, the fit test on the real deck (`tests/e2e/fit.spec.ts`, which the script runs by name; building first only if `dist/` or `build/server.js` is missing), one file uploaded, a restart, and the health check. It never ships code. The phone shows the new deck on the next launch.
+- **Cards**: edit `cards/cards.toml`, `bun run cards:check`, commit and push, then `scripts/deploy-do.sh cards`: the check, the fit test on the real deck (`tests/e2e/fit.spec.ts`, which the script runs by name: every card fits both faces and every topic chip is in full view in the panel; building first only if `dist/` or `build/server.js` is missing), one file uploaded, a restart, and the health check. It never ships code. The phone shows the new deck on the next launch.
 - **Code**: commit and push, then `scripts/deploy-do.sh up`: the gate, `build/release/` staged (`server.js`, `dist/`, `cards/cards.toml`) and sent with one `rsync -az --delete`, a restart, and the health check. The phone runs the new code one launch late.
 - **The health check**: `/healthz` on the droplet first (its journal printed if the server won't start), then https://flash.patforna.com/healthz from the laptop, whose `version` must equal `bun scripts/check-cards.ts --version cards/cards.toml`, retried for up to 2 minutes while a new droplet's DNS record and certificate come up.
 - `link` prints the address, `logs` the server's journal; `down` deletes the droplet and its A record.
