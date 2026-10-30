@@ -229,6 +229,15 @@ function swipe(stage: RefObject<HTMLElement | null>, options: RefObject<SwipeOpt
     const onCard = start.x >= rect.left && start.x <= rect.right && start.y >= rect.top && start.y <= rect.bottom;
     if (!onCard) return;
     gesture = { pointer: e.pointerId, start, samples: [start], axis: "pending", layers, rect };
+    // The card is picked up: its lift rises (the stylesheets key off data-pressed), never the layer that drags.
+    layers.current.setAttribute("data-pressed", "");
+  };
+
+  // The pointer is done with: the card is put down, and the stage idle until an animation starts.
+  const end = (g: Gesture) => {
+    gesture = null;
+    g.layers.current.removeAttribute("data-pressed");
+    mark("idle");
   };
 
   const move = (e: PointerEvent) => {
@@ -251,8 +260,7 @@ function swipe(stage: RefObject<HTMLElement | null>, options: RefObject<SwipeOpt
   const up = (e: PointerEvent) => {
     const g = own(e);
     if (!g) return;
-    gesture = null;
-    mark("idle");
+    end(g);
     if (g.axis === "pending" && isTap(g.start, sample(e))) options.current.onTap();
     if (g.axis !== "horizontal") return;
     g.samples.push(sample(e));
@@ -268,8 +276,7 @@ function swipe(stage: RefObject<HTMLElement | null>, options: RefObject<SwipeOpt
   const cancel = (e: PointerEvent) => {
     const g = own(e);
     if (!g) return;
-    gesture = null;
-    mark("idle");
+    end(g);
     if (g.axis === "horizontal") springBack(g);
   };
 

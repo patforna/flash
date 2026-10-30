@@ -177,3 +177,20 @@ describe("swipes", () => {
     expect(stage.dataset.state).toBe("idle");
   });
 });
+
+describe("the press", () => {
+  test("marks the card pressed from pointerdown to release, for its lift to rise; never a transform on the layer", () => {
+    const { stage, layer } = setup();
+    const finger = press(stage, layer("current"), 700, 200);
+    expect(layer("current").hasAttribute("data-pressed")).toBe(true);
+    expect(layer("current").style.transform).toBe("");
+    finger.up(80);
+    expect(layer("current").hasAttribute("data-pressed")).toBe(false);
+  });
+
+  test("ends when the browser takes the pointer", () => {
+    const { stage, layer } = setup();
+    press(stage, layer("current"), 700, 200).cancel();
+    expect(layer("current").hasAttribute("data-pressed")).toBe(false);
+  });
+});
