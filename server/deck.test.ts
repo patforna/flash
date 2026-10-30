@@ -5,7 +5,7 @@
 // [x] loadDeck reports every problem at once, naming the card: undeclared topic, duplicate question, long question, unknown key
 // [x] a TOML syntax error is one problem with its line and column
 // [x] shape: unknown top-level key, missing field, wrong type; a misspelt key doesn't stop the other cards' checks
-// [ ] declared topics: 1–30, 1–20 characters, the pattern, no trailing space, no repeats, each used
+// [x] declared topics: 1–30, 1–20 characters, the pattern, no trailing space, no repeats, each used
 // [ ] cards: 1–500
 // [ ] a card's topics: 1–3, declared, no repeats
 // [ ] question: 8–100 characters after trimming, one line, inline markup only, unique ignoring case
@@ -145,5 +145,41 @@ answer = "Dead tuples."
       'card 4 "which-topic-is-undeclared": topics item 2 must be a string',
       'card 5 "is-this-checked-as-well": topic "Kafka" is not declared',
     ]);
+  });
+
+  test("checks each declared topic: 1–20 characters, the allowed characters, no trailing space, no repeats", () => {
+    const topics = ["Redis", "", "Twenty-one characters", "Edge ", "#tag", "C++ & .NET/Go", "Redis"];
+    const toml = file(
+      [
+        card({ question: "Which topics come first?", topics: topics.slice(0, 3) }),
+        card({ question: "Which topics come next?", topics: topics.slice(3, 6) }),
+      ],
+      topics,
+    );
+
+    expect(problemsOf(toml)).toEqual([
+      'topic "" is empty',
+      'topic "Twenty-one characters" is 21 characters (max 20)',
+      'topic "Edge " ends with a space',
+      'topic "#tag" must start with a letter or digit and hold only letters, digits, spaces and & + . / -',
+      'topic "Redis" is declared more than once',
+    ]);
+  });
+
+  test("declares 1 to 30 topics", () => {
+    const many = Array.from({ length: 31 }, (_, i) => `Topic ${i + 1}`);
+    const cards = Array.from({ length: 11 }, (_, i) =>
+      card({ question: `Which is group ${i + 1}?`, topics: many.slice(i * 3, i * 3 + 3) }),
+    );
+
+    expect(problemsOf(file([card()], []))).toEqual([
+      "no topics declared",
+      'card 1 "what-is-redis-for": topic "Redis" is not declared',
+    ]);
+    expect(problemsOf(file(cards, many))).toEqual(["31 topics declared (max 30)"]);
+  });
+
+  test("uses every declared topic", () => {
+    expect(problemsOf(file([card()], ["Redis", "Edge"]))).toEqual(['topic "Edge" is not used by any card']);
   });
 });

@@ -51,6 +51,8 @@ export function loadDeck(toml: string): Deck {
     else for (const text of explain(issue, issue.path)) report(undefined, text);
   }
 
+  if (intact("topics")) for (const text of checkTopics(file.topics)) report(undefined, text);
+
   const seen = new Map<string, number>();
   const rendered: Card[] = [];
   cards.forEach((card, i) => {
@@ -75,10 +77,38 @@ export function loadDeck(toml: string): Deck {
     });
   });
 
+  // Whether a topic is used can only be judged when every card is intact.
+  if (intact("topics") && intact("card")) {
+    const used = new Set(rendered.flatMap((card) => card.topics));
+    for (const topic of file.topics)
+      if (!used.has(topic)) report(undefined, `topic "${topic}" is not used by any card`);
+  }
+
   // Grouped by card, in file order (the sort is stable).
   if (problems.length > 0) throw new DeckError(problems.sort(([a], [b]) => a - b).map(([, text]) => text));
   const content = { topics: file.topics, cards: rendered };
   return { version: version(content), ...content };
+}
+
+const LABEL = /^[A-Za-z0-9][A-Za-z0-9 &+./-]*$/;
+
+function checkTopics(topics: string[]): string[] {
+  const problems: string[] = [];
+  if (topics.length === 0) problems.push("no topics declared");
+  if (topics.length > LIMITS.topics) problems.push(`${topics.length} topics declared (max ${LIMITS.topics})`);
+  topics.forEach((topic, i) => {
+    const name = `topic "${topic}"`;
+    if (topic === "") problems.push(`${name} is empty`);
+    else if (topic.length > LIMITS.topicLabel) {
+      problems.push(`${name} is ${topic.length} characters (max ${LIMITS.topicLabel})`);
+    } else if (topic.endsWith(" ")) problems.push(`${name} ends with a space`);
+    else if (!LABEL.test(topic)) {
+      problems.push(`${name} must start with a letter or digit and hold only letters, digits, spaces and & + . / -`);
+    }
+    // Reported at its second appearance only.
+    if (topics.indexOf(topic, topics.indexOf(topic) + 1) === i) problems.push(`${name} is declared more than once`);
+  });
+  return problems;
 }
 
 function parseToml(toml: string) {
