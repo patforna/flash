@@ -1,6 +1,6 @@
 // To do:
 // [x] fetchDeck gets the deck with GET /api/cards at the client's base
-// [ ] fetchDeck throws on a status other than 2xx, naming it
+// [x] fetchDeck throws on a status other than 2xx, naming it
 // [ ] the client's base defaults to the page's origin
 import { describe, expect, test } from "vitest";
 import type { Deck } from "../../shared/types";
@@ -31,5 +31,11 @@ describe("fetchDeck", () => {
 
     expect(await fetchDeck(createClient("https://flash.test", fetchImpl))).toEqual(deck);
     expect(requests).toEqual(["GET https://flash.test/api/cards"]);
+  });
+
+  test("throws on a status other than 2xx, naming it", async () => {
+    const { fetchImpl } = server(503, { error: "down" });
+
+    await expect(fetchDeck(createClient("https://flash.test", fetchImpl))).rejects.toThrow("GET /api/cards: 503");
   });
 });

@@ -9,5 +9,6 @@ export function createClient(base = location.origin, fetchImpl?: typeof fetch) {
 
 export async function fetchDeck(client = createClient()): Promise<Deck> {
   const res = await client.api.cards.$get();
+  if (!res.ok) throw new Error(`GET /api/cards: ${res.status}`);
   return res.json();
 }
