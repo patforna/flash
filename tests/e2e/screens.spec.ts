@@ -76,7 +76,7 @@ test.describe("the Pixel 11", () => {
     await page.route("**/api/cards", () => {});
     await page.goto("/");
     await expect(page.getByText("shuffling…")).toBeVisible();
-    await page.evaluate(() => document.fonts.ready);
+    await page.evaluate(() => document.fonts.load('1em "Shantell Sans"'));
     await expect(page).toHaveScreenshot("loading.png");
   });
 
@@ -86,7 +86,7 @@ test.describe("the Pixel 11", () => {
     await expect(page.getByRole("button", { name: "Can't reach the deck. Tap to try again" })).toBeVisible({
       timeout: 15_000,
     });
-    await page.evaluate(() => document.fonts.ready);
+    await page.evaluate(() => document.fonts.load('1em "Shantell Sans"'));
     await expect(page).toHaveScreenshot("error.png");
   });
 

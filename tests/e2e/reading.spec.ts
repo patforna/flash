@@ -134,8 +134,12 @@ test("three rapid flicks advance exactly three cards, each dragging the card the
       if (x && Number(x) !== 0) log.push(top.querySelector("h2")?.textContent ?? "end");
     }).observe(top, { attributes: true, attributeFilter: ["style"] });
   });
+  // The cards dragged since the last look, and whether a card is still flying out (the next flick must start then).
   const takeLog = () =>
-    page.evaluate(() => [...new Set((window as unknown as { draggedCards: string[] }).draggedCards.splice(0))]);
+    page.evaluate(() => ({
+      cards: [...new Set((window as unknown as { draggedCards: string[] }).draggedCards.splice(0))],
+      flying: document.getAnimations().length > 0,
+    }));
   const first = await question(page).textContent();
   const second = await question(page, "next").textContent();
   // Every flick starts where the cards rest: mid-fling, the top layer is on its way off the screen.
@@ -143,14 +147,11 @@ test("three rapid flicks advance exactly three cards, each dragging the card the
   const quick = () => swipe(page, { from: at, to: { x: at.x - 160, y: at.y }, ms: 48 });
 
   await quick();
-  expect(await takeLog()).toEqual([first]);
-  // Each flick starts while the last card is still flying out.
-  expect(await page.evaluate(() => document.getAnimations().length)).toBeGreaterThan(0);
+  expect(await takeLog()).toEqual({ cards: [first], flying: true });
   await quick();
-  expect(await takeLog()).toEqual([second]);
-  expect(await page.evaluate(() => document.getAnimations().length)).toBeGreaterThan(0);
+  expect(await takeLog()).toEqual({ cards: [second], flying: true });
   await quick();
-  const third = await takeLog();
+  const { cards: third } = await takeLog();
 
   expect(third).toHaveLength(1);
   expect([first, second]).not.toContain(third[0]);
