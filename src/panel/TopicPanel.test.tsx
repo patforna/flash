@@ -2,7 +2,7 @@
 // [x] a group named "Topics"
 // [x] All reads "All · 65" and is pressed when nothing is selected
 // [x] All is not pressed while a topic is selected
-// [ ] the topics follow All in the given order, each pressed while selected
+// [x] the topics follow All in the given order, each pressed while selected
 // [ ] each chip's accessible name carries its count, "1 card" for one
 // [ ] the lead comes first
 // [ ] tapping All calls onAll; tapping a topic calls onToggle with its label
@@ -53,5 +53,12 @@ describe("TopicPanel", () => {
   it("does not press All while a topic is selected", () => {
     renderPanel({ selected: new Set(["Queues"]) });
     expect(screen.getByRole("button", { name: /^All/ }).getAttribute("aria-pressed")).toBe("false");
+  });
+
+  it("lists the topics after All in the given order, each pressed while selected", () => {
+    renderPanel({ selected: new Set(["Postgres", "Consistency"]) });
+    const chips = screen.getAllByRole("button");
+    expect(chips.map((chip) => chip.textContent)).toEqual(["All · 65", "Redis", "Postgres", "Queues", "Consistency"]);
+    expect(chips.map((chip) => chip.getAttribute("aria-pressed"))).toEqual(["false", "false", "true", "false", "true"]);
   });
 });
