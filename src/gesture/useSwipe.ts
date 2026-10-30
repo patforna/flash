@@ -24,10 +24,18 @@ interface Gesture {
   rect: DOMRect; // the current card at pointerdown, in viewport px
 }
 
-// Animations in flight; a commit's carries its direction.
+// Animations in flight; a commit's carries its direction, and a fling the flight of the card leaving.
 interface Run {
   animations: Animation[];
   dir: Dir | null;
+  flight?: Flight;
+}
+
+interface Flight {
+  card: HTMLElement;
+  keyframes: Keyframe[];
+  timing: KeyframeAnimationOptions;
+  animation: Animation;
 }
 
 const FLING_TILT = 10; // degrees, as a flung card leaves
@@ -68,8 +76,8 @@ function swipe(stage: RefObject<HTMLElement | null>, options: RefObject<SwipeOpt
   const animate = (el: Element, keyframes: Keyframe[], timing: KeyframeAnimationOptions) =>
     (options.current.animate ?? ((target, k, o) => target.animate(k, o)))(el, keyframes, timing);
 
-  function play(animations: Animation[], dir: Dir | null) {
-    const run: Run = { animations, dir };
+  function play(animations: Animation[], dir: Dir | null, flight?: Flight) {
+    const run: Run = { animations, dir, flight };
     running = run;
     mark("animating");
     Promise.all(animations.map((a) => a.finished)).then(
@@ -83,8 +91,26 @@ function swipe(stage: RefObject<HTMLElement | null>, options: RefObject<SwipeOpt
   function finishRunning() {
     const run = running;
     if (!run) return;
+    if (run.flight) flyOn(run.flight);
     for (const animation of run.animations) animation.finish();
     complete(run);
+  }
+
+  // A card still flying out as the move lands carries on as a copy, from where it is on its curve, over the stack and
+  // out of the stage's way; it goes once it has flown. A thumb flicking on never sees the last card vanish mid-air.
+  function flyOn({ card, keyframes, timing, animation }: Flight) {
+    const copy = card.cloneNode(true) as HTMLElement;
+    copy.removeAttribute("data-role");
+    copy.inert = true;
+    copy.setAttribute("aria-hidden", "true");
+    Object.assign(copy.style, { visibility: "visible", pointerEvents: "none", transformOrigin: "50% 140%" });
+    card.after(copy);
+    const flown = animate(copy, keyframes, timing);
+    flown.currentTime = animation.currentTime;
+    flown.finished.then(
+      () => copy.remove(),
+      () => copy.remove(),
+    );
   }
 
   // A new card came from elsewhere (a reshuffle, a topic change): what was in flight belongs to the old one.
@@ -151,26 +177,29 @@ function swipe(stage: RefObject<HTMLElement | null>, options: RefObject<SwipeOpt
   // flies half its width further than gone: its curve slows it to a stop, which then happens off screen.
   function fling(layers: Layers, rect: DOMRect, dx: number, vx: number, easing?: string) {
     const { current, next } = layers;
-    if (options.current.reducedMotion()) {
-      if (next) write(next, underneath(1));
-      const fade = animate(current, [{ opacity: 1 }, { opacity: 0 }], { duration: MOTION.fadeMs, fill: "forwards" });
-      return play([fade], "next");
-    }
+    const reduced = options.current.reducedMotion();
     const to = easing ? gone(rect) : gone(rect) - rect.width / 2;
-    const timing = { duration: flingDuration(dx - to, vx), easing: easing ?? flingEasing(dx - to, vx) };
-    const from = current.style.transform || IN_PLACE;
-    const animations = [
-      animate(current, [{ transform: from }, { transform: `translateX(${to}px) rotate(${-FLING_TILT}deg)` }], {
-        ...timing,
-        fill: "forwards",
-      }),
-    ];
+    const timing = reduced
+      ? { duration: MOTION.fadeMs }
+      : { duration: flingDuration(dx - to, vx), easing: easing ?? flingEasing(dx - to, vx) };
+    const keyframes = reduced
+      ? [{ opacity: 1 }, { opacity: 0 }]
+      : [
+          { transform: current.style.transform || IN_PLACE },
+          { transform: `translateX(${to}px) rotate(${-FLING_TILT}deg)` },
+        ];
+    const flight = { card: current, keyframes, timing: { ...timing, fill: "forwards" as const } };
+    const animation = animate(current, flight.keyframes, flight.timing);
+    const animations = [animation];
     if (next) {
+      // It rises with the card leaving; under reduced motion it is in place at once, under the card fading out.
       const below = next.style.transform || underneath(0);
       write(next, underneath(1));
-      animations.push(animate(next, [{ transform: below }, { transform: underneath(1) }], timing));
+      if (!reduced) animations.push(animate(next, [{ transform: below }, { transform: underneath(1) }], timing));
     }
-    play(animations, "next");
+    play(animations, "next", { ...flight, animation });
+    // The end card has no card under it: the next pass is dealt at once, under it as it flies off.
+    if (!next) finishRunning();
   }
 
   function slideIn(layers: Layers, rect: DOMRect, dx: number, vx: number, easing?: string) {

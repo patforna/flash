@@ -13,6 +13,8 @@
 // [x] a vertical drag and a pointercancel do nothing; a pointercancel mid-drag cancels
 // [x] only the first pointer counts; a pointer that went down off the card, on a button or with another button is ignored
 // [x] a pointerdown during a commit finishes it, completing the commit (flushSync) before reading layers() again
+// [x] …while a copy of the flying card flies on from where it was, out of the stage's way, and goes when it lands
+// [x] the end card (no card under it) is let go of at once: the move lands while a copy flies off
 // [x] a pointerdown during a cancel or a deal finishes it
 // [x] reduced motion: no rotation while following; opacity-only animations
 // [x] commit(dir): the same fling from rest on MOTION.commitEase; not where can() forbids, nor while a pointer is down
@@ -39,7 +41,14 @@ afterEach(() => {
 // A stage with real layer elements. Each commit brings new ones, as a new card would.
 type Swipe = ReturnType<typeof useSwipe>;
 
-function Stage({ options, prev, held }: { options: SwipeOptions; prev: boolean; held: { swipe?: Swipe } }) {
+interface StageProps {
+  options: SwipeOptions;
+  prev: boolean;
+  next: boolean;
+  held: { swipe?: Swipe };
+}
+
+function Stage({ options, prev, next, held }: StageProps) {
   const stage = useRef<HTMLDivElement>(null);
   const [commits, setCommits] = useState(0);
   held.swipe = useSwipe(stage, {
@@ -47,7 +56,7 @@ function Stage({ options, prev, held }: { options: SwipeOptions; prev: boolean; 
     layers: () => {
       const find = (role: string) => stage.current?.querySelector<HTMLElement>(`[data-role="${role}"]`) ?? null;
       const current = find("current");
-      return current && { current, next: find("next"), prev: prev ? find("prev") : null };
+      return current && { current, next: next ? find("next") : null, prev: prev ? find("prev") : null };
     },
     onCommit: (dir) => {
       options.onCommit(dir);
@@ -63,7 +72,8 @@ function Stage({ options, prev, held }: { options: SwipeOptions; prev: boolean; 
   );
 }
 
-function setup(overrides: Partial<SwipeOptions> = {}, { prev = true } = {}) {
+// Without `next`, there is no card under the one on top: it is the end card.
+function setup(overrides: Partial<SwipeOptions> = {}, { prev = true, next = true } = {}) {
   const animations: FakeAnimation[] = [];
   const onTap = vi.fn();
   const onCommit = vi.fn();
@@ -84,7 +94,7 @@ function setup(overrides: Partial<SwipeOptions> = {}, { prev = true } = {}) {
   const held: { swipe?: Swipe } = {};
   const view = render(
     <Profiler id="stage" onRender={() => renders++}>
-      <Stage options={options} prev={prev} held={held} />
+      <Stage options={options} prev={prev} next={next} held={held} />
     </Profiler>,
   );
   const stage = view.getByTestId("stage");
@@ -378,6 +388,34 @@ describe("input during an animation", () => {
     await act(async () => {});
     expect(onCommit).toHaveBeenCalledOnce();
   });
+  test("…while a copy of the flying card flies on from where it was, then goes", async () => {
+    const { stage, layer, animations } = setup();
+    const flying = layer("current");
+    flying.textContent = "the flung card";
+    flick(stage, layer);
+    const [fling] = animations;
+    if (fling) fling.currentTime = 100;
+    press(stage, layer("next"), 700, 200, 100);
+    const copy = animations.find((a) => a.el !== flying && a.el.textContent === "the flung card");
+    if (!copy || !(copy.el instanceof HTMLElement)) throw new Error("no copy flies on");
+    expect([copy.keyframes, copy.options, copy.currentTime]).toEqual([fling?.keyframes, fling?.options, 100]);
+    // Over the stack, out of the way: no role for the stage's lookups, no input, nothing read out.
+    expect(copy.el.isConnected).toBe(true);
+    expect(copy.el.hasAttribute("data-role")).toBe(false);
+    expect([copy.el.inert, copy.el.getAttribute("aria-hidden")]).toEqual([true, "true"]);
+    expect(copy.el.style.visibility).toBe("visible");
+    await act(async () => copy.finish());
+    expect(copy.el.isConnected).toBe(false);
+  });
+
+  test("a key mid-fling lets the card fly on too, as a copy", () => {
+    const { layer, animations, swipe } = setup();
+    const flying = layer("current");
+    act(() => swipe().commit("next"));
+    act(() => swipe().commit("next"));
+    expect(animations.filter((a) => a.el !== flying && !a.el.hasAttribute("data-role"))).toHaveLength(1);
+  });
+
   test("a pointerdown mid-cancel finishes it", () => {
     const { stage, layer, animations } = setup();
     const finger = press(stage, layer("current"), 400, 200);
@@ -386,6 +424,26 @@ describe("input during an animation", () => {
     press(stage, layer("current"), 700, 200, 200);
     expect(animations[0]?.playState).toBe("finished");
     expect(inline(layer("prev"))).toEqual({ transform: "", visibility: "" });
+  });
+});
+
+describe("the end card, with no card under it", () => {
+  test("is let go of at once: the move lands as it flies off, a copy flying on over the pass dealt under it", () => {
+    const { stage, layer, animations, onCommit } = setup({}, { next: false });
+    const flying = layer("current");
+    flick(stage, layer);
+    expect(onCommit).toHaveBeenCalledExactlyOnceWith("next");
+    const [fling, copy] = animations;
+    expect(fling?.el).toBe(flying);
+    expect(copy?.el.hasAttribute("data-role")).toBe(false);
+    expect(copy?.keyframes).toEqual(fling?.keyframes);
+  });
+
+  test("a key does the same", () => {
+    const { animations, onCommit, swipe } = setup({}, { next: false });
+    act(() => swipe().commit("next"));
+    expect(onCommit).toHaveBeenCalledExactlyOnceWith("next");
+    expect(animations.map((a) => a.el.hasAttribute("data-role"))).toEqual([true, false]);
   });
 });
 
@@ -489,7 +547,7 @@ describe("commit(dir), for keys and buttons", () => {
     act(() => swipe().commit("next"));
     expect(onCommit).toHaveBeenCalledExactlyOnceWith("next");
     expect(animations[0]?.playState).toBe("idle");
-    expect(animations[2]?.el).toBe(layer("current"));
+    expect(animations.filter((a) => a.el === layer("current"))).toHaveLength(1);
   });
 });
 

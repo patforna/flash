@@ -172,6 +172,57 @@ test("three rapid flicks advance exactly three cards, each dragging the card the
   expect([first, second, ...third]).not.toContain(await question(page).textContent());
 });
 
+// Where the copy of a card still flying out is, frame by frame (its right edge, in px), and what it shows: a card
+// wanted at once flies on as a copy beside the stage's layers. [] when there is none.
+const flyingOn = (page: Page) =>
+  page.evaluate(
+    () =>
+      new Promise<{ text: string; right: number }[]>((resolve) => {
+        const seen: { text: string; right: number }[] = [];
+        const look = () => {
+          const copy = document.querySelector('[data-role="current"] ~ div:not([data-role])');
+          if (copy) seen.push({ text: copy.textContent ?? "", right: copy.getBoundingClientRect().right });
+          if (!copy || seen.length === 3) return resolve(seen);
+          requestAnimationFrame(look);
+        };
+        requestAnimationFrame(look);
+      }),
+  );
+
+test("a card still flying out when the next touch lands flies on: it never vanishes mid-air", async ({ page }) => {
+  const first = (await question(page).textContent()) ?? "";
+  const at = await centre(page);
+  await swipe(page, { from: at, to: { x: at.x - 160, y: at.y }, ms: 48 });
+
+  const f = await finger(page, at);
+  const flight = await flyingOn(page);
+
+  expect(flight.length, "frames of the flight after the touch").toBe(3);
+  expect(flight.every(({ text }) => text.includes(first))).toBe(true);
+  const rights = flight.map(({ right }) => right);
+  expect(rights[0], "on screen as the touch lands").toBeGreaterThan(0);
+  expect(rights, "moving left").toEqual([...rights].sort((a, b) => b - a));
+  expect(new Set(rights).size, "moving").toBe(3);
+  await expect(announcer(page)).toHaveText("Card 2 of 9");
+  await f.move({ x: at.x - 40, y: at.y }, 80);
+  await f.up();
+});
+
+test("a swipe on the end card deals the next pass at once, under the end card flying off", async ({ page }) => {
+  for (let i = 0; i < 9; i++) {
+    await page.keyboard.press("l");
+    await settled(page);
+  }
+  await expect(announcer(page)).toHaveText("That's all 9. Tap or swipe to shuffle again.");
+
+  await flick(page, "left");
+  const flight = await flyingOn(page);
+
+  await expect(announcer(page)).toHaveText("Card 1 of 9");
+  expect(flight.length, "frames of the end card flying off").toBeGreaterThan(0);
+  expect(flight[0]?.text).toContain("That's all 9.");
+});
+
 test("past the last card comes the end card; a tap on it deals a new pass that doesn't start with the card just seen", async ({
   page,
 }) => {

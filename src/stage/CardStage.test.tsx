@@ -7,6 +7,7 @@
 // [x] the press: data-pressed on the current layer from pointerdown to release, never a transform on it
 // [x] data-flipping from a change of side until the flipper's transform transition ends, or the flip's duration
 // [x] a new card from elsewhere (a reshuffle, a topic change) is dealt; one that survives isn't, nor one swiped to
+// [x] a swipe on the end card deals the next pass at once, under a copy of the end card flying off
 // [x] buttons: "Show answer" / "Show question", "Previous" and "Next", which go as a swipe does
 // [x] shortcuts: → and ← go as a swipe does, Space flips, s reshuffles, f calls onFullscreen
 // (Styles aren't computed here: happy-dom gets no CSS modules. The feel check covers them in Chromium.)
@@ -328,13 +329,16 @@ describe("dealing", () => {
     expect(inline(layer("prev"))).toEqual({ transform: "", visibility: "" });
   });
 
-  test("swiping on from the end card deals the new pass", async () => {
-    const { stage, layer } = setup({ start: 4 });
+  test("swiping on from the end card deals the new pass at once, under the end card flying off", () => {
+    const { stage, layer, calls } = setup({ start: 4 });
     flick(stage, layer);
-    await land();
+    expect(calls).toEqual(["goNext"]);
     expect(layer("current").textContent).toBe("b?");
     expect(animations.at(-1)?.el).toBe(layer("current"));
     expect(animations.at(-1)?.keyframes).toEqual(deal);
+    // A copy of the end card, off the stage's roles, flies on over it.
+    const copy = animations.find((a) => a.el.textContent === "That's all" && !a.el.hasAttribute("data-role"));
+    expect(copy?.el.isConnected).toBe(true);
   });
 });
 

@@ -4,6 +4,7 @@ import { act } from "@testing-library/react";
 // Records what was animated; finish() and cancel() settle `finished` as browsers do (cancel rejects it).
 export class FakeAnimation {
   playState: AnimationPlayState = "running";
+  currentTime: number | null = 0;
   readonly finished: Promise<FakeAnimation>;
   #resolve: (a: FakeAnimation) => void = () => {};
   #reject: (e: unknown) => void = () => {};
