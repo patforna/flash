@@ -1,3 +1,5 @@
+// Size budgets over a build: `bun scripts/budget.ts [distDir]`, distDir defaulting to dist. Prints a table, or one
+// line per budget exceeded and exits 1.
 import { readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 
@@ -9,7 +11,7 @@ const BUDGETS = [
   { key: "precache", label: "precache", limit: 700_000 },
 ] as const;
 
-export type Sizes = ReturnType<typeof measure>;
+type Sizes = ReturnType<typeof measure>;
 
 export function measure(dir: string) {
   const html = readFileSync(join(dir, "index.html"), "utf8");
@@ -18,6 +20,7 @@ export function measure(dir: string) {
   const loaded = (ext: string) => matches(html, new RegExp(`(?:src|href)="([^"]+\\.${ext})"`, "g"));
   const gzipped = (path: string) => Bun.gzipSync(readFileSync(join(dir, path))).length;
   const raw = (path: string) => statSync(join(dir, path)).size;
+  // The service worker's precache manifest: the urls in its precacheAndRoute([…]) call.
   const precached = new Set(matches(sw.match(/precacheAndRoute\(\[[^\]]*\]/)?.[0] ?? "", /url:"([^"]+)"/g));
   return {
     js: sum(loaded("js"), gzipped),
