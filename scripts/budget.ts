@@ -33,7 +33,27 @@ export function breaches(sizes: Sizes): string[] {
   );
 }
 
+export function table(sizes: Sizes): string {
+  return align(
+    BUDGETS.map((b) => [
+      b.label,
+      kB(sizes[b.key]),
+      "of",
+      `${b.limit / 1000} kB`,
+      `${Math.round((100 * sizes[b.key]) / b.limit)}%`,
+    ]),
+  );
+}
+
 const kB = (bytes: number) => `${(bytes / 1000).toFixed(2)} kB`;
+
+// Pads every column to its widest cell: the first on the right, the others on the left, so the numbers line up.
+function align(rows: string[][]): string {
+  const width = (i: number) => Math.max(...rows.map((row) => row[i]?.length ?? 0));
+  return rows
+    .map((row) => row.map((cell, i) => (i === 0 ? cell.padEnd(width(i)) : cell.padStart(width(i)))).join(" "))
+    .join("\n");
+}
 
 const matches = (text: string, re: RegExp) => [...text.matchAll(re)].map((m) => m[1] ?? "");
 const sum = (paths: Iterable<string>, size: (path: string) => number) =>

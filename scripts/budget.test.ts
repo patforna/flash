@@ -2,7 +2,7 @@ import { afterAll, expect, test } from "bun:test";
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
-import { breaches, measure } from "./budget";
+import { breaches, measure, table } from "./budget";
 
 // To do:
 // [x] an empty build measures zero
@@ -12,7 +12,7 @@ import { breaches, measure } from "./budget";
 // [x] precache: the raw size of every file sw.js precaches, each counted once
 // [x] breaches: none at the limits
 // [x] breaches: one line per budget exceeded, with the size and the limit
-// [ ] table: one aligned row per budget, with the size, the limit and the share used
+// [x] table: one aligned row per budget, with the size, the limit and the share used
 // [ ] the command: within budget it prints the table and exits 0
 // [ ] the command: over budget it prints the breaches and exits 1
 // [ ] the command: reads dist by default
@@ -108,4 +108,15 @@ test("each budget exceeded gives one line with its size and its limit", () => {
     "fonts: 241.00 kB, over the 240 kB budget",
     "precache: 750.00 kB, over the 700 kB budget",
   ]);
+});
+
+test("the table has one aligned row per budget, with the size, the limit and the share used", () => {
+  expect(table({ js: 68_420, css: 3_100, fonts: 231_240, precache: 452_820 })).toBe(
+    [
+      "JS (gzip)   68.42 kB of 100 kB 68%",
+      "CSS (gzip)   3.10 kB of  12 kB 26%",
+      "fonts      231.24 kB of 240 kB 96%",
+      "precache   452.82 kB of 700 kB 65%",
+    ].join("\n"),
+  );
 });
