@@ -4,5 +4,5 @@ import { fetchDeck } from "./client";
 
 export function useDeckQuery(): UseQueryResult<Deck, Error> {
   // Not `queryFn: fetchDeck`: the query's context would arrive as the client.
-  return useQuery({ queryKey: ["deck"], queryFn: () => fetchDeck() });
+  return useQuery({ queryKey: ["deck"], queryFn: () => fetchDeck(), retry: 2 });
 }

@@ -1,6 +1,6 @@
 // To do:
 // [x] loads the deck under the key ["deck"], once, in StrictMode
-// [ ] retries twice, then fails with the error
+// [x] retries twice, then fails with the error
 // [ ] keeps the deck for the session: a second reader gets it without a request; no refetch on focus or reconnect
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { renderHook, waitFor } from "@testing-library/react";
@@ -51,5 +51,15 @@ describe("useDeckQuery", () => {
     expect(result.current.data).toEqual(deck);
     expect(queryClient.getQueryData(["deck"])).toEqual(deck);
     expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  test("retries twice, then fails with the error", async () => {
+    const fetchMock = answer(503, { error: "down" });
+
+    const { result } = renderDeckQuery();
+
+    await waitFor(() => expect(result.current.isError).toBe(true));
+    expect(result.current.error?.message).toBe("GET /api/cards: 503");
+    expect(fetchMock).toHaveBeenCalledTimes(3);
   });
 });
