@@ -1,7 +1,7 @@
 // To do:
 // [ ] serves the API
 // [x] serves index.html at / and /index.html, revalidated on every use
-// [ ] serves hashed assets as immutable for a year
+// [x] serves hashed assets as immutable for a year
 // [ ] serves the service worker, its helpers, the manifest and the icons, revalidated on every use
 // [ ] answers 404 for anything else: missing files, other methods, traversal attempts raw and percent-encoded
 // [ ] sets the robots, sniffing and referrer headers on every response: static, API, 304 and 404
@@ -51,5 +51,17 @@ describe("createApp", () => {
     expect(res.headers.get("Content-Type")).toStartWith("text/html");
     expect(res.headers.get("Cache-Control")).toBe("no-cache");
     expect(await res.text()).toBe(files["index.html"]);
+  });
+
+  test.each([
+    ["/assets/index-B2x9.js", "text/javascript"],
+    ["/assets/index-Cq1z.css", "text/css"],
+    ["/assets/shantell-sans-latin-full-normal-D4f1.woff2", "font/woff2"],
+  ])("serves the hashed asset %s as immutable for a year", async (path, type) => {
+    const res = await app.request(path);
+
+    expect(res.status).toBe(200);
+    expect(res.headers.get("Content-Type")).toStartWith(type);
+    expect(res.headers.get("Cache-Control")).toBe("public, max-age=31536000, immutable");
   });
 });
