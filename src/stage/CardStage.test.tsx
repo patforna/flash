@@ -74,10 +74,15 @@ function Reader({ calls, onFullscreen, start, held }: ReaderProps) {
     goNext: move("goNext", (p) =>
       p.index === n ? { order: rotate(p.order), index: 0, side: "front" } : { ...p, index: p.index + 1, side: "front" },
     ),
-    goPrev: move("goPrev", (p) => ({ ...p, index: p.index - 1, side: "front" })),
+    // On a pass's first card it changes nothing, and keeps the state, so React skips the render.
+    goPrev: move("goPrev", (p) => (p.index > 0 ? { ...p, index: p.index - 1, side: "front" } : p)),
     reshuffle: move("reshuffle", (p) => ({ order: rotate(p.order), index: 0, side: "front" })),
-    // A topic change that keeps the card on screen: the rest of the pass changes behind it.
-    toggleTopic: move("toggleTopic", (p) => ({ ...p, order: [p.order[p.index] ?? card("x"), card("y"), card("z")] })),
+    // A topic change that keeps the card on screen: a new pass with it first, on the same side.
+    toggleTopic: move("toggleTopic", (p) => ({
+      order: [p.order[p.index] ?? card("x"), card("y"), card("z")],
+      index: 0,
+      side: p.side,
+    })),
     clearTopics: move("clearTopics", (p) => p),
   };
   held.view = view;
@@ -309,6 +314,18 @@ describe("dealing", () => {
     act(() => deck().toggleTopic("Redis"));
     expect(layer("next").textContent).toBe("y?");
     expect(animations).toEqual([]);
+  });
+
+  test("a topic change while the previous card slides back leaves nothing filling", async () => {
+    const { layer, deck } = setup({ start: 1 });
+    fireEvent.keyDown(document.body, { key: "ArrowLeft" });
+    const [slide] = animations;
+    expect(slide?.el).toBe(layer("prev"));
+    // The card on screen survives at the head of a new pass, so the slide lands on nothing to go back to.
+    act(() => deck().toggleTopic("Redis"));
+    await land();
+    expect(animations.map((a) => a.playState)).toEqual(["idle"]);
+    expect(inline(layer("prev"))).toEqual({ transform: "", visibility: "" });
   });
 
   test("swiping on from the end card deals the new pass", async () => {

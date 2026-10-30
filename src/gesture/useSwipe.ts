@@ -103,6 +103,9 @@ function swipe(stage: RefObject<HTMLElement | null>, options: RefObject<SwipeOpt
     if (!dir) return clear();
     settling = run;
     flushSync(() => options.current.onCommit(dir));
+    // A commit that changed nothing (a topic change put the card first while the previous one came back) renders
+    // nothing, so no layout effect lets go of the run: let go of it here.
+    settle();
   }
 
   // After the commit has rendered, before paint: let go of the fling and clear every inline style written.
