@@ -2,7 +2,7 @@
 // [x] the DOM contract: frame > flipper[data-side] > two faces, front then back
 // [x] the hidden face is inert and aria-hidden; the face on show is neither
 // [x] the front: the question, and the band in the first topic's colour
-// [ ] the front: the card's topics as dots with labels, each dot in its topic's colour
+// [x] the front: the card's topics as dots with labels, each dot in its topic's colour
 // [ ] the front: the counter, the position zero-padded to the total's width ("07 / 16")
 // [ ] the back: the question again in its header, then the answer
 // [ ] each face carries data-fit once measured
@@ -66,6 +66,15 @@ describe("CardView", () => {
     expect(question.textContent).toBe("Why does Postgres need VACUUM?");
     expect(question.querySelector("code")?.textContent).toBe("VACUUM");
     expect(front.querySelector<HTMLElement>(`.${styles.band}`)?.style.backgroundColor).toBe("var(--s-mint)");
+  });
+
+  it("labels the front with the card's topics, each with a dot in its colour", () => {
+    const topics = within(renderFace("front")).getAllByRole("listitem");
+    expect(topics.map((topic) => topic.textContent)).toEqual(["Postgres", "Queues"]);
+    expect(topics.map((topic) => topic.querySelector<HTMLElement>(`.${styles.dot}`)?.style.backgroundColor)).toEqual([
+      "var(--s-mint)",
+      "var(--s-sky)",
+    ]);
   });
 });
 

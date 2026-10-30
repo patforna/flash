@@ -19,6 +19,14 @@ export function CardView({ card, side, colourOf }: CardViewProps) {
           <div className={styles.band} style={{ backgroundColor: colours[0] }} />
           {/* biome-ignore lint/security/noDangerouslySetInnerHtml: the server renders the deck's Markdown through an allowlist of tags */}
           <h2 className={styles.question} dangerouslySetInnerHTML={{ __html: card.questionHtml }} />
+          <ul className={styles.topics}>
+            {card.topics.map((topic, i) => (
+              <li key={topic}>
+                <span className={styles.dot} style={{ backgroundColor: colours[i] }} />
+                {topic}
+              </li>
+            ))}
+          </ul>
         </div>
         <div className={`${styles.face} ${styles.back}`} {...hiddenUnless(side === "back")} />
       </div>

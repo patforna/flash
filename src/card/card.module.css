@@ -35,3 +35,14 @@
 .question {
   margin: 0;
 }
+
+/* The card's topics, bottom left: a dot in each topic's colour and its label, in pencil. */
+.topics {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.dot {
+  display: inline-block;
+}
