@@ -147,7 +147,8 @@ function swipe(stage: RefObject<HTMLElement | null>, options: RefObject<SwipeOpt
     if (layers.next && dx < 0) write(layers.next, underneath(Math.min(-dx / rect.width / GESTURE.commitFraction, 1)));
   }
 
-  // A commit's motion, from a release at dx and vx, or from rest for a key or a button (easing given).
+  // A commit's motion, from a release at dx and vx, or from rest for a key or a button (easing given). A released card
+  // flies half its width further than gone: its curve slows it to a stop, which then happens off screen.
   function fling(layers: Layers, rect: DOMRect, dx: number, vx: number, easing?: string) {
     const { current, next } = layers;
     if (options.current.reducedMotion()) {
@@ -155,7 +156,7 @@ function swipe(stage: RefObject<HTMLElement | null>, options: RefObject<SwipeOpt
       const fade = animate(current, [{ opacity: 1 }, { opacity: 0 }], { duration: MOTION.fadeMs, fill: "forwards" });
       return play([fade], "next");
     }
-    const to = gone(rect);
+    const to = easing ? gone(rect) : gone(rect) - rect.width / 2;
     const timing = { duration: flingDuration(dx - to, vx), easing: easing ?? flingEasing(dx - to, vx) };
     const from = current.style.transform || IN_PLACE;
     const animations = [

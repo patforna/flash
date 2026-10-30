@@ -5,7 +5,8 @@
 // [x] a right drag shows the previous layer, following from −(cardRect.right + 80); changing direction hands over
 // [x] a right drag without a previous card rubber-bands the current one
 // [x] zero React commits during a drag
-// [x] a release past the threshold flings at the release speed (fill: forwards only here); the card underneath rises
+// [x] a release past the threshold flings at the release speed (fill: forwards only here), out to half a card past
+//     gone; the card underneath rises
 // [x] onCommit once the fling finishes; then the fling is cancelled and inline styles cleared
 // [x] a commit to the previous card slides it in to 0
 // [x] a cancel animates back with the cancel timing and leaves nothing filling
@@ -185,7 +186,8 @@ describe("following the finger", () => {
   });
 });
 
-// A drag left at 2.5 px/ms to dx −160 (short of 168 px, but fast): the fling has 800 px to go.
+// A drag left at 2.5 px/ms to dx −160 (short of 168 px, but fast). Released, a card flies half its width further
+// than gone, −(880 + 80 + 300) = −1260 px, so it slows down only off screen: 1100 px to go.
 function flick(stage: HTMLElement, layer: (role: string) => HTMLElement) {
   const finger = press(stage, layer("current"), 700, 200);
   for (let i = 1; i <= 8; i++) finger.move(700 - 20 * i, 200);
@@ -200,15 +202,15 @@ describe("releasing", () => {
     expect(fling?.el).toBe(layer("current"));
     expect(fling?.keyframes).toEqual([
       { transform: "translateX(-160px) rotate(-4.8deg)" },
-      { transform: "translateX(-960px) rotate(-10deg)" },
+      { transform: "translateX(-1260px) rotate(-10deg)" },
     ]);
-    expect(fling?.options).toEqual({ duration: 320, easing: "cubic-bezier(0.2, 0.2, 0.3, 1)", fill: "forwards" });
+    expect(fling?.options).toEqual({ duration: 320, easing: "cubic-bezier(0.2, 0.145, 0.3, 1)", fill: "forwards" });
     expect(rise?.el).toBe(layer("next"));
     expect(rise?.keyframes).toEqual([
       { transform: "scale(0.9983) translateY(0.381px)" },
       { transform: "scale(1) translateY(0px)" },
     ]);
-    expect(rise?.options).toEqual({ duration: 320, easing: "cubic-bezier(0.2, 0.2, 0.3, 1)" });
+    expect(rise?.options).toEqual({ duration: 320, easing: "cubic-bezier(0.2, 0.145, 0.3, 1)" });
   });
 });
 
@@ -236,7 +238,7 @@ describe("committing", () => {
       { x: 600, t: 200 },
     ]);
     finger.up();
-    expect(animations[0]?.keyframes.at(-1)).toEqual({ transform: "translateX(-960px) rotate(-10deg)" });
+    expect(animations[0]?.keyframes.at(-1)).toEqual({ transform: "translateX(-1260px) rotate(-10deg)" });
   });
 
   test("a flick right slides the previous card in to its place, then commits", async () => {
