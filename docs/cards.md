@@ -45,7 +45,7 @@ Do the job in that transaction, then mark it done.
 `bun run cards:check` enforces all of them; the numbers live in `LIMITS` in `shared/schema.ts`.
 
 - **The file** has exactly two keys at the top level: `topics` and `card`.
-- **`topics`**: 1–30 labels, no repeats. A label is 1–20 characters: letters, digits, spaces and `& + . / -`, starting with a letter or a digit, with no space at the end. Every label is used by at least one card. Their order is the panel's order.
+- **`topics`**: 1–30 labels, no repeats. A label is 1–20 characters: unaccented letters, digits, spaces and `& + . / -`, starting with a letter or a digit, with no space at the end. Every label is used by at least one card. Their order is the panel's order.
 - **Cards**: 1–500 `[[card]]` tables, each with exactly `question`, `topics` and `answer`. Any other key fails, which catches a typo such as `topic =`.
 - **`question`**: 8–100 characters once trimmed, on one line, with inline markup only (`code` and `**bold**`). No two questions may be the same, ignoring case.
 - **A card's `topics`**: 1–3 of the declared labels, no repeats.

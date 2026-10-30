@@ -28,7 +28,7 @@ Reading:
 - A tap is under 10 px and at most 350 ms: a thumb resting on the card must not flip it when it lifts.
 - The flip turns around the X axis: sideways motion means navigation, so the flip must not look like one, and on a 5:3 card it sweeps the short side, which is snappier.
 - The card follows the finger 1:1, never clamped: a card that stops following fails "extremely smooth".
-- A pass is a Fisher–Yates shuffle with no repeats, closed by an end card; a reshuffle never starts with the card just seen, and happens only at launch, at the end card, on `s` and on a selection change.
+- A pass is a Fisher–Yates shuffle with no repeats, closed by an end card; a reshuffle never starts with the card just seen, and happens only at launch, at the end card, on `s` and on a selection change. The brief: "cards are just shuffled and shown randomly".
 - The card on screen survives a topic change when it still matches: changing topics shouldn't throw away the card being read.
 - No scrolling inside a card: validation limits, three fit steps and an end-to-end fit test over the real deck. A card that scrolls is not an index card and fights the swipe.
 - Code lines at most 46 characters, never scrolled: a scroller inside a swipeable card fights the swipe.
@@ -144,8 +144,8 @@ docs/                      original-request.md, plan.md, cards.md, seed.md
 
 ## Shipping cards versus code
 
-- **Cards**: edit `cards/cards.toml`, `bun run cards:check`, commit and push, then `scripts/deploy-do.sh cards`: the check, the fit test on the real deck (building first only if `dist/` or `build/server.js` is missing), one file uploaded, a restart, and the health check. It never ships code. The phone shows the new deck on the next launch.
-- **Code**: commit, then `scripts/deploy-do.sh up`: the gate, `build/release/` staged (`server.js`, `dist/`, `cards/cards.toml`) and sent with one `rsync -az --delete`, a restart, and the health check. The phone runs the new code one launch late.
+- **Cards**: edit `cards/cards.toml`, `bun run cards:check`, commit and push, then `scripts/deploy-do.sh cards`: the check, the fit test on the real deck (`tests/e2e/fit.spec.ts`, which the script runs by name; building first only if `dist/` or `build/server.js` is missing), one file uploaded, a restart, and the health check. It never ships code. The phone shows the new deck on the next launch.
+- **Code**: commit and push, then `scripts/deploy-do.sh up`: the gate, `build/release/` staged (`server.js`, `dist/`, `cards/cards.toml`) and sent with one `rsync -az --delete`, a restart, and the health check. The phone runs the new code one launch late.
 - **The health check**: `/healthz` on the droplet first (its journal printed if the server won't start), then https://flash.patforna.com/healthz from the laptop, whose `version` must equal `bun scripts/check-cards.ts --version cards/cards.toml`, retried for up to 2 minutes while a new droplet's DNS record and certificate come up.
 - `link` prints the address, `logs` the server's journal; `down` deletes the droplet and its A record.
 

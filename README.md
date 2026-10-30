@@ -55,7 +55,7 @@ Run both and open http://localhost:5173. The server reads the deck when it start
 | `bun run e2e`    | Playwright, headless: a Pixel 11 in landscape, in portrait, and a laptop; `bun run build` first          |
 | `bun run verify` | every gate in order: `cards:check`, `typecheck`, `lint`, `test`, `build`, `budget`, `e2e`                |
 
-Each step of `verify` also runs alone; `budget` checks the size budgets over `dist/`, and `bunx biome check --write .` fixes what `lint` finds in formatting.
+Each step of `verify` also runs alone, as `bun run <step>`; `budget` checks the size budgets over `dist/`. `bunx biome check --write .` fixes formatting and import order.
 
 ## Deploying
 
