@@ -181,4 +181,13 @@ describe("following the finger", () => {
     finger.move(300, 210);
     expect(layer("current").style.transform).toBe("translateX(-400px) rotate(-7deg)");
   });
+
+  test("the card underneath grows and rises as the drag nears the commit distance", () => {
+    const { stage, layer } = setup();
+    const finger = press(stage, layer("current"), 700, 200);
+    finger.move(616, 200);
+    expect(layer("next").style.transform).toBe("scale(0.9825) translateY(4px)");
+    finger.move(400, 200);
+    expect(layer("next").style.transform).toBe("scale(1) translateY(0px)");
+  });
 });
