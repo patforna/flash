@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { canFullscreen } from "./fullscreen";
 
 // To do:
@@ -19,8 +19,14 @@ function define(target: object, key: string, value: unknown) {
   defined.push([target, key]);
 }
 
+// happy-dom always reports a browser tab; the installed app runs in display-mode fullscreen.
+function displayMode(mode: string) {
+  vi.stubGlobal("matchMedia", (query: string) => ({ matches: query === `(display-mode: ${mode})` }));
+}
+
 afterEach(() => {
   for (const [target, key] of defined.splice(0)) Reflect.deleteProperty(target, key);
+  vi.unstubAllGlobals();
 });
 
 describe("canFullscreen", () => {
@@ -34,5 +40,13 @@ describe("canFullscreen", () => {
     define(document, "fullscreenElement", null);
 
     expect(canFullscreen()).toBe(true);
+  });
+
+  it("is false outside a browser tab, as in the installed app", () => {
+    define(document, "fullscreenEnabled", true);
+    define(document, "fullscreenElement", null);
+    displayMode("fullscreen");
+
+    expect(canFullscreen()).toBe(false);
   });
 });
