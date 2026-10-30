@@ -1,5 +1,5 @@
 // To do:
-// [ ] slug: lowercase ASCII words joined by "-"; accents dropped; at most 64 characters, never ending in "-"
+// [x] slug: lowercase ASCII words joined by "-"; accents dropped; at most 64 characters, never ending in "-"
 // [ ] loadDeck turns a minimal deck into its declared topics and cards, ids slugged from the questions
 // [ ] the version: 12 base64url characters, stable for the same deck, different when a card changes
 // [ ] loadDeck reports every problem at once, naming the card: undeclared topic, duplicate question, long question, unknown key
@@ -21,5 +21,16 @@ describe("slug", () => {
     expect(slug("What does Redis do by default when memory is full?")).toBe(
       "what-does-redis-do-by-default-when-memory-is-full",
     );
+  });
+
+  test("keeps only ASCII letters and digits, dropping accents", () => {
+    expect(slug("Why `SETNX` in a café, not Ünicode → ?")).toBe("why-setnx-in-a-cafe-not-unicode");
+  });
+
+  test("cuts at 64 characters and never ends in a dash", () => {
+    const id = slug("How can several workers take jobs from one Postgres table without blocking each other?");
+
+    expect(id).toBe("how-can-several-workers-take-jobs-from-one-postgres-table-withou");
+    expect(slug(`${"a".repeat(63)} b`)).toBe("a".repeat(63));
   });
 });
