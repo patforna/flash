@@ -1,0 +1,4 @@
+/* The stage (docs/plan.md §2, §4, §11): the layers over the card's 5:3 box, the blank cards behind, the buttons. */
+.stage {
+  position: relative;
+}
