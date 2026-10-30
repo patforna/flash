@@ -375,10 +375,10 @@ button.message:focus-visible {
   color: var(--rule-red);
 }
 
-/* Blank paper until the face is fitted, and while the card on top turns over: near 90° it is almost edge-on, and the
-   next card's question must not show through. */
+/* Blank paper until the face is fitted, and while the card on top turns over or is dealt: near 90° a turning card is
+   almost edge-on, and a dealt card fades in, so the next card's writing would show through. */
 .flipper > :not([data-fit]) > *,
-[data-flipping] [data-role="next"] .face > * {
+:is([data-flipping], [data-dealing]) [data-role="next"] .face > * {
   visibility: hidden;
 }
 

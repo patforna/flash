@@ -42,7 +42,7 @@ Look and motion:
 - The card being read stays upright; only the blank cards peeking behind it tilt: crisp text.
 - The card is designed in card units (600 × 360, `--u`, the `frame` has `container-type: size`): it lays out identically at any size.
 - The press scales `lift`, not the dragged layer: the card never trails the finger.
-- While a flip runs, the card underneath shows blank paper: near 90° the flipping card is almost edge-on and the next question must not show through.
+- While a flip or a deal runs, the card underneath shows blank paper (the stage's `data-flipping`, `data-dealing`): near 90° the flipping card is almost edge-on, and a dealt card fades in over it, so the next question must not show through. The deal's is a departure from plan §11, which blanks it for flips only: the M3 review saw both questions superimposed.
 - Reduced motion: animations become short fades, but the drag still follows the finger, without rotation; direct manipulation is not motion.
 - The fullscreen chip shows only in a browser tab: the installed app is already fullscreen (`display: fullscreen`), locked to landscape.
 - The fullscreen chip is an icon-only 44 px sticker named "Full screen": a visible label (121 px) breaks the six-row panel.

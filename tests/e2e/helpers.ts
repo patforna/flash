@@ -169,6 +169,27 @@ export async function questions(page: Page): Promise<string[]> {
   );
 }
 
+// Frame by frame while `moving` animates, through the first `upTo` of its duration: whether the card underneath
+// showed its question. A flip passes edge-on early in its turn; a deal fades its card in over all of its time.
+export function underneathWhile(page: Page, moving: string, upTo = 1): Promise<boolean[]> {
+  return page.evaluate(
+    ({ moving, upTo }) =>
+      new Promise<boolean[]>((resolve) => {
+        const frames: boolean[] = [];
+        const look = () => {
+          const animation = document.querySelector(moving)?.getAnimations()[0];
+          const writing = document.querySelector('[data-role="next"] h2');
+          const duration = Number(animation?.effect?.getTiming().duration);
+          if (!writing || !animation || Number(animation.currentTime) > duration * upTo) return resolve(frames);
+          frames.push(writing.checkVisibility({ visibilityProperty: true }));
+          requestAnimationFrame(look);
+        };
+        requestAnimationFrame(look);
+      }),
+    { moving, upTo },
+  );
+}
+
 // The card's centre, where a tap or a swipe starts.
 export async function centre(page: Page): Promise<Point> {
   const box = await layer(page).boundingBox();

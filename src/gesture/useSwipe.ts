@@ -90,15 +90,20 @@ function swipe(stage: RefObject<HTMLElement | null>, options: RefObject<SwipeOpt
   // A new card came from elsewhere (a reshuffle, a topic change): what was in flight belongs to the old one.
   function abort() {
     for (const animation of running?.animations ?? []) animation.cancel();
+    stop();
+    clear();
+  }
+
+  // Nothing in flight any more: the stage is idle, and no longer dealing.
+  function stop() {
     running = null;
     mark("idle");
-    clear();
+    stage.current?.removeAttribute("data-dealing");
   }
 
   function complete(run: Run) {
     if (running !== run) return;
-    running = null;
-    mark("idle");
+    stop();
     const { dir } = run;
     if (!dir) return clear();
     settling = run;
@@ -324,6 +329,8 @@ function swipe(stage: RefObject<HTMLElement | null>, options: RefObject<SwipeOpt
         ];
     const timing = fade ? { duration: MOTION.fadeMs } : { duration: MOTION.dealMs, easing: MOTION.dealEase };
     play([animate(layers.current, keyframes, timing)], null);
+    // The card comes in over the one underneath, whose writing would show through it: blank paper until it lands.
+    stage.current?.setAttribute("data-dealing", "");
   }
 
   return { listen, settle, commit, tap, deal };

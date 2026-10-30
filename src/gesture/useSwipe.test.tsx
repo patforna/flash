@@ -544,6 +544,31 @@ describe("deal(), when the view brings a new card", () => {
     press(stage, layer("current"), 700, 200);
     expect(animations[0]?.playState).toBe("finished");
   });
+
+  test("marks the stage dealing while it runs, for the card underneath to show blank paper", async () => {
+    const { stage, animations, swipe } = setup();
+    act(() => swipe().deal());
+    expect(stage.hasAttribute("data-dealing")).toBe(true);
+    await act(async () => animations[0]?.finish());
+    expect(stage.hasAttribute("data-dealing")).toBe(false);
+  });
+
+  test("…until a pointerdown finishes it, or a fling takes over", () => {
+    const { stage, layer, swipe } = setup();
+    act(() => swipe().deal());
+    press(stage, layer("current"), 700, 200).up(400);
+    expect(stage.hasAttribute("data-dealing")).toBe(false);
+    act(() => swipe().deal());
+    act(() => swipe().commit("next"));
+    expect(stage.hasAttribute("data-dealing")).toBe(false);
+  });
+
+  test("a deal that replaces one still running keeps the stage dealing", () => {
+    const { stage, swipe } = setup();
+    act(() => swipe().deal());
+    act(() => swipe().deal());
+    expect(stage.hasAttribute("data-dealing")).toBe(true);
+  });
 });
 
 describe("a flip still turning", () => {
