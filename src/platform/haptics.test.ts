@@ -2,9 +2,9 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { tick } from "./haptics";
 
 // To do:
-// [ ] vibrates for 8 ms under a coarse pointer
-// [ ] vibrates for the given duration
-// [ ] keeps still under a fine pointer
+// [x] vibrates for 8 ms under a coarse pointer
+// [x] vibrates for the given duration
+// [x] keeps still under a fine pointer
 // [ ] never throws: no vibration API; a vibration that throws
 
 // happy-dom matches (pointer: coarse) when the device reports touch points.
@@ -31,5 +31,22 @@ describe("tick", () => {
     tick();
 
     expect(vibrate).toHaveBeenCalledWith(8);
+  });
+
+  it("vibrates for the given duration", () => {
+    coarsePointer();
+    const vibrate = vibration();
+
+    tick(20);
+
+    expect(vibrate).toHaveBeenCalledWith(20);
+  });
+
+  it("keeps still under a fine pointer", () => {
+    const vibrate = vibration();
+
+    tick();
+
+    expect(vibrate).not.toHaveBeenCalled();
   });
 });

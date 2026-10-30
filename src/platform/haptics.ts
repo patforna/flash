@@ -1,3 +1,3 @@
 export function tick(ms = 8): void {
-  navigator.vibrate(ms);
+  if (matchMedia("(pointer: coarse)").matches) navigator.vibrate(ms);
 }
