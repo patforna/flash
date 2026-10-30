@@ -1,3 +1,3 @@
 export function canFullscreen(): boolean {
-  return false;
+  return document.fullscreenEnabled === true;
 }

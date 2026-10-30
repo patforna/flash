@@ -27,4 +27,12 @@ describe("canFullscreen", () => {
   it("is false where fullscreen isn't enabled", () => {
     expect(canFullscreen()).toBe(false);
   });
+
+  // happy-dom matches (display-mode: browser), as a tab does.
+  it("is true in a browser tab with fullscreen enabled and nothing fullscreen", () => {
+    define(document, "fullscreenEnabled", true);
+    define(document, "fullscreenElement", null);
+
+    expect(canFullscreen()).toBe(true);
+  });
 });
