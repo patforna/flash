@@ -182,6 +182,7 @@
   font-weight: 500;
   font-variation-settings: "INFM" 40;
   color: var(--ink-pen-soft);
+  text-wrap: balance;
 }
 
 /* --rule-baseline: where the baseline falls in a line box, so where each rule is drawn. Shantell's ascent and descent
@@ -292,11 +293,13 @@
   box-decoration-break: clone;
 }
 
-/* The last resort (a real card never gets here: the fit test fails the build): the answer scrolls, fading out. */
+/* The last resort (a real card never gets here: the fit test fails the build): the answer scrolls, fading out over
+   its last line and a half; the end padding lets the final line scroll clear of the fade. */
 .face[data-fit="scroll"] .answer {
+  padding-bottom: calc(1.5 * var(--pitch) * var(--u));
   overflow-y: auto;
   overscroll-behavior: contain;
-  mask-image: linear-gradient(to top, transparent, black calc(24 * var(--u)));
+  mask-image: linear-gradient(to top, transparent, black calc(1.5 * var(--pitch) * var(--u)));
 }
 
 /* The end card and the message cards (loading, error, empty): one face, centred. */
@@ -378,7 +381,8 @@ button.message:focus-visible {
   visibility: hidden;
 }
 
-/* Reduced motion: the faces cross-fade in place of the turn. */
+/* Reduced motion: the back dissolves in over the front in place of the turn. The front stays opaque underneath, so
+   nothing shows through halfway. */
 @media (prefers-reduced-motion: reduce) {
   .flipper,
   .flipper[data-side="back"] {
@@ -388,14 +392,10 @@ button.message:focus-visible {
 
   .back {
     transform: none;
-  }
-
-  .face {
     transition: opacity var(--flip-fade-duration) ease-out;
   }
 
-  .flipper[data-side="front"] > .back,
-  .flipper[data-side="back"] > .face:not(.back) {
+  .flipper[data-side="front"] > .back {
     opacity: 0;
   }
 }
