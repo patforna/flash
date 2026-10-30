@@ -1,14 +1,15 @@
 // To do:
-// [ ] a layer per role through renderCard, each with data-role and a lift inside; the previous and next layers inert
-// [ ] the blank cards behind show while at least 2, and at least 3, cards remain after the current one
-// [ ] a tap flips the card; on the end card it goes next (which reshuffles)
-// [ ] a swipe commits through the view once its animation finishes; the new card is at rest before paint
-// [ ] data-state: idle, dragging, animating
-// [ ] the press: data-pressed on the current layer from pointerdown to release, never a transform on it
-// [ ] data-flipping from a change of side until the flipper's transform transition ends, or the flip's duration
-// [ ] a new card from elsewhere (a reshuffle, a topic change) is dealt; one that survives isn't, nor one swiped to
-// [ ] buttons: "Show answer" / "Show question", "Previous" and "Next", which go as a swipe does
-// [ ] shortcuts: → and ← go as a swipe does, Space flips, s reshuffles, f calls onFullscreen
+// [x] a layer per role through renderCard, each with data-role and a lift inside; the previous and next layers inert
+// [x] the blank cards behind show while at least 2, and at least 3, cards remain after the current one
+// [x] a tap flips the card; on the end card it goes next (which reshuffles)
+// [x] a swipe commits through the view once its animation finishes; the new card is at rest before paint
+// [x] data-state: idle, dragging, animating
+// [x] the press: data-pressed on the current layer from pointerdown to release, never a transform on it
+// [x] data-flipping from a change of side until the flipper's transform transition ends, or the flip's duration
+// [x] a new card from elsewhere (a reshuffle, a topic change) is dealt; one that survives isn't, nor one swiped to
+// [x] buttons: "Show answer" / "Show question", "Previous" and "Next", which go as a swipe does
+// [x] shortcuts: → and ← go as a swipe does, Space flips, s reshuffles, f calls onFullscreen
+// (Styles aren't computed here: happy-dom gets no CSS modules. The feel check covers them in Chromium.)
 import { act, fireEvent, render, screen } from "@testing-library/react";
 import { StrictMode, useState } from "react";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";

@@ -87,45 +87,49 @@ export function CardStage({ view, renderCard, onFullscreen }: CardStageProps) {
       ref={stage}
       className={styles.stage}
       onTransitionEnd={(e) => {
-        if (e.propertyName === "transform" && e.target instanceof Element && e.target.matches("[data-side]"))
+        // The flipper is the card's [data-side] element (docs/plan.md §11).
+        if (e.propertyName === "transform" && e.target instanceof Element && e.target.matches("[data-side]")) {
           stopFlip();
+        }
       }}
     >
-      <div className={styles.blank} data-shown={remaining >= 3 || undefined} />
-      <div className={styles.blank} data-shown={remaining >= 2 || undefined} />
-      {ROLES.map((role) => {
-        const card = view[role];
-        return (
-          <div
-            key={role}
-            ref={(el) => {
-              layers.current[role] = el;
-            }}
-            className={styles.layer}
-            data-role={role}
-            inert={role !== "current"}
-          >
-            <div className={styles.lift}>{card !== null && renderCard(card, role)}</div>
-          </div>
-        );
-      })}
-      <button
-        type="button"
-        className={styles.prev}
-        aria-label="Previous"
-        disabled={view.prev === null}
-        onClick={() => swipe.commit("prev")}
-      >
-        ‹
-      </button>
-      {view.current !== "end" && (
-        <button type="button" className={styles.flip} onClick={swipe.tap}>
-          {view.side === "front" ? "Show answer" : "Show question"}
+      <div className={styles.box}>
+        <div className={styles.blank} data-shown={remaining >= 3 || undefined} />
+        <div className={styles.blank} data-shown={remaining >= 2 || undefined} />
+        {ROLES.map((role) => {
+          const card = view[role];
+          return (
+            <div
+              key={role}
+              ref={(el) => {
+                layers.current[role] = el;
+              }}
+              className={styles.layer}
+              data-role={role}
+              inert={role !== "current"}
+            >
+              <div className={styles.lift}>{card !== null && renderCard(card, role)}</div>
+            </div>
+          );
+        })}
+        <button
+          type="button"
+          className={styles.prev}
+          aria-label="Previous"
+          disabled={view.prev === null}
+          onClick={() => swipe.commit("prev")}
+        >
+          ‹
         </button>
-      )}
-      <button type="button" className={styles.next} aria-label="Next" onClick={() => swipe.commit("next")}>
-        ›
-      </button>
+        {view.current !== "end" && (
+          <button type="button" className={styles.flip} onClick={swipe.tap}>
+            {view.side === "front" ? "Show answer" : "Show question"}
+          </button>
+        )}
+        <button type="button" className={styles.next} aria-label="Next" onClick={() => swipe.commit("next")}>
+          ›
+        </button>
+      </div>
     </div>
   );
 }
