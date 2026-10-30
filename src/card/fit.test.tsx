@@ -10,10 +10,12 @@
 // [x] useFit: "scroll" when no step fits
 // [x] useFit: measures once per key, not on every render (a flip re-renders the card; measuring forces layout)
 // [x] useFit: measures again when its key changes
-import { render, screen, waitFor } from "@testing-library/react";
+import { configure, render, screen, waitFor } from "@testing-library/react";
 import { useLayoutEffect, useRef } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { chooseStep, useFit } from "./fit";
+
+configure({ reactStrictMode: true });
 
 describe("chooseStep", () => {
   it("chooses step 0, the largest type, when it fits", () => {
