@@ -35,16 +35,20 @@ export function loadDeck(toml: string): Deck {
   const file = data as CardsFile;
   const cards = Array.isArray(file.card) ? file.card : [];
 
+  // A problem with a card names it; one with the file comes first.
   const problems: [card: number, text: string][] = [];
-  const report = (card: number, text: string) => {
+  const label = (card: number) => {
     const question = cards[card]?.question;
-    const label = typeof question === "string" ? `card ${card + 1} "${slug(question.trim())}"` : `card ${card + 1}`;
-    problems.push([card, `${label}: ${text}`]);
+    return typeof question === "string" ? `card ${card + 1} "${slug(question.trim())}"` : `card ${card + 1}`;
+  };
+  const report = (card: number | undefined, text: string) => {
+    problems.push(card === undefined ? [-1, text] : [card, `${label(card)}: ${text}`]);
   };
 
   for (const issue of issues) {
-    const [, card] = issue.path;
-    if (typeof card === "number") for (const text of explain(issue)) report(card, text);
+    const [key, card, ...field] = issue.path;
+    if (key === "card" && typeof card === "number") for (const text of explain(issue, field)) report(card, text);
+    else for (const text of explain(issue, issue.path)) report(undefined, text);
   }
 
   const seen = new Map<string, number>();
@@ -88,8 +92,12 @@ function parseToml(toml: string) {
   }
 }
 
-function explain(issue: z.core.$ZodIssue): string[] {
-  return issue.code === "unrecognized_keys" ? issue.keys.map((key) => `unknown key "${key}"`) : [issue.message];
+function explain(issue: z.core.$ZodIssue, path: PropertyKey[]): string[] {
+  if (issue.code === "unrecognized_keys") return issue.keys.map((key) => `unknown key "${key}"`);
+  const field = path.map((key) => (typeof key === "number" ? `item ${key + 1}` : String(key))).join(" ");
+  if (issue.code !== "invalid_type") return [`${field}: ${issue.message}`];
+  if (issue.input === undefined) return [`${field} is missing`];
+  return [`${field} must be ${/^[aeiou]/.test(issue.expected) ? "an" : "a"} ${issue.expected}`];
 }
 
 // The ETag and what /healthz reports: the first 12 characters of the base64url SHA-256 of the deck's JSON.

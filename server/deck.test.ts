@@ -4,7 +4,7 @@
 // [x] the version: 12 base64url characters, stable for the same deck, different when a card changes
 // [x] loadDeck reports every problem at once, naming the card: undeclared topic, duplicate question, long question, unknown key
 // [x] a TOML syntax error is one problem with its line and column
-// [ ] shape: unknown top-level key, missing field, wrong type; a misspelt key doesn't stop the other cards' checks
+// [x] shape: unknown top-level key, missing field, wrong type; a misspelt key doesn't stop the other cards' checks
 // [ ] declared topics: 1–30, 1–20 characters, the pattern, no trailing space, no repeats, each used
 // [ ] cards: 1–500
 // [ ] a card's topics: 1–3, declared, no repeats
@@ -120,6 +120,30 @@ answer = "Dead tuples."
   test("reports a TOML syntax error with its line and column", () => {
     expect(problemsOf('topics = ["Redis"]\n\n[[card]]\nquestion = What is Redis?\n')).toEqual([
       "line 4, column 12: invalid value",
+    ]);
+  });
+
+  test("reports the shape: unknown keys, missing fields and wrong types, and checks the other cards", () => {
+    const toml = stringify({
+      topics: ["Redis"],
+      version: 1,
+      card: [
+        { question: "Which key is misspelt?", topic: ["Redis"], answer: "topic" },
+        card({ question: 42 }),
+        card({ question: "Which topics are a string?", topics: "Redis" }),
+        card({ question: "Which topic is undeclared?", topics: ["Redis", 7] }),
+        card({ question: "Is this checked as well?", topics: ["Kafka"] }),
+      ],
+    });
+
+    expect(problemsOf(toml)).toEqual([
+      'unknown key "version"',
+      'card 1 "which-key-is-misspelt": topics is missing',
+      'card 1 "which-key-is-misspelt": unknown key "topic"',
+      "card 2: question must be a string",
+      'card 3 "which-topics-are-a-string": topics must be an array',
+      'card 4 "which-topic-is-undeclared": topics item 2 must be a string',
+      'card 5 "is-this-checked-as-well": topic "Kafka" is not declared',
     ]);
   });
 });
