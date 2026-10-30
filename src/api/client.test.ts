@@ -1,8 +1,8 @@
 // To do:
 // [x] fetchDeck gets the deck with GET /api/cards at the client's base
 // [x] fetchDeck throws on a status other than 2xx, naming it
-// [ ] the client's base defaults to the page's origin
-import { describe, expect, test } from "vitest";
+// [x] the client's base defaults to the page's origin
+import { afterEach, describe, expect, test, vi } from "vitest";
 import type { Deck } from "../../shared/types";
 import { createClient, fetchDeck } from "./client";
 
@@ -38,4 +38,16 @@ describe("fetchDeck", () => {
 
     await expect(fetchDeck(createClient("https://flash.test", fetchImpl))).rejects.toThrow("GET /api/cards: 503");
   });
+
+  test("asks the page's own origin through the global fetch by default", async () => {
+    const { requests, fetchImpl } = server(200, deck);
+    vi.stubGlobal("fetch", fetchImpl);
+
+    expect(await fetchDeck()).toEqual(deck);
+    expect(requests).toEqual([`GET ${location.origin}/api/cards`]);
+  });
+});
+
+afterEach(() => {
+  vi.unstubAllGlobals();
 });
