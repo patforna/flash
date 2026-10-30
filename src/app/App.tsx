@@ -2,13 +2,15 @@ import { useEffect, useMemo, useState } from "react";
 import type { Deck } from "../../shared/types";
 import { useDeckQuery } from "../api/useDeckQuery";
 import { CardView } from "../card/CardView";
-import { EndCard } from "../card/EndCard";
+import { EndCard, endCardText } from "../card/EndCard";
 import { MessageCard } from "../card/MessageCard";
+import type { DeckView } from "../deck/types";
 import { useDeck } from "../deck/useDeck";
 import { colourFor } from "../panel/colours";
 import { TopicPanel } from "../panel/TopicPanel";
 import { toggleFullscreen } from "../platform/fullscreen";
 import { CardStage } from "../stage/CardStage";
+import styles from "./App.module.css";
 
 // A deck that arrives within this long never shows the loading card, so a quick start doesn't flash it.
 const LOADING_AFTER_MS = 200;
@@ -65,8 +67,19 @@ function Reader({ deck }: { deck: Deck }) {
         }
         onFullscreen={toggleFullscreen}
       />
+      {/* The cards remount on every move, so they can't announce it: this region stays and speaks for them. */}
+      <p className={styles.announcer} aria-live="polite">
+        {whereYouAre(view)}
+      </p>
     </>
   );
+}
+
+// "Card 7 of 16", or what the end card says.
+function whereYouAre(view: DeckView): string {
+  if (view.current !== "end") return `Card ${view.position} of ${view.total}`;
+  const { title, hint } = endCardText(view.total);
+  return `${title} ${hint}`;
 }
 
 // How many cards carry each topic: the panel names each chip with its count.

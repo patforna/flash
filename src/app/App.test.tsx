@@ -3,9 +3,9 @@
 // [x] the error card once the deck can't be fetched; tapping it fetches again
 // [ ] the empty card for a deck without cards
 // [x] the first card of a pass on the stage, front up; the next card underneath, front up too
-// [ ] the panel: All with the deck's total, the topics in order with their counts, the wordmark at its foot
-// [ ] a chip toggles its topic, All clears the selection
-// [ ] colours by the topic's declared index, on the chips and the card
+// [x] the panel: All with the deck's total, the topics in order with their counts, the wordmark at its foot
+// [x] a chip toggles its topic, All clears the selection
+// [x] colours by the topic's declared index, on the chips and the card
 // [x] the end card closes the pass
 // [ ] a live region says where you are: "Card 1 of 3", the end card's text
 // [ ] haptics on next, previous, reshuffle, the end card's reshuffle and a chip toggle; never on a flip
@@ -232,3 +232,26 @@ describe("topics", () => {
 });
 
 const sticker = (chip: HTMLElement) => chip.style.getPropertyValue("--sticker");
+
+describe("announcements", () => {
+  const live = () => document.querySelector('[aria-live="polite"]');
+
+  test("one live region says where you are, and stays put as the cards come and go", async () => {
+    await reading();
+    const region = live();
+    expect(region?.textContent).toBe("Card 1 of 3");
+
+    await goNext();
+
+    expect(live()).toBe(region);
+    expect(region?.textContent).toBe("Card 2 of 3");
+  });
+
+  test("on the end card it reads out the end card", async () => {
+    await reading();
+
+    for (let i = 0; i < 3; i++) await goNext();
+
+    expect(live()?.textContent).toBe("That's all 3. Tap or swipe to shuffle again.");
+  });
+});
