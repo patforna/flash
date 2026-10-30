@@ -71,7 +71,8 @@ describe("FullscreenChip", () => {
 
     renderChip();
 
-    expect(chip()?.querySelector("svg")?.getAttribute("aria-hidden")).toBe("true");
+    const button = screen.getByRole("button", { name: "Full screen" });
+    expect(button.querySelector("svg")?.getAttribute("aria-hidden")).toBe("true");
   });
 
   it("goes fullscreen when clicked", () => {

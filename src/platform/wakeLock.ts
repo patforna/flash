@@ -1,8 +1,8 @@
 import { useEffect } from "react";
 
 // Keeps the screen on while reading: from the first tap or key until idleMs pass without one. The browser drops the
-// lock whenever the page is hidden, so a lock held then is asked for again on return. Input is caught on the way down,
-// so no handler can hide it.
+// lock whenever the page is hidden, so one that was held is asked for again when the page is back. Input is heard in
+// the capture phase, where no other handler can stop it.
 export function useWakeLock(idleMs = 300_000): void {
   useEffect(() => {
     const { wakeLock } = navigator;
