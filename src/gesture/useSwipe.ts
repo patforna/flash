@@ -136,6 +136,11 @@ function swipe(stage: RefObject<HTMLElement | null>, options: RefObject<SwipeOpt
   function slideIn(g: Gesture, dx: number, vx: number) {
     const { prev } = g.layers;
     if (!prev) return;
+    if (options.current.reducedMotion()) {
+      write(prev, "translateX(0px)");
+      const fade = animate(prev, [{ opacity: 0 }, { opacity: 1 }], { duration: MOTION.fadeMs, fill: "forwards" });
+      return play([fade], "prev");
+    }
     const from = gone(g.rect) + dx;
     const timing = { duration: flingDuration(-from, vx), easing: flingEasing(-from, vx) };
     play(
@@ -151,6 +156,7 @@ function swipe(stage: RefObject<HTMLElement | null>, options: RefObject<SwipeOpt
 
   // Each moved card animates from where it is to its resting style, which it has again as soon as this starts.
   function springBack(g: Gesture) {
+    if (options.current.reducedMotion()) return clear();
     const timing = { duration: MOTION.cancelMs, easing: MOTION.cancelEase };
     const animations: Animation[] = [];
     for (const [el, rest] of [

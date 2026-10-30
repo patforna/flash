@@ -431,4 +431,23 @@ describe("reduced motion", () => {
     await act(async () => animations[0]?.finish());
     expect(onCommit).toHaveBeenCalledExactlyOnceWith("next");
   });
+  test("a commit to the previous card fades it in, in place", () => {
+    const { stage, layer, animations } = setup({ reducedMotion });
+    const finger = press(stage, layer("current"), 400, 200);
+    for (let i = 1; i <= 8; i++) finger.move(400 + 20 * i, 200);
+    finger.up();
+    expect(animations.map((a) => [a.el, a.keyframes, a.options])).toEqual([
+      [layer("prev"), [{ opacity: 0 }, { opacity: 1 }], { duration: 140, fill: "forwards" }],
+    ]);
+    expect(inline(layer("prev"))).toEqual({ transform: "translateX(0px)", visibility: "visible" });
+  });
+
+  test("a cancel puts everything back at once", () => {
+    const { stage, layer, animations } = setup({ reducedMotion });
+    const finger = press(stage, layer("current"), 400, 200);
+    finger.move(450, 200, 50);
+    finger.up(100);
+    expect(animations).toEqual([]);
+    expect(inline(layer("prev"))).toEqual({ transform: "", visibility: "" });
+  });
 });
