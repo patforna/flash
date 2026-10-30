@@ -12,7 +12,7 @@
 // - [x] toggleTopic and clearTopics persist the selection
 // - [x] clearTopics returns to every card; with nothing selected it changes nothing
 // - [x] a new deck (a different version) keeps the selection, drops unknown topics and deals afresh
-// - [ ] the same version in a new object changes nothing
+// - [x] the same version in a new object changes nothing
 // - [ ] the callbacks keep their identity across renders
 // - [ ] localStorage by default; a blocked localStorage is ignored
 
@@ -191,5 +191,13 @@ describe("useDeck", () => {
     expect(result.current.selected).toEqual(new Set(["Redis"]));
     expect(result.current).toMatchObject({ prev: null, side: "front", position: 1, total: 2, topics: ["Redis", "Postgres"] });
     expect(walk(result).toSorted()).toEqual(["a", "f"]);
+  });
+
+  it("changes nothing for the same deck version in a new object", () => {
+    const { result, rerender } = setup();
+    act(() => result.current.goNext());
+    const { prev, current } = result.current;
+    rerender({ ...deck });
+    expect(result.current).toMatchObject({ prev, current, position: 2 });
   });
 });
