@@ -4,7 +4,7 @@
 // [x] All is not pressed while a topic is selected
 // [x] the topics follow All in the given order, each pressed while selected
 // [x] each chip's accessible name carries its count, "1 card" for one
-// [ ] the lead comes first
+// [x] the lead comes first
 // [ ] tapping All calls onAll; tapping a topic calls onToggle with its label
 // [ ] each chip carries its colour, and a fixed tilt within ±1.5° that differs from its neighbours'
 import { configure, render, screen } from "@testing-library/react";
@@ -69,4 +69,10 @@ describe("TopicPanel", () => {
       expect(screen.getByRole("button", { name })).toBeTruthy();
     },
   );
+
+  it("puts the lead before All", () => {
+    renderPanel({ lead: <button type="button">Full screen</button> });
+    const chips = screen.getAllByRole("button").map((chip) => chip.textContent);
+    expect(chips.slice(0, 2)).toEqual(["Full screen", "All · 65"]);
+  });
 });
