@@ -481,4 +481,19 @@ describe("commit(dir), for keys and buttons", () => {
     });
     expect(onCommit).toHaveBeenCalledExactlyOnceWith("next");
   });
+
+  test('commit("prev") brings the previous card in from off screen', async () => {
+    const { layer, animations, onCommit, swipe } = setup();
+    act(() => swipe().commit("prev"));
+    expect(animations.map((a) => [a.el, a.keyframes, a.options])).toEqual([
+      [
+        layer("prev"),
+        [{ transform: "translateX(-960px)" }, { transform: "translateX(0px)" }],
+        { duration: 320, easing: "cubic-bezier(0.2, 0.7, 0.3, 1)", fill: "forwards" },
+      ],
+    ]);
+    expect(layer("prev").style.visibility).toBe("visible");
+    await act(async () => animations[0]?.finish());
+    expect(onCommit).toHaveBeenCalledExactlyOnceWith("prev");
+  });
 });

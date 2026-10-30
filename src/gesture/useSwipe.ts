@@ -50,6 +50,11 @@ function swipe(stage: RefObject<HTMLElement | null>, options: RefObject<SwipeOpt
     el.style.transform = transform;
     touched.add(el);
   };
+  // The previous card rests hidden; it shows while it comes back.
+  const show = (el: HTMLElement) => {
+    el.style.visibility = "visible";
+    touched.add(el);
+  };
   const animate = (el: Element, keyframes: Keyframe[], timing: KeyframeAnimationOptions) =>
     (options.current.animate ?? ((target, k, o) => target.animate(k, o)))(el, keyframes, timing);
 
@@ -99,7 +104,7 @@ function swipe(stage: RefObject<HTMLElement | null>, options: RefObject<SwipeOpt
   function follow(g: Gesture, dx: number) {
     const { layers, rect } = g;
     if (dx > 0 && layers.prev) {
-      layers.prev.style.visibility = "visible";
+      show(layers.prev);
       write(layers.prev, `translateX(${gone(rect) + dx}px)`);
       return;
     }
@@ -134,19 +139,21 @@ function swipe(stage: RefObject<HTMLElement | null>, options: RefObject<SwipeOpt
     play(animations, "next");
   }
 
-  function slideIn(layers: Layers, rect: DOMRect, dx: number, vx: number) {
+  function slideIn(layers: Layers, rect: DOMRect, dx: number, vx: number, easing?: string) {
     const { prev } = layers;
     if (!prev) return;
+    show(prev);
     if (options.current.reducedMotion()) {
       write(prev, "translateX(0px)");
       const fade = animate(prev, [{ opacity: 0 }, { opacity: 1 }], { duration: MOTION.fadeMs, fill: "forwards" });
       return play([fade], "prev");
     }
     const from = gone(rect) + dx;
-    const timing = { duration: flingDuration(-from, vx), easing: flingEasing(-from, vx) };
+    const timing = { duration: flingDuration(-from, vx), easing: easing ?? flingEasing(-from, vx) };
+    const at = prev.style.transform || `translateX(${from}px)`;
     play(
       [
-        animate(prev, [{ transform: prev.style.transform }, { transform: "translateX(0px)" }], {
+        animate(prev, [{ transform: at }, { transform: "translateX(0px)" }], {
           ...timing,
           fill: "forwards",
         }),
@@ -160,7 +167,8 @@ function swipe(stage: RefObject<HTMLElement | null>, options: RefObject<SwipeOpt
     finishRunning();
     const layers = options.current.layers();
     if (!layers) return;
-    if (dir === "next") fling(layers, layers.current.getBoundingClientRect(), 0, 0, MOTION.commitEase);
+    const rect = layers.current.getBoundingClientRect();
+    (dir === "next" ? fling : slideIn)(layers, rect, 0, 0, MOTION.commitEase);
   }
 
   // Each moved card animates from where it is to its resting style, which it has again as soon as this starts.
