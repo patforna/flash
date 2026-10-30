@@ -5,7 +5,7 @@
 // [x] `-` and `1.` lists render tight, `start` kept on `ol`; a lead-in line stays a paragraph; items keep their breaks
 // [x] fenced code renders as pre > code without its class, its lines and escapes intact
 // [x] inline code and bold render; -> and <- are typeset as → and ← outside code
-// [ ] raw HTML is escaped text, not an error; tables, strikethrough, task lists and autolinks stay text
+// [x] raw HTML is escaped text, not an error; tables, strikethrough, task lists and autolinks stay text
 // [ ] rejects a heading (ATX and setext), a link, an image, a block quote, a rule and emphasis, each with its reason
 // [ ] rejects a loose list, a list inside a list and a code block inside a list item
 // [ ] rejects an unclosed fence, caught on the source
@@ -45,6 +45,16 @@ describe("renderAnswer", () => {
   test("renders inline code and bold, and typesets -> and <- as arrows outside code", () => {
     expect(renderAnswer("A -> B, `a -> b`, **x <- y**\n- c -> d\n```\ne <- f\n```")).toEqual({
       html: "<p>A → B, <code>a -&gt; b</code>, <strong>x ← y</strong></p><ul><li>c → d</li></ul><pre><code>e &lt;- f\n</code></pre>",
+    });
+  });
+
+  test("leaves raw HTML, tables, strikethrough, task lists, bare links and indented code as text", () => {
+    const src = "<b>raw</b>\n\n<div>\nblock\n</div>\n\n    indented\n\n| a | b |\n|---|---|\n\n~~gone~~ https://x.dev\n\n- [ ] task";
+
+    expect(renderAnswer(src)).toEqual({
+      html:
+        "<p>&lt;b&gt;raw&lt;/b&gt;</p><p>&lt;div&gt;<br>block<br>&lt;/div&gt;</p><p>indented</p>" +
+        "<p>| a | b |<br>|---|---|</p><p>~~gone~~ https://x.dev</p><ul><li>[ ] task</li></ul>",
     });
   });
 });
