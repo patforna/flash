@@ -2,7 +2,8 @@
 // [x] printable ASCII is covered, from its first character to its last; control characters are not
 // [x] what only Radon covers counts (the font stack falls back to it): → ← ≤ ≥ ≈
 // [x] what neither font covers does not: emoji, CJK, Greek beyond Ω
-import { describe, expect, test } from "bun:test";
+// Run by `bun test`, which serves vitest's API: shared/ is in the browser program too, which has no `bun:test`.
+import { describe, expect, test } from "vitest";
 import { isCovered } from "./glyphs";
 
 const covered = (text: string) => [...text].filter((ch) => isCovered(ch.codePointAt(0) ?? 0));

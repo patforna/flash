@@ -2,7 +2,8 @@
 // [x] CardsFileSchema accepts topics and cards
 // [x] it rejects an unknown key at the top level and on a card (catches `topic =`)
 // [x] DeckSchema accepts the wire shape and rejects anything else
-import { describe, expect, test } from "bun:test";
+// Run by `bun test`, which serves vitest's API: shared/ is in the browser program too, which has no `bun:test`.
+import { describe, expect, test } from "vitest";
 import { CardsFileSchema, DeckSchema } from "./schema";
 
 const card = { question: "What is Redis?", topics: ["Redis"], answer: "A key-value store." };
