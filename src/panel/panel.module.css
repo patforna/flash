@@ -24,6 +24,7 @@
   --turn: 0deg;
   position: relative;
   isolation: isolate;
+  min-width: 44px; /* a label may be a single letter */
   height: 44px;
   padding: 0 10px;
   border: 0;
