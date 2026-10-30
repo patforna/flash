@@ -20,5 +20,5 @@ export function flingDuration(remainingPx: number, vPxPerMs: number): number {
 export function flingEasing(remainingPx: number, vPxPerMs: number): string {
   const duration = flingDuration(remainingPx, vPxPerMs);
   const y1 = clamp((0.2 * Math.abs(vPxPerMs) * duration) / remainingPx, 0.1, 0.7);
-  return `cubic-bezier(0.2, ${y1}, 0.3, 1)`;
+  return `cubic-bezier(0.2, ${Math.round(y1 * 1000) / 1000}, 0.3, 1)`;
 }

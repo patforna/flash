@@ -30,6 +30,10 @@ describe("flingEasing", () => {
     expect(flingEasing(800, -2.5)).toBe("cubic-bezier(0.2, 0.2, 0.3, 1)");
   });
 
+  test("gives y1 to three decimals", () => {
+    expect(flingEasing(960, 2.5)).toBe("cubic-bezier(0.2, 0.167, 0.3, 1)");
+  });
+
   test("never starts steeper than the 3.5 the duration assumes", () => {
     expect(flingEasing(700, 10)).toBe("cubic-bezier(0.2, 0.7, 0.3, 1)");
     expect(flingEasing(300, 10)).toBe("cubic-bezier(0.2, 0.7, 0.3, 1)");
