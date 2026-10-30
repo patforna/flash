@@ -31,6 +31,10 @@ const REASONS: Record<string, string> = {
   blockquote: "a block quote (a line starting with >)",
   hr: "a horizontal rule (a line of ---, *** or ___)",
   em: "emphasis (*text* or _text_): only **bold** is allowed",
+  ul: "a list",
+  ol: "a list",
+  li: "a list",
+  pre: "a code block",
 };
 
 // A list item holds lines of text only.
@@ -49,6 +53,7 @@ export function renderAnswer(src: string): Rendered {
 
 export function renderQuestion(src: string): Rendered {
   const { html, problems } = render(src, QUESTION_TAGS);
+  if (src.includes("\n")) problems.add("more than one line");
   return result({ html: html.replace(/^<p>(.*)<\/p>$/, "$1"), problems });
 }
 
@@ -69,7 +74,7 @@ function render(src: string, allowed: ReadonlySet<string>) {
     .replaceAll("<br />\n", "\n")
     .replace(TOKEN, (_: string, slash: string, name: string, attrs: string, text: string | undefined) => {
       if (text !== undefined) {
-        // Code keeps its lines; in a paragraph or an item each line is a line on the card; whitespace between blocks goes.
+        // Code keeps its lines; in a paragraph or an item, each line is a line on the card; between blocks, it goes.
         if (open.includes("pre")) return text;
         if (!open.some((t) => t === "p" || t === "li")) return "";
         const lines = text.replaceAll("\n", "<br>");

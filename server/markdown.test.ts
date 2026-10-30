@@ -10,8 +10,8 @@
 // [x] rejects a loose list, a list inside a list and a code block inside a list item
 // [x] rejects an unclosed fence, caught on the source
 // [x] reports every reason at once, each once
-// [ ] renderQuestion: plain text without the outer <p>; inline code, bold and arrows
-// [ ] renderQuestion rejects a second line, block markup and emphasis
+// [x] renderQuestion: plain text without the outer <p>; inline code, bold and arrows
+// [x] renderQuestion rejects a second line, block markup and emphasis
 import { describe, expect, test } from "bun:test";
 import { renderAnswer, renderQuestion } from "./markdown";
 
@@ -49,7 +49,8 @@ describe("renderAnswer", () => {
   });
 
   test("leaves raw HTML, tables, strikethrough, task lists, bare links and indented code as text", () => {
-    const src = "<b>raw</b>\n\n<div>\nblock\n</div>\n\n    indented\n\n| a | b |\n|---|---|\n\n~~gone~~ https://x.dev\n\n- [ ] task";
+    const src =
+      "<b>raw</b>\n\n<div>\nblock\n</div>\n\n    indented\n\n| a | b |\n|---|---|\n\n~~gone~~ https://x.dev\n\n- [ ] task";
 
     expect(renderAnswer(src)).toEqual({
       html:
@@ -109,5 +110,17 @@ describe("renderQuestion", () => {
     expect(renderQuestion("What does `SETNX` do -> **and why**?")).toEqual({
       html: "What does <code>SETNX</code> do → <strong>and why</strong>?",
     });
+  });
+
+  test.each([
+    ["What is\nthis?", ["more than one line"]],
+    ["1. What is a list?", ["a list"]],
+    ["- What is a list?", ["a list"]],
+    ["```What?", ["an unclosed code fence (``` or ~~~)", "a code block"]],
+    ["# What is a heading?", ["a heading (a line starting with #, or a line underlined with --- or ===)"]],
+    ["What is *this*?", ["emphasis (*text* or _text_): only **bold** is allowed"]],
+    ["What is [this](https://x.dev)?", ["a link"]],
+  ])("rejects %p with its reasons", (src, problems) => {
+    expect(renderQuestion(src)).toEqual({ problems });
   });
 });
