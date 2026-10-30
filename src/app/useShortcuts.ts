@@ -30,7 +30,9 @@ export function useShortcuts(h: Handlers): void {
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       const action = KEYS[e.key];
-      if (action) h[action]();
+      if (!action) return;
+      e.preventDefault();
+      h[action]();
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);

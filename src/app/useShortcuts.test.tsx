@@ -45,4 +45,10 @@ describe("useShortcuts", () => {
     fireEvent.keyDown(document.body, { key: "x" });
     for (const handler of Object.values(h)) expect(handler).not.toHaveBeenCalled();
   });
+
+  test("a handled key doesn't scroll the page; any other key keeps its default", () => {
+    setup();
+    expect(fireEvent.keyDown(document.body, { key: "PageDown" })).toBe(false);
+    expect(fireEvent.keyDown(document.body, { key: "x" })).toBe(true);
+  });
 });
