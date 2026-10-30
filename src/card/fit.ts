@@ -8,7 +8,7 @@ export function chooseStep(fits: (step: number) => boolean, steps: number): numb
 }
 
 // The faces' type: the handwriting, and Radon for code and the counter's digits.
-const FONTS = ['1em "Shantell Sans"', '1em "Monaspace Radon"'];
+export const FONTS = ['1em "Shantell Sans"', '1em "Monaspace Radon"'];
 
 // A face fits when none of its parts overflows its box, down or across (a code line wider than its column).
 function overflows(face: HTMLElement): boolean {

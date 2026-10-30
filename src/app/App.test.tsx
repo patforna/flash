@@ -1,7 +1,7 @@
 // To do:
 // [x] nothing for 200 ms while the deck loads, then a card reading "shuffling…"
 // [x] the error card once the deck can't be fetched; tapping it fetches again
-// [ ] the empty card for a deck without cards
+// [x] the empty card for a deck without cards
 // [x] the first card of a pass on the stage, front up; the next card underneath, front up too
 // [x] the panel: All with the deck's total, the topics in order with their counts, the wordmark at its foot
 // [x] a chip toggles its topic, All clears the selection
@@ -111,6 +111,8 @@ afterEach(() => {
   vi.restoreAllMocks();
   Reflect.deleteProperty(document, "fonts");
   localStorage.clear();
+  // The tests share one page load.
+  performance.clearMarks("flash:first-card");
 });
 
 describe("loading", () => {
@@ -368,5 +370,33 @@ describe("the wake lock", () => {
     fireEvent.pointerDown(layer("current"));
 
     expect(request).toHaveBeenCalledWith("screen");
+  });
+});
+
+describe("the first card's mark", () => {
+  const marks = () => performance.getEntriesByName("flash:first-card", "mark").length;
+
+  // Fonts that are still downloading, until `arrive()`.
+  function fontsOnTheirWay() {
+    let arrive = () => {};
+    const loaded = new Promise<FontFace[]>((resolve) => {
+      arrive = () => resolve([]);
+    });
+    Object.defineProperty(document, "fonts", { configurable: true, value: { check: () => false, load: () => loaded } });
+    return () => act(async () => arrive());
+  }
+
+  test("is set once the fonts are in and the first card is on screen, once per page load", async () => {
+    const arrive = fontsOnTheirWay();
+    await reading();
+    expect(marks()).toBe(0);
+
+    await arrive();
+    expect(marks()).toBe(1);
+
+    await goNext();
+    renderApp();
+    await act(async () => {});
+    expect(marks()).toBe(1);
   });
 });

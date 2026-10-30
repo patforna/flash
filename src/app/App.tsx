@@ -3,6 +3,7 @@ import type { Deck } from "../../shared/types";
 import { useDeckQuery } from "../api/useDeckQuery";
 import { CardView } from "../card/CardView";
 import { EndCard, endCardText } from "../card/EndCard";
+import { FONTS } from "../card/fit";
 import { MessageCard } from "../card/MessageCard";
 import type { DeckView } from "../deck/types";
 import { useDeck } from "../deck/useDeck";
@@ -38,6 +39,7 @@ const OFFSET = { prev: -1, current: 0, next: 1 } as const;
 
 function Reader({ deck }: { deck: Deck }) {
   const view = useDeck(deck);
+  useFirstCardMark();
   const counts = useMemo(() => countTopics(deck), [deck]);
   // A topic's colour is its place in the deck's declared order, the same on its chip and on every card.
   const colourOf = useMemo(() => {
@@ -102,6 +104,18 @@ function whereYouAre(view: DeckView): string {
 // How many cards carry each topic: the panel names each chip with its count.
 function countTopics({ topics, cards }: Deck): Map<string, number> {
   return new Map(topics.map((topic) => [topic, cards.filter((card) => card.topics.includes(topic)).length]));
+}
+
+// The first card is on screen once the fonts it is written in are in: the performance budgets and the screenshots
+// wait for this mark, set once per page load.
+const FIRST_CARD = "flash:first-card";
+
+function useFirstCardMark() {
+  useEffect(() => {
+    Promise.all(FONTS.map((font) => document.fonts.load(font))).then(() => {
+      if (performance.getEntriesByName(FIRST_CARD, "mark").length === 0) performance.mark(FIRST_CARD);
+    });
+  }, []);
 }
 
 // True once `ms` have passed since the first render.
