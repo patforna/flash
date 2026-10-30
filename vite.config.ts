@@ -34,7 +34,8 @@ export default defineConfig({
         skipWaiting: true,
         clientsClaim: true,
         cleanupOutdatedCaches: true,
-        globPatterns: ["**/*.{js,css,html,woff2,svg,png,webmanifest}"],
+        // The manifest is precached by the plugin itself.
+        globPatterns: ["**/*.{js,css,html,woff2,svg,png}"],
         navigateFallback: "/index.html",
         navigateFallbackDenylist: [/^\/api\//, /^\/healthz/],
         runtimeCaching: [
