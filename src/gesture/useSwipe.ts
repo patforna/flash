@@ -76,6 +76,13 @@ function swipe(stage: RefObject<HTMLElement | null>, options: RefObject<SwipeOpt
     complete(run);
   }
 
+  // A new card came from elsewhere (a reshuffle, a topic change): what was in flight belongs to the old one.
+  function abort() {
+    for (const animation of running?.animations ?? []) animation.cancel();
+    running = null;
+    clear();
+  }
+
   function complete(run: Run) {
     if (running !== run) return;
     running = null;
@@ -263,6 +270,7 @@ function swipe(stage: RefObject<HTMLElement | null>, options: RefObject<SwipeOpt
   }
 
   function deal() {
+    abort();
     const layers = options.current.layers();
     if (!layers) return;
     const keyframes = [

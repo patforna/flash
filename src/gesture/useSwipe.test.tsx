@@ -544,4 +544,22 @@ describe("deal(), when the view brings a new card", () => {
       ],
     ]);
   });
+
+  test("drops a fling in flight without committing it: the pass it belonged to has gone", async () => {
+    const { layer, animations, onCommit, swipe } = setup();
+    const next = layer("next");
+    act(() => swipe().commit("next"));
+    act(() => swipe().deal());
+    await act(async () => {});
+    expect(onCommit).not.toHaveBeenCalled();
+    expect(animations.slice(0, 2).map((a) => a.playState)).toEqual(["idle", "idle"]);
+    expect(inline(next)).toEqual({ transform: "", visibility: "" });
+  });
+
+  test("a pointerdown mid-deal finishes it", () => {
+    const { stage, layer, animations, swipe } = setup();
+    act(() => swipe().deal());
+    press(stage, layer("current"), 700, 200);
+    expect(animations[0]?.playState).toBe("finished");
+  });
 });
