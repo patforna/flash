@@ -1,4 +1,9 @@
+import type { Card } from "../../shared/types";
 import type { Rng } from "./types";
+
+export function poolFor(cards: readonly Card[], _selected: ReadonlySet<string>): string[] {
+  return cards.map((c) => c.id);
+}
 
 // Fisher–Yates, on a copy.
 export function shuffle<T>(xs: readonly T[], rng: Rng): T[] {

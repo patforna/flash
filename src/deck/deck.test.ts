@@ -3,7 +3,7 @@
 // - [x] shuffle is deterministic for a seeded rng
 // - [x] shuffle never mutates its input
 // - [x] shuffle puts every item in every position (a real shuffle, not a fixed rearrangement)
-// - [ ] poolFor: an empty selection gives every card id in file order
+// - [x] poolFor: an empty selection gives every card id in file order
 // - [ ] poolFor: OR across the selected topics, in file order
 // - [ ] poolFor: unknown topics are ignored
 // - [ ] deal: a shuffled pass of the pool at index 0, front up
@@ -20,8 +20,12 @@
 // - [ ] reselect: otherwise, or from the end card, a fresh deal, front up
 
 import { describe, expect, it } from "vitest";
-import { shuffle } from "./deck";
+import type { Card } from "../../shared/types";
+import { poolFor, shuffle } from "./deck";
 import type { Rng } from "./types";
+
+const card = (id: string, ...topics: string[]): Card => ({ id, topics, questionHtml: id, answerHtml: id });
+const cards = [card("a", "Redis"), card("b", "Postgres"), card("c", "Redis", "Queues"), card("d", "Queues")];
 
 // A seeded generator, so every run shuffles the same way.
 function mulberry32(seed: number): Rng {
@@ -58,5 +62,11 @@ describe("shuffle", () => {
       for (const [i, x] of shuffle(["a", "b", "c", "d"], rng).entries()) placings.add(`${x} at ${i}`);
     }
     expect(placings.size).toBe(4 * 4);
+  });
+});
+
+describe("poolFor", () => {
+  it("gives every card id in file order when nothing is selected", () => {
+    expect(poolFor(cards, new Set())).toEqual(["a", "b", "c", "d"]);
   });
 });
