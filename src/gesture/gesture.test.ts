@@ -49,4 +49,8 @@ describe("velocityX", () => {
   test("a steady drag left gives its speed in px/ms", () => {
     expect(velocityX([at(700, 0, 0), at(680, 0, 8), at(660, 0, 16), at(640, 0, 24)])).toBeCloseTo(-2.5);
   });
+
+  test("an uneven drag gives the least-squares slope, not the end points' (0.67)", () => {
+    expect(velocityX([at(0, 0, 0), at(0, 0, 8), at(16, 0, 16), at(16, 0, 24)])).toBeCloseTo(0.8);
+  });
 });

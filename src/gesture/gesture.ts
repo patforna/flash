@@ -30,8 +30,14 @@ export function isTap(start: Sample, end: Sample): boolean {
 }
 
 export function velocityX(samples: readonly Sample[]): number {
-  const first = samples[0];
-  const last = samples.at(-1);
-  if (!first || !last || last.t === first.t) return 0;
-  return (last.x - first.x) / (last.t - first.t);
+  const n = samples.length;
+  const meanT = samples.reduce((sum, s) => sum + s.t, 0) / n;
+  const meanX = samples.reduce((sum, s) => sum + s.x, 0) / n;
+  let covariance = 0;
+  let variance = 0;
+  for (const s of samples) {
+    covariance += (s.t - meanT) * (s.x - meanX);
+    variance += (s.t - meanT) ** 2;
+  }
+  return variance === 0 ? 0 : covariance / variance;
 }
