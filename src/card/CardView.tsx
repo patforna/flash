@@ -17,6 +17,7 @@ export function CardView({ card, side, colourOf }: CardViewProps) {
       <div className={styles.flipper} data-side={side}>
         <div className={styles.face} {...hiddenUnless(side === "front")}>
           <div className={styles.band} style={{ backgroundColor: colours[0] }} />
+          {/* biome-ignore lint/security/noDangerouslySetInnerHtml: the server renders the deck's Markdown through an allowlist of tags */}
           <h2 className={styles.question} dangerouslySetInnerHTML={{ __html: card.questionHtml }} />
         </div>
         <div className={`${styles.face} ${styles.back}`} {...hiddenUnless(side === "back")} />
