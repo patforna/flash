@@ -257,13 +257,18 @@ function swipe(stage: RefObject<HTMLElement | null>, options: RefObject<SwipeOpt
     };
   }
 
-  return { listen, settle, commit };
+  function tap() {
+    finishRunning();
+    options.current.onTap();
+  }
+
+  return { listen, settle, commit, tap };
 }
 
 export function useSwipe(
   stage: RefObject<HTMLElement | null>,
   o: SwipeOptions,
-): { commit(dir: "next" | "prev"): void } {
+): { commit(dir: "next" | "prev"): void; tap(): void } {
   const options = useRef(o);
   useLayoutEffect(() => {
     options.current = o;
@@ -273,5 +278,5 @@ export function useSwipe(
   useLayoutEffect(() => {
     machine.settle();
   });
-  return { commit: machine.commit };
+  return { commit: machine.commit, tap: machine.tap };
 }

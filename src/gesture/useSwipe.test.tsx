@@ -94,11 +94,13 @@ function Stage({ options, prev, held }: { options: SwipeOptions; prev: boolean; 
 
 function setup(overrides: Partial<SwipeOptions> = {}, { prev = true } = {}) {
   const animations: FakeAnimation[] = [];
+  const onTap = vi.fn();
+  const onCommit = vi.fn();
   const options: SwipeOptions = {
     layers: () => null,
     can: () => ({ prev: true, next: true }),
-    onTap: vi.fn(),
-    onCommit: vi.fn(),
+    onTap,
+    onCommit,
     reducedMotion: () => false,
     animate: (el, keyframes, opts) => {
       const animation = new FakeAnimation(el, keyframes, opts);
@@ -124,7 +126,7 @@ function setup(overrides: Partial<SwipeOptions> = {}, { prev = true } = {}) {
     if (!held.swipe) throw new Error("not rendered");
     return held.swipe;
   };
-  return { stage, layer, animations, onTap: options.onTap, onCommit: options.onCommit, renders: () => renders, swipe };
+  return { stage, layer, animations, onTap, onCommit, renders: () => renders, swipe };
 }
 
 // A finger (or mouse) going down on `target` at (x, y) at time `t` ms; later events go to the stage, as captured.
@@ -513,5 +515,16 @@ describe("commit(dir), for keys and buttons", () => {
     expect(onCommit).toHaveBeenCalledExactlyOnceWith("next");
     expect(animations[0]?.playState).toBe("idle");
     expect(animations[2]?.el).toBe(layer("current"));
+  });
+});
+
+describe("tap(), for keys and buttons", () => {
+  test("completes a running commit first, so the card that lands is the one that flips", () => {
+    const { onTap, onCommit, swipe } = setup();
+    act(() => swipe().commit("next"));
+    act(() => swipe().tap());
+    expect(onCommit).toHaveBeenCalledOnce();
+    expect(onTap).toHaveBeenCalledOnce();
+    expect(onCommit.mock.invocationCallOrder[0]).toBeLessThan(onTap.mock.invocationCallOrder[0] ?? 0);
   });
 });
