@@ -3,6 +3,8 @@
 // [x] the error card once the deck can't be fetched; tapping it fetches again
 // [x] the empty card for a deck without cards
 // [x] the first card of a pass on the stage, front up; the next card underneath, front up too
+// [x] only the card on top shows the side it was turned to
+// [x] each layer's card counts its own place in the pass
 // [x] the panel: All with the deck's total, the topics in order with their counts, the wordmark at its foot
 // [x] a chip toggles its topic, All clears the selection
 // [x] colours by the topic's declared index, on the chips and the card
@@ -11,7 +13,8 @@
 // [x] haptics on next, previous, reshuffle, the end card's reshuffle and a chip toggle; never on a flip
 // [x] the fullscreen chip leads the panel; f toggles fullscreen
 // [x] the wake lock is asked for on the first input
-// [x] performance mark flash:first-card once the fonts are in and the first card is on screen, once per page load
+// [x] performance mark flash:first-card once the fonts are in and the first card is on screen, once per page load;
+//     also when a font fails to load
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { StrictMode } from "react";
