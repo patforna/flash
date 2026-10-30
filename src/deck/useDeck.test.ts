@@ -14,7 +14,7 @@
 // - [x] a new deck (a different version) keeps the selection, drops unknown topics and deals afresh
 // - [x] the same version in a new object changes nothing
 // - [x] the callbacks keep their identity across renders
-// - [ ] localStorage by default; a blocked localStorage is ignored
+// - [x] localStorage by default; a blocked localStorage is ignored
 
 import { act, renderHook } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
@@ -227,5 +227,15 @@ describe("useDeck without an injected storage", () => {
     expect(result.current.selected).toEqual(new Set(["Queues"]));
     act(() => result.current.toggleTopic("Redis"));
     expect(localStorage.getItem("flash:v1:topics")).toBe('["Queues","Redis"]');
+  });
+
+  it("deals the whole deck, and still selects, when localStorage is blocked", () => {
+    vi.spyOn(window, "localStorage", "get").mockImplementation(() => {
+      throw new DOMException("The operation is insecure.", "SecurityError");
+    });
+    const { result } = renderHook(() => useDeck(deck, { rng: mulberry32(3) }), { reactStrictMode: true });
+    expect(result.current).toMatchObject({ position: 1, total: 5 });
+    act(() => result.current.toggleTopic("Redis"));
+    expect(result.current.selected).toEqual(new Set(["Redis"]));
   });
 });

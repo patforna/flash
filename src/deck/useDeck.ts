@@ -10,13 +10,22 @@ interface State {
   pass: Pass;
 }
 
+// localStorage, or none where the browser blocks it: then merely reading the property throws.
+function browserStorage(): Storage | null {
+  try {
+    return localStorage;
+  } catch {
+    return null;
+  }
+}
+
 function start(deck: Deck, selected: ReadonlySet<string>, rng: Rng): State {
   return { deck, selected, pass: deal(poolFor(deck.cards, selected), rng) };
 }
 
 export function useDeck(
   deck: Deck,
-  { rng = Math.random, storage = localStorage }: { rng?: Rng; storage?: Storage | null } = {},
+  { rng = Math.random, storage = browserStorage() }: { rng?: Rng; storage?: Storage | null } = {},
 ): DeckView {
   const [state, setState] = useState(() => start(deck, loadSelection(storage, deck.topics), rng));
   if (state.deck.version !== deck.version) {
