@@ -2,6 +2,7 @@ import { parse, TomlError } from "smol-toml";
 import type { z } from "zod";
 import { isCovered } from "../shared/glyphs";
 import { type CardsFile, CardsFileSchema, LIMITS } from "../shared/schema";
+import { STICKERS } from "../shared/stickers";
 import type { Card, Deck } from "../shared/types";
 import { type Rendered, readLines, renderAnswer, renderQuestion } from "./markdown";
 
@@ -146,6 +147,15 @@ function checkCardTopics(topics: string[], declared: readonly string[] | undefin
     if (declared && !declared.includes(topic)) problems.push(`topic "${topic}" is not declared`);
   }
   for (const topic of repeated(topics)) problems.push(`topic "${topic}" is listed more than once`);
+  // The colours come round again every STICKERS.length topics: two of a card's topics that far apart look alike.
+  const colour = (topic: string) => declared?.indexOf(topic) ?? -1;
+  topics.forEach((a, i) => {
+    for (const b of topics.slice(i + 1)) {
+      if (a !== b && colour(a) >= 0 && colour(b) >= 0 && colour(a) % STICKERS.length === colour(b) % STICKERS.length) {
+        problems.push(`topics "${a}" and "${b}" share a colour: reorder the topics line`);
+      }
+    }
+  });
   return problems;
 }
 

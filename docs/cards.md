@@ -117,9 +117,9 @@ These don't fail but show exactly as typed: HTML tags such as `<b>`, tables, `~~
 
 ## Topics
 
-The 13 topics, in panel order: Patterns, Case studies, Sharding, Real-time, Edge, Postgres, SQL, Queues, Streams, Redis, Consistency, Concurrency.
+The 13 topics, in panel order: Patterns, Case studies, Sharding, Real-time, Edge, Postgres, SQL, Redis, Queues, Streams, Consistency, Concurrency.
 
-- **Colour** follows the position in `topics`, cycling through pink, marigold, mint, sky, lilac, tangerine, teal and lime, so neighbours never share one. Inserting a topic shifts the colours of those after it.
+- **Colour** follows the position in `topics`, cycling through pink, marigold, mint, sky, lilac, tangerine, teal and lime, so neighbours never share one. Inserting a topic shifts the colours of those after it. Topics 8 apart share a colour, so no card may carry two of them (the check names the card): reorder `topics` until none does.
 - **To add one**, put its label in `topics` where it should appear in the panel, and use it on at least one card.
 - **To rename one**, change it in `topics` and on every card: search and replace the quoted label, such as `"Real-time"`. The phone forgets a selection whose label disappeared.
 - **To remove one**, take it out of `topics` and off every card; a card left with no topic fails.

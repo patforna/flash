@@ -7,7 +7,7 @@
 // [x] shape: unknown top-level key, missing field, wrong type; a misspelt key doesn't stop the other cards' checks
 // [x] declared topics: 1–30, 1–20 characters, the pattern, no trailing space, no repeats, each used
 // [x] cards: 1–500
-// [x] a card's topics: 1–3, declared, no repeats
+// [x] a card's topics: 1–3, declared, no repeats, no two in one colour (8 apart in the topics line)
 // [x] question: 1–100 characters after trimming (a topic alone will do), a letter or digit for its id, one line,
 //     inline markup only, unique ignoring case
 // [x] answer: 1–520 characters after trimming, at most 11 lines (what fit step 2 holds), code lines at most 46
@@ -208,6 +208,25 @@ answer = "Dead tuples."
       'card 1 "which-card-has-no-topics": has no topics',
       'card 2 "which-card-has-four-topics": has 4 topics (max 3)',
       'card 3 "which-card-repeats-a-topic": topic "Redis" is listed more than once',
+    ]);
+  });
+
+  test("gives a card's topics a colour each: none 8 apart in the topics line, where the colours come round again", () => {
+    const topics = ["Redis", "B", "C", "D", "E", "F", "G", "H", "Case studies"];
+    const toml = file(
+      [
+        card({ topics: ["Redis", "Case studies"] }),
+        card({ question: "Which card has B?", topics: ["B", "C", "D"] }),
+        card({ question: "Which card has E?", topics: ["E", "F", "G"] }),
+        card({ question: "Which card has H?", topics: ["H", "Nope", "Nor this"] }),
+      ],
+      topics,
+    );
+
+    expect(problemsOf(toml)).toEqual([
+      'card 1 "what-is-redis-for": topics "Redis" and "Case studies" share a colour: reorder the topics line',
+      'card 4 "which-card-has-h": topic "Nope" is not declared',
+      'card 4 "which-card-has-h": topic "Nor this" is not declared',
     ]);
   });
 

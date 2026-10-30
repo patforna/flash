@@ -25,7 +25,7 @@ Reading:
 - A chip takes its whole look from its sticker's colour. Not selected, it is a muted sticker: a fill of 18 % of its colour on the desk, the 60 % outline, a label 35 % of the way to its colour (all OKLab mixes); the fullscreen chip and All are muted in chalk. Selected, it is stuck on: full colour, dark ink, tilt, and a hard shadow 40 % of its colour on black. A departure from plan §3 (outline only, chalk labels, a black shadow) after the M3 review: the default screen was 90 % neutral, the chips read as Material's outlined filter chips, and a black shadow on the desk (1.13:1) barely showed.
 - Counts only on All and in each chip's accessible name: a count widens every chip by about 20 px and costs rows.
 - One live region in the app reads out where you are ("Card 7 of 16", or the end card's text), and before there is a deck what the loading or error card says: the cards remount on every move, so a live region inside one never announces. `App` renders it once, empty, beside whichever state shows, and each state writes into it through a portal: a region that mounts with its text isn't read out, and the stage is replaced when the deck arrives.
-- Topics in the file's order, coloured by declared index mod 8: the author groups related topics, the order never shifts, and neighbours never share a colour.
+- Topics in the file's order, coloured by declared index mod 8: the author groups related topics, the order never shifts, and neighbours never share a colour. `cards:check` fails a card carrying two topics of one colour (8 apart): two cards showed two mint dots, Case studies and Redis, so Redis moved beside Postgres and SQL (plan §9's line has it after Streams). The sticker list is `shared/stickers.ts`, read by the panel and the check.
 - The buttons for keyboards and screen readers never leave as the cards change, so focus never falls back to the page: Previous is `aria-disabled` on a pass's first card (a commit with nowhere to go does nothing), and on the end card the third button reads "Shuffle again" (plan §4 has no such label).
 - Tap flips; swipe left is next, right is previous within the pass; keys add vim's `h j k l` as in Patric's plant-selection, `s` to reshuffle and `f` for fullscreen.
 - A tap is under 10 px and at most 350 ms: a thumb resting on the card must not flip it when it lifts.
@@ -113,6 +113,7 @@ cards/cards.toml           the deck
 shared/types.ts            the wire types, Card and Deck
 shared/schema.ts           the Zod schema of the deck file, LIMITS, the wire shape's Zod mirror
 shared/glyphs.ts           the characters the two fonts cover, extracted once from the font files
+shared/stickers.ts         the sticker colours, in the order topics take them
 server/markdown.ts         Bun.markdown → allowlisted HTML: line breaks, arrows, word joiners, attributes stripped
 server/deck.ts             TOML text → Deck: slug(), loadDeck(), DeckError listing every problem
 server/api.ts              createApi(deck): /api/cards and /healthz; type Api
