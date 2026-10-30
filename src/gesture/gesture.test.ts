@@ -13,4 +13,8 @@ describe("classify", () => {
   test("a pointer that hasn't moved is still pending", () => {
     expect(classify(at(100, 100), at(100, 100))).toBe("pending");
   });
+
+  test("crossing the slop mostly sideways is horizontal", () => {
+    expect(classify(at(100, 100), at(88, 110))).toBe("horizontal");
+  });
 });

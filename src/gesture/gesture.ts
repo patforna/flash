@@ -18,6 +18,7 @@ export interface Sample {
   y: number;
 }
 
-export function classify(_start: Sample, _now: Sample): "pending" | "horizontal" | "vertical" {
-  return "pending";
+export function classify(start: Sample, now: Sample): "pending" | "horizontal" | "vertical" {
+  if (Math.hypot(now.x - start.x, now.y - start.y) < GESTURE.slop) return "pending";
+  return "horizontal";
 }
