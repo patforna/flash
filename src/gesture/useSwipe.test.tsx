@@ -227,6 +227,18 @@ describe("committing", () => {
     expect(inline(before.next)).toEqual({ transform: "", visibility: "" });
   });
 
+  test("the release speed counts the samples the browser coalesced into each move", () => {
+    const { stage, layer, animations } = setup();
+    const finger = press(stage, layer("current"), 700, 200);
+    // One move after 200 ms; only its coalesced samples show the last 50 px took 50 ms, a flick.
+    finger.move(600, 200, 200, [
+      { x: 650, t: 150 },
+      { x: 600, t: 200 },
+    ]);
+    finger.up();
+    expect(animations[0]?.keyframes.at(-1)).toEqual({ transform: "translateX(-960px) rotate(-10deg)" });
+  });
+
   test("a flick right slides the previous card in to its place, then commits", async () => {
     const { stage, layer, animations, onCommit } = setup();
     const finger = press(stage, layer("current"), 400, 200);

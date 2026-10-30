@@ -244,7 +244,9 @@ function swipe(stage: RefObject<HTMLElement | null>, options: RefObject<SwipeOpt
   const move = (e: PointerEvent) => {
     const g = own(e);
     if (!g) return;
-    g.samples.push(sample(e));
+    // A frame's move may stand for several touch samples; the velocity wants them all.
+    const coalesced = e.getCoalescedEvents();
+    for (const c of coalesced.length ? coalesced : [e]) g.samples.push(sample(c));
     if (g.axis === "pending") {
       g.axis = classify(g.start, sample(e));
       // A card dragged mid-flip would travel edge-on: the flip (the card's [data-side] transition) ends now.
