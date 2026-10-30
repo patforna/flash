@@ -16,6 +16,7 @@ const FENCE = /^ {0,3}(?:`{3,}[^`]*|~{3,}.*)$/;
 const TOKEN = /<(\/?)([a-z][a-z0-9]*)([^>]*)>|([^<]+)/g;
 
 const ANSWER_TAGS = new Set(["p", "br", "ul", "ol", "li", "strong", "code", "pre"]);
+const QUESTION_TAGS = new Set(["p", "strong", "code"]);
 
 const HEADING = "a heading (a line starting with #, or a line underlined with --- or ===)";
 const REASONS: Record<string, string> = {
@@ -43,6 +44,19 @@ const IN_ITEM: Record<string, string> = {
 type Rendered = { html: string } | { problems: string[] };
 
 export function renderAnswer(src: string): Rendered {
+  return result(render(src, ANSWER_TAGS));
+}
+
+export function renderQuestion(src: string): Rendered {
+  const { html, problems } = render(src, QUESTION_TAGS);
+  return result({ html: html.replace(/^<p>(.*)<\/p>$/, "$1"), problems });
+}
+
+function result({ html, problems }: { html: string; problems: Set<string> }): Rendered {
+  return problems.size > 0 ? { problems: [...problems] } : { html };
+}
+
+function render(src: string, allowed: ReadonlySet<string>) {
   const problems = new Set<string>();
   // Bun silently closes an open fence at the end; an odd number of fence lines means one was never closed.
   if (src.split("\n").filter((line) => FENCE.test(line)).length % 2 === 1) {
@@ -66,12 +80,12 @@ export function renderAnswer(src: string): Rendered {
         open.pop();
         return `</${name}>`;
       }
-      if (!ANSWER_TAGS.has(name)) problems.add(REASONS[name] ?? `<${name}>`);
+      if (!allowed.has(name)) problems.add(REASONS[name] ?? `<${name}>`);
       const inItem = open.at(-1) === "li" ? IN_ITEM[name] : undefined;
       if (inItem) problems.add(inItem);
       open.push(name);
       // Every attribute goes but the start of a numbered list (`code` loses its `class="language-…"`).
       return `<${name}${name === "ol" ? (attrs.match(/ start="\d+"/)?.[0] ?? "") : ""}>`;
     });
-  return problems.size > 0 ? { problems: [...problems] } : { html };
+  return { html, problems };
 }

@@ -13,7 +13,7 @@
 // [ ] renderQuestion: plain text without the outer <p>; inline code, bold and arrows
 // [ ] renderQuestion rejects a second line, block markup and emphasis
 import { describe, expect, test } from "bun:test";
-import { renderAnswer } from "./markdown";
+import { renderAnswer, renderQuestion } from "./markdown";
 
 describe("renderAnswer", () => {
   test("renders a line as a paragraph", () => {
@@ -100,6 +100,14 @@ describe("renderAnswer", () => {
         "a loose list (blank lines between its items)",
         "emphasis (*text* or _text_): only **bold** is allowed",
       ],
+    });
+  });
+});
+
+describe("renderQuestion", () => {
+  test("renders the line without its paragraph, with inline code, bold and arrows", () => {
+    expect(renderQuestion("What does `SETNX` do -> **and why**?")).toEqual({
+      html: "What does <code>SETNX</code> do → <strong>and why</strong>?",
     });
   });
 });
