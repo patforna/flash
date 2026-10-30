@@ -91,4 +91,9 @@ describe("release", () => {
     expect(release(23, 2, width, both)).toBe("cancel");
     expect(release(300, -0.45, width, both)).toBe("cancel");
   });
+
+  test("commits only where there is a card to go to", () => {
+    expect(release(300, 0, width, { prev: false, next: true })).toBe("cancel");
+    expect(release(-300, 0, width, { prev: true, next: false })).toBe("cancel");
+  });
 });
