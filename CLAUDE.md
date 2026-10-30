@@ -68,7 +68,7 @@ Stack:
 - No OpenAPI chain: openapi-typescript crashes under TypeScript 7 and openapi-fetch is in maintenance mode (Patric: "don't get hung up on openapi-fetch").
 - TOML for the deck, parsed by smol-toml: a standard grammar whose errors carry line and column; Bun's own parser doesn't comply (Gotchas).
 - Markdown rendered on the server by `Bun.markdown.html` behind an allowlist of tags: no Markdown dependency and no parser in the bundle.
-- The renderer puts U+2060 (word joiner, invisible) after a hyphen inside a word and after every hyphen in inline code: lines broke inside "staff-level" and `allkeys-lfu`, CSS can't forbid a break after a hyphen, and neither font has a non-breaking hyphen. The glyph check skips it.
+- The renderer puts U+2060 (word joiner, invisible) after a hyphen inside a word and after every hyphen in inline code: lines broke inside "staff-level" and `allkeys-lfu`, CSS can't forbid a break after a hyphen, and neither font has a non-breaking hyphen. The glyph check skips it. It also holds inline code together with U+00A0 (no-break space, which both fonts draw) where a break would split it: a span of up to 20 characters, a word of one or two at either end of a longer one, a quoted value of up to 18 (lines had ended on a lone `ON`, or split `hash(value) = 42` and `'ANY 1 (s1, s2)'`).
 - A service worker (vite-plugin-pwa, `generateSW`): instant start of the installed app and offline reading; the deck is fetched network-first, so cards stay fresh. An HTTP error counts as a network failure (a `fetchDidSucceed` plugin throws on it), so the cached deck also stands in for Caddy's 502 while the server is down; Workbox alone passes the error to the app.
 - One package, no workspaces; exact pins at least 7 days old (`bunfig.toml`).
 

@@ -38,6 +38,9 @@ export function readLines(src: string): { kinds: LineKind[]; unclosed: boolean }
 // U+2060 WORD JOINER: invisible, it forbids a line break on either side of it.
 const JOIN = "\u2060";
 
+// U+00A0 NO-BREAK SPACE: a space no line breaks at. Both fonts draw it.
+const HOLD = "\u00a0";
+
 // Bun escapes `<` in text and attribute values, so every `<` in its output starts a tag.
 const TOKEN = /<(\/?)([a-z][a-z0-9]*)([^>]*)>|([^<]+)/g;
 
@@ -109,7 +112,7 @@ function render(src: string, allowed: ReadonlySet<string>) {
         const lines = text.replaceAll("\n", "<br>");
         // A hyphen in a word, or any in code, holds on to what follows it, so no line breaks inside a compound or an
         // identifier (neither font has a non-breaking hyphen).
-        if (open.includes("code")) return lines.replaceAll("-", `-${JOIN}`);
+        if (open.includes("code")) return holdCode(lines).replaceAll("-", `-${JOIN}`);
         // The arrows arrive escaped: <->, -> and <-, however many dashes.
         return lines
           .replace(/&lt;-+&gt;/g, "↔")
@@ -130,3 +133,19 @@ function render(src: string, allowed: ReadonlySet<string>) {
     });
   return { html, problems };
 }
+
+// Inline code holds together where a break would split what reads as one: a span of up to 20 characters, a word of
+// one or two at either end of a longer one (`ON CONFLICT …`), and a quoted value of up to 18 (`= 'ANY 1 (s1, s2)'`).
+function holdCode(html: string): string {
+  if (shown(html) <= 20) return html.replaceAll(" ", HOLD);
+  const short = (word: string) => shown(word) <= 2;
+  return html
+    .replace(/^(\S+) /, (all, word: string) => (short(word) ? `${word}${HOLD}` : all))
+    .replace(/ (\S+)$/, (all, word: string) => (short(word) ? `${HOLD}${word}` : all))
+    .replace(/('|&quot;)(.*?)\1/g, (quoted, _, value: string) =>
+      shown(value) <= 18 ? quoted.replaceAll(" ", HOLD) : quoted,
+    );
+}
+
+// How many characters HTML text shows: an entity (`&gt;`, `&quot;`) is one.
+const shown = (html: string) => html.replace(/&(?:#\w+|\w+);/g, "x").length;
