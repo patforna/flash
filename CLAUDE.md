@@ -46,6 +46,7 @@ Look and motion:
 - Reduced motion: animations become short fades, but the drag still follows the finger, without rotation; direct manipulation is not motion.
 - The fullscreen chip shows only in a browser tab: the installed app is already fullscreen (`display: fullscreen`), locked to landscape.
 - The fullscreen chip is an icon-only 44 px sticker named "Full screen": a visible label (121 px) breaks the six-row panel.
+- The panel stands beside the card from its top edge to its foot: the shell's one row is exactly as tall as the card, `min(100%, stage width × 3/5)`, and centred. A camera cutout or a wide screen narrows the card; the panel follows.
 
 Stack:
 
@@ -141,7 +142,7 @@ docs/                      original-request.md, plan.md, cards.md, seed.md
 - `bun run build`: Vite into `dist/`, the server into `build/server.js`.
 - `bun run cards:check` and `bun run budget`; `bun run verify` runs `cards:check`, `typecheck`, `lint`, `test`, `build`, `budget` and `e2e`, in that order.
 - `scripts/deploy-do.test.ts` needs `shellcheck` on the path. It only checks the script's syntax, lint and usage: never run the script with a subcommand from a test.
-- Playwright projects: `pixel11` (923 × 412, DPR 2.625, touch), `portrait` (412 × 923) and `laptop` (1280 × 800, fine pointer); en-GB, Europe/Zurich. Port 4173 serves `tests/fixtures/cards.toml` and is the base URL; 4174 serves `cards/cards.toml` (`test.use({ baseURL: "http://127.0.0.1:4174" })`), for the fit test. Service workers are blocked unless a spec sets `test.use({ serviceWorkers: "allow" })`. Screenshots go to `tests/screenshots/<project>/<name>.png`, so names are unique across specs; `animations: "disabled"`, `caret: "hide"` and `maxDiffPixelRatio: 0.001` are the defaults.
+- Playwright projects: `pixel11` (923 × 412, DPR 2.625, touch), `portrait` (412 × 923) and `laptop` (1280 × 800, fine pointer); en-GB, Europe/Zurich. `perf` is the Pixel 11 again, for `perf.spec.ts` alone, after the other three: timings taken while other specs share the CPU are noise. Selecting it (`--project perf`) runs the whole suite first. Port 4173 serves `tests/fixtures/cards.toml` and is the base URL; 4174 serves `cards/cards.toml` (`test.use({ baseURL: "http://127.0.0.1:4174" })`), for the fit test. Service workers are blocked unless a spec sets `test.use({ serviceWorkers: "allow" })`. Screenshots go to `tests/screenshots/<project>/<name>.png`, so names are unique across specs; `animations: "disabled"`, `caret: "hide"` and `maxDiffPixelRatio: 0.001` are the defaults.
 - The fixture deck: 9 cards, 7 topics (Redis, Postgres, Queues, Consistency, Sharding, Real-time, Case studies; Consistency has one card, Postgres and Queues three). It covers every markup feature; one card has three topics, one question is exactly 100 characters, and the shard-key answer (498 characters, 12 lines) needs fit step 2. Its 64-character ids rely on `slug()` truncating. Keep it valid by every rule.
 
 ## Shipping cards versus code
@@ -169,6 +170,8 @@ docs/                      original-request.md, plan.md, cards.md, seed.md
 - Inline code needs `line-height: 0`, or each line with code grows by about 2 px and the writing drifts off the rules.
 - Shantell lacks → ← ↔ ≤ ≥ ≈ ≠ ∞: the `--font-hand` stack falls back to Radon for them.
 - Measure interaction latency with Event Timing (`PerformanceObserver({ type: "event" })`), not a DevTools trace, which inflates DOM-churn timings.
+- Event Timing in headless Chromium is mostly pipeline: a tap's touch events wait about a frame before they are dispatched and are presented one or two frames later, so at 4× CPU a tap's entries read 16–40 ms, of which the app's own processing is about 8 ms. While a measured frame is on its way, leave the page alone: `settled()` polls `document.getAnimations()`, which forces style into the frames being measured.
+- CDP answers `Input.dispatchTouchEvent` for a move before the page sees it (moves are dispatched with the next frame): poll for the effect of the last move rather than reading it at once.
 - happy-dom 21 has no `document.fonts`, no `document.getAnimations` and no layout; `(pointer: coarse)` is false; `fullscreenEnabled`, `navigator.vibrate` and `navigator.wakeLock` are undefined; `PointerEvent` ignores `timeStamp` in its init (set it with `Object.defineProperty`). Stub or inject these; everything visual belongs to Playwright.
 - Outside CI, Playwright reuses a server already listening on 4173 or 4174: a stale one makes the tests, including the fit test `deploy-do.sh cards` runs, use an old build or deck.
 - `hono/bun`'s `serveStatic` is deprecated (gone in v5): use `@hono/bun`'s. Neither sends an ETag for static files.
@@ -177,4 +180,5 @@ docs/                      original-request.md, plan.md, cards.md, seed.md
 ## Current state
 
 - 30 Oct 2026, integration (M2a): the seven packages merged and wired in `App`; `cards:check`, `typecheck`, `lint`, `test`, `build` and `budget` pass, and so does `tests/e2e/pwa.spec.ts`. The real deck has 66 cards in 13 topics; every card fits, two backs at step 1.
-- Next: the Playwright suite and its screenshot baselines (the fit spec is `tests/e2e/fit.spec.ts`, which `deploy-do.sh cards` runs by name), then the review (M3) and the first deploy (M4). Not deployed yet.
+- 30 Oct 2026, end to end (M2b): the Playwright suite in `tests/e2e/` (reading, topics, keyboard, fit, layout, a11y, perf, screens, pwa) and its baselines; `verify` passes end to end. The fit spec is `tests/e2e/fit.spec.ts`, which `deploy-do.sh cards` runs by name.
+- Next: the review (M3) and the first deploy (M4). Not deployed yet.
