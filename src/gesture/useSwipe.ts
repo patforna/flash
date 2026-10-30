@@ -332,7 +332,9 @@ export function useSwipe(
     options.current = o;
   });
   const [machine] = useState(() => swipe(stage, options));
-  useEffect(() => machine.listen(), [machine]);
+  useEffect(() => {
+    return machine.listen();
+  }, [machine]);
   useLayoutEffect(() => {
     machine.settle();
   });
