@@ -1,7 +1,7 @@
 // To do:
 // [x] a group named "Topics"
 // [x] All reads "All · 65" and is pressed when nothing is selected
-// [ ] All is not pressed while a topic is selected
+// [x] All is not pressed while a topic is selected
 // [ ] the topics follow All in the given order, each pressed while selected
 // [ ] each chip's accessible name carries its count, "1 card" for one
 // [ ] the lead comes first
@@ -48,5 +48,10 @@ describe("TopicPanel", () => {
     const all = screen.getByRole("button", { name: /^All/ });
     expect(all.textContent).toBe("All · 65");
     expect(all.getAttribute("aria-pressed")).toBe("true");
+  });
+
+  it("does not press All while a topic is selected", () => {
+    renderPanel({ selected: new Set(["Queues"]) });
+    expect(screen.getByRole("button", { name: /^All/ }).getAttribute("aria-pressed")).toBe("false");
   });
 });
