@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 
 export function measure(dir: string) {
@@ -8,5 +8,9 @@ export function measure(dir: string) {
     [...html.matchAll(new RegExp(`(?:src|href)="([^"]+\\.${ext})"`, "g"))]
       .map((m) => m[1] ?? "")
       .reduce((sum, url) => sum + Bun.gzipSync(readFileSync(join(dir, url))).length, 0);
-  return { js: gzipped("js"), css: gzipped("css"), fonts: 0, precache: 0 };
+  const fonts = [...new Bun.Glob("**/*.woff2").scanSync(dir)].reduce(
+    (sum, path) => sum + statSync(join(dir, path)).size,
+    0,
+  );
+  return { js: gzipped("js"), css: gzipped("css"), fonts, precache: 0 };
 }

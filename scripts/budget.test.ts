@@ -8,7 +8,7 @@ import { measure } from "./budget";
 // [x] an empty build measures zero
 // [x] JS: the gzipped size of the scripts index.html references, and nothing else
 // [x] CSS: the gzipped size of the stylesheets index.html references
-// [ ] fonts: the raw size of every woff2 file
+// [x] fonts: the raw size of every woff2 file
 // [ ] precache: the raw size of every file sw.js precaches, each counted once
 // [ ] breaches: none at the limits; one line per budget exceeded, with the size and the limit
 // [ ] table: one aligned row per budget, with the size, the limit and the share used
@@ -72,4 +72,15 @@ test("CSS is the gzipped size of the stylesheets index.html references", () => {
     "sw.js": sw([]),
   });
   expect(measure(dir).css).toBe(gzipped(app));
+});
+
+test("fonts are the raw size of every woff2 file", () => {
+  const dir = dist({
+    "index.html": html(""),
+    "sw.js": sw([]),
+    "assets/hand.woff2": new Uint8Array(1_000),
+    "assets/code.woff2": new Uint8Array(234),
+    "assets/icon.png": new Uint8Array(5_000),
+  });
+  expect(measure(dir).fonts).toBe(1_234);
 });
