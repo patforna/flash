@@ -4,7 +4,7 @@
 // [x] chooseStep: "scroll" when no step fits
 // [x] useFit: with the fonts in, measures before paint (a later layout effect sees data-fit)
 // [x] useFit: content hidden (no data-fit) until the fonts load; then measured
-// [ ] useFit: waits for the code font too (code blocks and the counter are set in it)
+// [x] useFit: waits for the code font too (code blocks and the counter are set in it)
 // [ ] useFit: walks the steps while a part overflows down
 // [ ] useFit: a part overflowing across (a code line wider than its column) also steps down
 // [ ] useFit: "scroll" when no step fits
@@ -28,9 +28,14 @@ describe("chooseStep", () => {
   });
 });
 
-// happy-dom has no document.fonts: stand one in whose faces are either in already or arrive when load() resolves.
-function stubFonts(ready: boolean) {
-  const fonts = { check: vi.fn(() => ready), load: vi.fn(() => Promise.resolve([])) };
+// happy-dom has no document.fonts: stand one in where the named families are in already and the rest arrive when
+// load() resolves.
+const BOTH = ["Shantell Sans", "Monaspace Radon"];
+function stubFonts(loaded: string[]) {
+  const fonts = {
+    check: vi.fn((font: string) => loaded.some((family) => font.includes(family))),
+    load: vi.fn(() => Promise.resolve([])),
+  };
   Object.defineProperty(document, "fonts", { value: fonts, configurable: true });
   return fonts;
 }
@@ -50,7 +55,7 @@ function Face({ fitKey, onLayout }: { fitKey: string; onLayout?: (fit: string | 
 
 describe("useFit", () => {
   beforeEach(() => {
-    stubFonts(true);
+    stubFonts(BOTH);
   });
 
   afterEach(() => {
@@ -64,11 +69,20 @@ describe("useFit", () => {
   });
 
   it("keeps the content hidden until the fonts have loaded, then measures", async () => {
-    const fonts = stubFonts(false);
+    const fonts = stubFonts([]);
     render(<Face fitKey="vacuum" />);
     const face = screen.getByTestId("face");
     expect(face.dataset.fit).toBeUndefined();
     expect(fonts.load).toHaveBeenCalledWith(expect.stringContaining("Shantell Sans"));
+    await waitFor(() => expect(face.dataset.fit).toBe("0"));
+  });
+
+  it("waits for the code font too", async () => {
+    const fonts = stubFonts(["Shantell Sans"]);
+    render(<Face fitKey="vacuum" />);
+    const face = screen.getByTestId("face");
+    expect(face.dataset.fit).toBeUndefined();
+    expect(fonts.load).toHaveBeenCalledWith(expect.stringContaining("Monaspace Radon"));
     await waitFor(() => expect(face.dataset.fit).toBe("0"));
   });
 });
