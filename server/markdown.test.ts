@@ -7,7 +7,7 @@
 // [x] inline code and bold render; -> and <- are typeset as → and ← outside code
 // [x] raw HTML is escaped text, not an error; tables, strikethrough, task lists and autolinks stay text
 // [x] rejects a heading (ATX and setext), a link, an image, a block quote, a rule and emphasis, each with its reason
-// [ ] rejects a loose list, a list inside a list and a code block inside a list item
+// [x] rejects a loose list, a list inside a list and a code block inside a list item
 // [ ] rejects an unclosed fence, caught on the source
 // [ ] reports every reason at once, each once
 // [ ] renderQuestion: plain text without the outer <p>; inline code, bold and arrows
@@ -71,6 +71,14 @@ describe("renderAnswer", () => {
     ["Above\n\n---\n\nBelow", "a horizontal rule (a line of ---, *** or ___)"],
     ["*maybe* or _maybe_", "emphasis (*text* or _text_): only **bold** is allowed"],
   ])("rejects %p with its reason", (src, reason) => {
+    expect(renderAnswer(src)).toEqual({ problems: [reason] });
+  });
+
+  test.each([
+    ["- one\n\n- two", "a loose list (blank lines between its items)"],
+    ["- one\n  - inner", "a list inside a list"],
+    ["1. one\n   ```\n   code\n   ```", "a code block inside a list item"],
+  ])("rejects %p: a list item holds one or more lines of text only", (src, reason) => {
     expect(renderAnswer(src)).toEqual({ problems: [reason] });
   });
 });

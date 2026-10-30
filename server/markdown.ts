@@ -29,6 +29,14 @@ const REASONS: Record<string, string> = {
   em: "emphasis (*text* or _text_): only **bold** is allowed",
 };
 
+// A list item holds lines of text only.
+const IN_ITEM: Record<string, string> = {
+  p: "a loose list (blank lines between its items)",
+  ul: "a list inside a list",
+  ol: "a list inside a list",
+  pre: "a code block inside a list item",
+};
+
 type Rendered = { html: string } | { problems: string[] };
 
 export function renderAnswer(src: string): Rendered {
@@ -52,6 +60,8 @@ export function renderAnswer(src: string): Rendered {
         return `</${name}>`;
       }
       if (!ANSWER_TAGS.has(name)) problems.add(REASONS[name] ?? `<${name}>`);
+      const inItem = open.at(-1) === "li" ? IN_ITEM[name] : undefined;
+      if (inItem) problems.add(inItem);
       open.push(name);
       // Every attribute goes but the start of a numbered list (`code` loses its `class="language-…"`).
       return `<${name}${name === "ol" ? (attrs.match(/ start="\d+"/)?.[0] ?? "") : ""}>`;
