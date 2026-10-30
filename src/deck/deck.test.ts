@@ -5,7 +5,7 @@
 // - [x] shuffle puts every item in every position (a real shuffle, not a fixed rearrangement)
 // - [x] poolFor: an empty selection gives every card id in file order
 // - [x] poolFor: OR across the selected topics, in file order
-// - [ ] poolFor: unknown topics are ignored
+// - [x] poolFor: unknown topics are ignored
 // - [ ] deal: a shuffled pass of the pool at index 0, front up
 // - [ ] deal: keep puts that id first; ignored when it isn't in the pool
 // - [ ] deal: avoidFirst never starts the pass with that id when there are at least 2 cards
@@ -72,5 +72,10 @@ describe("poolFor", () => {
 
   it("takes the cards carrying any selected topic, in file order", () => {
     expect(poolFor(cards, new Set(["Queues", "Redis"]))).toEqual(["a", "c", "d"]);
+  });
+
+  it("ignores unknown topics", () => {
+    expect(poolFor(cards, new Set(["Redis", "Nope"]))).toEqual(["a", "c"]);
+    expect(poolFor(cards, new Set(["Nope"]))).toEqual(["a", "b", "c", "d"]);
   });
 });

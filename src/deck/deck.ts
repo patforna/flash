@@ -1,9 +1,10 @@
 import type { Card } from "../../shared/types";
 import type { Rng } from "./types";
 
+// The cards carrying any selected topic, in file order. Nothing selected, or only topics no card carries, means every card.
 export function poolFor(cards: readonly Card[], selected: ReadonlySet<string>): string[] {
-  const pool = selected.size === 0 ? cards : cards.filter((c) => c.topics.some((t) => selected.has(t)));
-  return pool.map((c) => c.id);
+  const chosen = cards.filter((c) => c.topics.some((t) => selected.has(t)));
+  return (chosen.length > 0 ? chosen : cards).map((c) => c.id);
 }
 
 // Fisher–Yates, on a copy.
