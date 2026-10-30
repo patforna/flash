@@ -4,6 +4,7 @@
 // [x] the front: the question, and the band in the first topic's colour
 // [x] the front: the card's topics as dots with labels, each dot in its topic's colour
 // [x] the front: the counter, the position zero-padded to the total's width ("07 / 16")
+// [x] no live region: the card remounts on every move, so the app announces the position
 // [x] the back: the question again in its header, then the answer
 // [x] each face carries data-fit once measured
 import { configure, render, within } from "@testing-library/react";
@@ -81,13 +82,17 @@ describe("CardView", () => {
     [7, 16, "07 / 16"],
     [7, 9, "7 / 9"],
     [12, 120, "012 / 120"],
-  ])("counts card %i of %i on the front as %s, politely live", (position, total, text) => {
+  ])("counts card %i of %i on the front as %s", (position, total, text) => {
     const { container } = render(
       <CardView card={vacuum} side="front" position={position} total={total} colourOf={colourOf} />,
     );
     const front = container.querySelector<HTMLElement>(`.${styles.face}`) as HTMLElement;
-    const counter = within(front).getByText(text);
-    expect(counter.getAttribute("aria-live")).toBe("polite");
+    expect(within(front).getByText(text)).toBeTruthy();
+  });
+
+  it("announces nothing itself: it mounts with its text, so the app's own live region says where you are", () => {
+    const { container } = render(<CardView card={vacuum} side="front" position={7} total={16} colourOf={colourOf} />);
+    expect(container.querySelector("[aria-live]")).toBeNull();
   });
 
   it("writes the question again in the back's header, the answer under it and the counter", () => {

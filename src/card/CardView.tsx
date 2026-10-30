@@ -50,10 +50,11 @@ export function CardView({ card, side, position, total, colourOf }: CardViewProp
   );
 }
 
-// "07 / 16": the position padded to the total's width, so the digits never shift as you read on.
+// "07 / 16": the position padded to the total's width, so the digits never shift as you read on. Not a live region:
+// the card mounts with it on every move, which a screen reader wouldn't announce; the app has one that does.
 function Counter({ position, total }: { position: number; total: number }) {
   return (
-    <p className={styles.counter} aria-live="polite">
+    <p className={styles.counter}>
       {String(position).padStart(String(total).length, "0")} / {total}
     </p>
   );
