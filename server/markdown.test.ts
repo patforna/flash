@@ -6,6 +6,7 @@
 // [x] fenced code renders as pre > code without its class, its lines and escapes intact
 // [x] inline code and bold render; -> and <- are typeset as → and ← outside code
 // [x] <-> as ↔, --> as →, <-- as ←
+// [x] a word joiner after a hyphen inside a word, and after every hyphen in inline code; none in code blocks
 // [x] raw HTML is escaped text, not an error; tables, strikethrough, task lists and autolinks stay text
 // [x] rejects a heading (ATX and setext), a link, an image, a block quote, a rule and emphasis, each with its reason
 // [x] rejects a loose list, a list inside a list and a code block inside a list item
@@ -46,13 +47,19 @@ describe("renderAnswer", () => {
 
   test("renders inline code and bold, and typesets -> and <- as arrows outside code", () => {
     expect(renderAnswer("A -> B, `a -> b`, **x <- y**\n- c -> d\n```\ne <- f\n```")).toEqual({
-      html: "<p>A → B, <code>a -&gt; b</code>, <strong>x ← y</strong></p><ul><li>c → d</li></ul><pre><code>e &lt;- f\n</code></pre>",
+      html: "<p>A → B, <code>a -\u2060&gt; b</code>, <strong>x ← y</strong></p><ul><li>c → d</li></ul><pre><code>e &lt;- f\n</code></pre>",
     });
   });
 
   test("typesets both-way and long arrows too: <-> as ↔, --> as →, <-- as ←", () => {
     expect(renderAnswer("Client <-> server, a --> b <-- c, x <--> y; `a <-> b`")).toEqual({
-      html: "<p>Client ↔ server, a → b ← c, x ↔ y; <code>a &lt;-&gt; b</code></p>",
+      html: "<p>Client ↔ server, a → b ← c, x ↔ y; <code>a &lt;-\u2060&gt; b</code></p>",
+    });
+  });
+
+  test("joins a hyphen to the word after it (U+2060), so a line never breaks inside a compound or an identifier", () => {
+    expect(renderAnswer("A staff-level fan-out, `allkeys-lfu` and `--x`, but not a - b or -1\n```\na-b\n```")).toEqual({
+      html: "<p>A staff-\u2060level fan-\u2060out, <code>allkeys-\u2060lfu</code> and <code>-\u2060-\u2060x</code>, but not a - b or -1</p><pre><code>a-b\n</code></pre>",
     });
   });
 

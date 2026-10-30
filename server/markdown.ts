@@ -15,6 +15,9 @@ export const FENCE = /^ {0,3}(?:`{3,}[^`]*|~{3,}.*)$/;
 // A line Markdown reads as a link reference definition and hides: `[label]: …`, also opening a list item.
 const REFERENCE = /^ {0,3}(?:(?:[-+*]|\d{1,9}[.)]) +)?\[[^\]]+\]:/;
 
+// U+2060 WORD JOINER: invisible, it forbids a line break on either side of it.
+const JOIN = "\u2060";
+
 // Bun escapes `<` in text and attribute values, so every `<` in its output starts a tag.
 const TOKEN = /<(\/?)([a-z][a-z0-9]*)([^>]*)>|([^<]+)/g;
 
@@ -85,12 +88,15 @@ function render(src: string, allowed: ReadonlySet<string>) {
         if (open.includes("pre")) return text;
         if (!open.some((t) => t === "p" || t === "li")) return "";
         const lines = text.replaceAll("\n", "<br>");
-        if (open.includes("code")) return lines;
+        // A hyphen in a word, or any in code, holds on to what follows it, so no line breaks inside a compound or an
+        // identifier (neither font has a non-breaking hyphen).
+        if (open.includes("code")) return lines.replaceAll("-", `-${JOIN}`);
         // The arrows arrive escaped: <->, -> and <-, however many dashes.
         return lines
           .replace(/&lt;-+&gt;/g, "↔")
           .replace(/-+&gt;/g, "→")
-          .replace(/&lt;-+/g, "←");
+          .replace(/&lt;-+/g, "←")
+          .replace(/([\p{L}\p{N}])-(?=[\p{L}\p{N}])/gu, `$1-${JOIN}`);
       }
       if (slash) {
         open.pop();

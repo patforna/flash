@@ -61,6 +61,7 @@ Stack:
 - No OpenAPI chain: openapi-typescript crashes under TypeScript 7 and openapi-fetch is in maintenance mode (Patric: "don't get hung up on openapi-fetch").
 - TOML for the deck, parsed by smol-toml: a standard grammar whose errors carry line and column; Bun's own parser doesn't comply (Gotchas).
 - Markdown rendered on the server by `Bun.markdown.html` behind an allowlist of tags: no Markdown dependency and no parser in the bundle.
+- The renderer puts U+2060 (word joiner, invisible) after a hyphen inside a word and after every hyphen in inline code: lines broke inside "staff-level" and `allkeys-lfu`, CSS can't forbid a break after a hyphen, and neither font has a non-breaking hyphen. The glyph check skips it.
 - A service worker (vite-plugin-pwa, `generateSW`): instant start of the installed app and offline reading; the deck is fetched network-first, so cards stay fresh.
 - One package, no workspaces; exact pins at least 7 days old (`bunfig.toml`).
 
@@ -102,7 +103,7 @@ cards/cards.toml           the deck
 shared/types.ts            the wire types, Card and Deck
 shared/schema.ts           the Zod schema of the deck file, LIMITS, the wire shape's Zod mirror
 shared/glyphs.ts           the characters the two fonts cover, extracted once from the font files
-server/markdown.ts         Bun.markdown → allowlisted HTML: line breaks, arrows, attributes stripped
+server/markdown.ts         Bun.markdown → allowlisted HTML: line breaks, arrows, word joiners, attributes stripped
 server/deck.ts             TOML text → Deck: slug(), loadDeck(), DeckError listing every problem
 server/api.ts              createApi(deck): /api/cards and /healthz; type Api
 server/app.ts              createApp({ deck, distDir }): the API, static files, headers

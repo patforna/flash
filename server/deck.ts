@@ -149,9 +149,10 @@ function checkCardTopics(topics: string[], declared: readonly string[] | undefin
 }
 
 // Each character neither font covers, once, with its code point: `"😀" (U+1F600)`. Line breaks and tabs have rules of
-// their own.
+// their own; the word joiner the renderer puts after a hyphen (U+2060) is never drawn.
+const UNDRAWN = new Set(["\n", "\t", "\u2060"]);
 function uncovered(text: string): string[] {
-  const missing = new Set([...text].filter((c) => c !== "\n" && c !== "\t" && !isCovered(c.codePointAt(0) ?? 0)));
+  const missing = new Set([...text].filter((c) => !UNDRAWN.has(c) && !isCovered(c.codePointAt(0) ?? 0)));
   return [...missing].map((c) => `"${c}" (U+${(c.codePointAt(0) ?? 0).toString(16).toUpperCase().padStart(4, "0")})`);
 }
 
