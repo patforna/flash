@@ -8,6 +8,7 @@ import {
   flick,
   flipper,
   layer,
+  leaving,
   question,
   questions,
   settled,
@@ -67,6 +68,18 @@ test("a swipe left deals the next card, front up", async ({ page }) => {
   await expect(question(page)).toHaveText(next ?? "");
   await expect(announcer(page)).toHaveText("Card 2 of 9");
   await expect(flipper(page)).toHaveAttribute("data-side", "front");
+});
+
+test("a flicked card leaves as it was let go: it moves on every frame until it is off the screen", async ({ page }) => {
+  const steps = leaving(page);
+  await flick(page, "left");
+
+  const travelled = await steps;
+  expect(travelled.length, "frames until it is off the screen").toBeGreaterThanOrEqual(3);
+  expect(
+    travelled.filter((px) => px <= 0),
+    "frames standing still",
+  ).toEqual([]);
 });
 
 test("a swipe right brings back the previous card, front up", async ({ page }) => {

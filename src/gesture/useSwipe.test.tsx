@@ -17,6 +17,8 @@
 // [x] …while a copy of the flying card flies on from where it was, out of the stage's way, and goes when it lands
 // [x] the end card (no card under it) is let go of at once: the move lands while a copy flies off
 // [x] a pointerdown during a cancel or a deal finishes it
+// [x] a move (a fling, a slide in, a spring back, a copy flying on) starts at the timeline's time; a deal waits for the
+//     next frame
 // [x] reduced motion: no rotation while following; opacity-only animations
 // [x] commit(dir): the same fling from rest on MOTION.commitEase; not where can() forbids, nor while a pointer is down
 // [x] tap(): completes a running commit, then onTap
@@ -488,6 +490,36 @@ describe("the end card, with no card under it", () => {
     act(() => swipe().commit("next"));
     expect(onCommit).toHaveBeenCalledExactlyOnceWith("next");
     expect(animations.map((a) => a.el.hasAttribute("data-role"))).toEqual([true, false]);
+  });
+});
+
+describe("starting", () => {
+  // The document's timeline reads the last frame's time.
+  beforeEach(() => {
+    vi.spyOn(document.timeline, "currentTime", "get").mockReturnValue(1000);
+  });
+
+  test("a move carries on from the release at once: it starts at the timeline's time, not on the next frame", () => {
+    const { stage, layer, animations, swipe } = setup();
+    flick(stage, layer);
+    act(() => swipe().commit("next"));
+    act(() => swipe().commit("prev"));
+    // The fling and the rise; a copy flying on, the key's fling and rise; a copy flying on, the slide in.
+    expect(animations.map((a) => a.startTime)).toEqual([1000, 1000, 1000, 1000, 1000, 1000, 1000]);
+  });
+
+  test("so does a cancel's spring back", () => {
+    const { stage, layer, animations } = setup();
+    const finger = press(stage, layer("current"), 700, 200);
+    finger.move(650, 200, 50);
+    finger.up(100);
+    expect(animations.map((a) => a.startTime)).toEqual([1000, 1000]);
+  });
+
+  test("a deal waits for the next frame, so it starts from its first keyframe: after a render, the timeline's time can be frames old", () => {
+    const { animations, swipe } = setup();
+    act(() => swipe().deal());
+    expect(animations.map((a) => a.startTime)).toEqual([null]);
   });
 });
 

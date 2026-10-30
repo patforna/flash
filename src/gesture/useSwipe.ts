@@ -77,8 +77,17 @@ function swipe(stage: RefObject<HTMLElement | null>, options: RefObject<SwipeOpt
   const mark = (state: "idle" | "dragging" | "animating") => {
     if (stage.current) stage.current.dataset.state = state;
   };
+  // Left pending, an animation starts on the next frame, from its first keyframe.
   const animate = (el: Element, keyframes: Keyframe[], timing: KeyframeAnimationOptions) =>
     (options.current.animate ?? ((target, k, o) => target.animate(k, o)))(el, keyframes, timing);
+  // A move carries on at once, from the timeline's time (the last frame's): pending, a released card would stand still
+  // for a frame, its first keyframe being where the finger left it, before it flew.
+  const carryOn = (el: Element, keyframes: Keyframe[], timing: KeyframeAnimationOptions) => {
+    const animation = animate(el, keyframes, timing);
+    const now = document.timeline?.currentTime;
+    if (now != null) animation.startTime = now;
+    return animation;
+  };
 
   function play(animations: Animation[], dir: Dir | null, flight?: Flight) {
     const run: Run = { animations, dir, flight };
@@ -109,7 +118,7 @@ function swipe(stage: RefObject<HTMLElement | null>, options: RefObject<SwipeOpt
     copy.setAttribute("aria-hidden", "true");
     Object.assign(copy.style, { visibility: "visible", pointerEvents: "none", transformOrigin: "50% 140%" });
     card.after(copy);
-    const flown = animate(copy, keyframes, timing);
+    const flown = carryOn(copy, keyframes, timing);
     flown.currentTime = animation.currentTime;
     flown.finished.then(
       () => copy.remove(),
@@ -193,13 +202,13 @@ function swipe(stage: RefObject<HTMLElement | null>, options: RefObject<SwipeOpt
           { transform: `translateX(${to}px) rotate(${-FLING_TILT}deg)` },
         ];
     const flight = { card: current, keyframes, timing: { ...timing, fill: "forwards" as const } };
-    const animation = animate(current, flight.keyframes, flight.timing);
+    const animation = carryOn(current, flight.keyframes, flight.timing);
     const animations = [animation];
     if (next) {
       // It rises with the card leaving; under reduced motion it is in place at once, under the card fading out.
       const below = next.style.transform || underneath(0);
       write(next, underneath(1));
-      if (!reduced) animations.push(animate(next, [{ transform: below }, { transform: underneath(1) }], timing));
+      if (!reduced) animations.push(carryOn(next, [{ transform: below }, { transform: underneath(1) }], timing));
     }
     play(animations, "next", { ...flight, animation });
     // The end card has no card under it: the next pass is dealt at once, under it as it flies off.
@@ -212,7 +221,7 @@ function swipe(stage: RefObject<HTMLElement | null>, options: RefObject<SwipeOpt
     show(prev);
     if (options.current.reducedMotion()) {
       write(prev, "translateX(0px)");
-      const fade = animate(prev, [{ opacity: 0 }, { opacity: 1 }], { duration: MOTION.fadeMs, fill: "forwards" });
+      const fade = carryOn(prev, [{ opacity: 0 }, { opacity: 1 }], { duration: MOTION.fadeMs, fill: "forwards" });
       return play([fade], "prev");
     }
     const from = waiting(rect) + dx;
@@ -220,7 +229,7 @@ function swipe(stage: RefObject<HTMLElement | null>, options: RefObject<SwipeOpt
     const at = prev.style.transform || `translateX(${from}px)`;
     play(
       [
-        animate(prev, [{ transform: at }, { transform: "translateX(0px)" }], {
+        carryOn(prev, [{ transform: at }, { transform: "translateX(0px)" }], {
           ...timing,
           fill: "forwards",
         }),
@@ -252,14 +261,14 @@ function swipe(stage: RefObject<HTMLElement | null>, options: RefObject<SwipeOpt
       const from = el?.style.transform;
       if (!el || !from) continue;
       rest(el);
-      animations.push(animate(el, [{ transform: from }, { transform: home }], timing));
+      animations.push(carryOn(el, [{ transform: from }, { transform: home }], timing));
     }
     const { prev } = g.layers;
     if (prev?.style.visibility === "visible") {
       // Its resting style is hidden, so it ends off screen, still visible, until the run completes.
       const from = prev.style.transform;
       write(prev, `translateX(${gone(g.rect)}px)`);
-      animations.push(animate(prev, [{ transform: from }, { transform: prev.style.transform }], timing));
+      animations.push(carryOn(prev, [{ transform: from }, { transform: prev.style.transform }], timing));
     }
     play(animations, null);
   }

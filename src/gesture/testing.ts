@@ -5,6 +5,7 @@ import { act } from "@testing-library/react";
 export class FakeAnimation {
   playState: AnimationPlayState = "running";
   currentTime: number | null = 0;
+  startTime: number | null = null; // null: pending, to start on the next frame
   readonly finished: Promise<FakeAnimation>;
   #resolve: (a: FakeAnimation) => void = () => {};
   #reject: (e: unknown) => void = () => {};

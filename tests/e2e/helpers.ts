@@ -193,6 +193,30 @@ export function underneathWhile(page: Page, moving: string, upTo = 1): Promise<b
   );
 }
 
+// Frame by frame from the next release until the card on top is off the screen's left edge: how far it travelled
+// since the frame before, in px. Started before the gesture, read after it.
+export function leaving(page: Page): Promise<number[]> {
+  return page.evaluate(
+    () =>
+      new Promise<number[]>((resolve) => {
+        const card = document.querySelector('[data-role="current"]');
+        if (!card) throw new Error("no card on the stage");
+        let released = false;
+        addEventListener("pointerup", () => (released = true), { capture: true, once: true });
+        const steps: number[] = [];
+        let last = 0;
+        const look = () => {
+          const x = new DOMMatrix(getComputedStyle(card).transform).m41;
+          if (released) steps.push(last - x);
+          last = x;
+          if ((released && card.getBoundingClientRect().right < 0) || steps.length === 60) return resolve(steps);
+          requestAnimationFrame(look);
+        };
+        requestAnimationFrame(look);
+      }),
+  );
+}
+
 // The card's centre, where a tap or a swipe starts.
 export async function centre(page: Page): Promise<Point> {
   const box = await layer(page).boundingBox();
