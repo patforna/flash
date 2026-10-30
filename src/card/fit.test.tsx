@@ -2,13 +2,14 @@
 // [x] chooseStep: step 0 (the largest type) when it fits
 // [x] chooseStep: the first smaller step that fits
 // [x] chooseStep: "scroll" when no step fits
-// [ ] useFit: with the fonts in, measures before paint (a later layout effect sees data-fit)
-// [ ] useFit: content hidden (no data-fit) until the fonts load; then measured
+// [x] useFit: with the fonts in, measures before paint (a later layout effect sees data-fit)
+// [x] useFit: content hidden (no data-fit) until the fonts load; then measured
+// [ ] useFit: waits for the code font too (code blocks and the counter are set in it)
 // [ ] useFit: walks the steps while a part overflows down
 // [ ] useFit: a part overflowing across (a code line wider than its column) also steps down
 // [ ] useFit: "scroll" when no step fits
 // [ ] useFit: measures again when its key changes
-import { render } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import { useLayoutEffect, useRef } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { chooseStep, useFit } from "./fit";
@@ -60,5 +61,14 @@ describe("useFit", () => {
     const seen: (string | undefined)[] = [];
     render(<Face fitKey="vacuum" onLayout={(fit) => seen.push(fit)} />);
     expect(seen[0]).toBe("0");
+  });
+
+  it("keeps the content hidden until the fonts have loaded, then measures", async () => {
+    const fonts = stubFonts(false);
+    render(<Face fitKey="vacuum" />);
+    const face = screen.getByTestId("face");
+    expect(face.dataset.fit).toBeUndefined();
+    expect(fonts.load).toHaveBeenCalledWith(expect.stringContaining("Shantell Sans"));
+    await waitFor(() => expect(face.dataset.fit).toBe("0"));
   });
 });
