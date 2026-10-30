@@ -262,13 +262,23 @@ function swipe(stage: RefObject<HTMLElement | null>, options: RefObject<SwipeOpt
     options.current.onTap();
   }
 
-  return { listen, settle, commit, tap };
+  function deal() {
+    const layers = options.current.layers();
+    if (!layers) return;
+    const keyframes = [
+      { transform: "translateY(14px)", opacity: 0 },
+      { transform: "translateY(0px)", opacity: 1 },
+    ];
+    play([animate(layers.current, keyframes, { duration: MOTION.dealMs, easing: MOTION.dealEase })], null);
+  }
+
+  return { listen, settle, commit, tap, deal };
 }
 
 export function useSwipe(
   stage: RefObject<HTMLElement | null>,
   o: SwipeOptions,
-): { commit(dir: "next" | "prev"): void; tap(): void } {
+): { commit(dir: "next" | "prev"): void; tap(): void; deal(): void } {
   const options = useRef(o);
   useLayoutEffect(() => {
     options.current = o;
@@ -278,5 +288,5 @@ export function useSwipe(
   useLayoutEffect(() => {
     machine.settle();
   });
-  return { commit: machine.commit, tap: machine.tap };
+  return { commit: machine.commit, tap: machine.tap, deal: machine.deal };
 }

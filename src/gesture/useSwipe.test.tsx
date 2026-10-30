@@ -528,3 +528,20 @@ describe("tap(), for keys and buttons", () => {
     expect(onCommit.mock.invocationCallOrder[0]).toBeLessThan(onTap.mock.invocationCallOrder[0] ?? 0);
   });
 });
+
+describe("deal(), when the view brings a new card", () => {
+  test("the card on top rises 14 px as it fades in", () => {
+    const { layer, animations, swipe } = setup();
+    act(() => swipe().deal());
+    expect(animations.map((a) => [a.el, a.keyframes, a.options])).toEqual([
+      [
+        layer("current"),
+        [
+          { transform: "translateY(14px)", opacity: 0 },
+          { transform: "translateY(0px)", opacity: 1 },
+        ],
+        { duration: 220, easing: "cubic-bezier(0.2, 0.8, 0.2, 1)" },
+      ],
+    ]);
+  });
+});
