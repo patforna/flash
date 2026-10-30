@@ -43,3 +43,12 @@ export function velocityX(samples: readonly Sample[]): number {
   }
   return variance === 0 ? 0 : covariance / variance;
 }
+
+export function release(
+  dx: number,
+  _vx: number,
+  width: number,
+  _can: { prev: boolean; next: boolean },
+): "next" | "prev" | "cancel" {
+  return -dx / width >= GESTURE.commitFraction ? "next" : "cancel";
+}

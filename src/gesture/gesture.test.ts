@@ -5,7 +5,7 @@
 // - release: 28 % of the width, or 0.45 px/ms with |dx| ≥ 24; a fling against the drag cancels; only what `can` allows
 // - rubberBand: 0 gives 0, monotonic, always below 80
 import { describe, expect, test } from "vitest";
-import { classify, isTap, velocityX } from "./gesture";
+import { classify, isTap, release, velocityX } from "./gesture";
 
 const at = (x: number, y: number, t = 0) => ({ t, x, y });
 
@@ -58,5 +58,18 @@ describe("velocityX", () => {
     const flick = [at(0, 0, 0), at(300, 0, 10)];
     const settle = [at(300, 0, 100), at(310, 0, 140), at(320, 0, 180)];
     expect(velocityX([...flick, ...settle])).toBeCloseTo(0.25);
+  });
+});
+
+describe("release", () => {
+  const width = 600; // 28 % is 168 px
+  const both = { prev: true, next: true };
+
+  test("a short, slow drag cancels", () => {
+    expect(release(-50, -0.1, width, both)).toBe("cancel");
+  });
+
+  test("dragging left 28 % of the width commits next", () => {
+    expect(release(-168, 0, width, both)).toBe("next");
   });
 });
