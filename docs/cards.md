@@ -91,6 +91,7 @@ These fail, naming the card and the reason:
 | `---` straight under a line of text             | Markdown reads it as underlining a heading                                       |
 | `---` on a line of its own                      | a rule, which a card doesn't have                                                |
 | a link: `[text](url)`                           | nothing on a card can be opened; a bare URL stays plain text                     |
+| a line starting `[label]:`                      | Markdown reads it as a link's reference and hides it, even in a list item        |
 | emphasis: `*words*` or `_words_`                | no italics in the handwriting; `a*b*c` counts too, so put such text in backticks |
 | a list inside a list                            | one level of list only                                                           |
 | an image `![alt](src)` or a quote `> text`      | cards are text only                                                              |

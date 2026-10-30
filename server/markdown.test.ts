@@ -10,6 +10,7 @@
 // [x] rejects a heading (ATX and setext), a link, an image, a block quote, a rule and emphasis, each with its reason
 // [x] rejects a loose list, a list inside a list and a code block inside a list item
 // [x] rejects an unclosed fence, caught on the source
+// [x] rejects a link reference definition, caught on the source, also at the start of a list item
 // [x] reports every reason at once, each once
 // [x] renderQuestion: plain text without the outer <p>; inline code, bold and arrows
 // [x] renderQuestion rejects a second line, block markup and emphasis
@@ -90,6 +91,21 @@ describe("renderAnswer", () => {
     expect(renderAnswer(src)).toEqual({ problems: [reason] });
   });
 
+  test.each(["Glossary:\n\n[SLO]: objective", "- [SLO]: objective\n- two", "1. [x]: y"])(
+    "rejects a link reference definition, which Markdown hides: %p",
+    (src) => {
+      expect(renderAnswer(src)).toEqual({
+        problems: ["a link reference definition ([label]: …), which Markdown hides"],
+      });
+    },
+  );
+
+  test("leaves a line with [label]: elsewhere, or in code, as text", () => {
+    expect(renderAnswer("Text [ref]: not at the start\n```\n[a]: b\n```")).toEqual({
+      html: "<p>Text [ref]: not at the start</p><pre><code>[a]: b\n</code></pre>",
+    });
+  });
+
   test.each(["Code:\n```sql\nSELECT 1", "Code:\n~~~\nSELECT 1", "```\na\n```\n\n```\nb"])(
     "rejects an unclosed fence, counted on the source: %p",
     (src) => {
@@ -127,6 +143,7 @@ describe("renderQuestion", () => {
     ["# What is a heading?", ["a heading (a line starting with #, or a line underlined with --- or ===)"]],
     ["What is *this*?", ["emphasis (*text* or _text_): only **bold** is allowed"]],
     ["What is [this](https://x.dev)?", ["a link"]],
+    ["[CAP]: consistency", ["a link reference definition ([label]: …), which Markdown hides"]],
   ])("rejects %p with its reasons", (src, problems) => {
     expect(renderQuestion(src)).toEqual({ problems });
   });

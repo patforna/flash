@@ -12,6 +12,9 @@ const OPTIONS = {
 // A line that opens or closes a fenced code block (a backtick fence's info string has no backticks).
 export const FENCE = /^ {0,3}(?:`{3,}[^`]*|~{3,}.*)$/;
 
+// A line Markdown reads as a link reference definition and hides: `[label]: …`, also opening a list item.
+const REFERENCE = /^ {0,3}(?:(?:[-+*]|\d{1,9}[.)]) +)?\[[^\]]+\]:/;
+
 // Bun escapes `<` in text and attribute values, so every `<` in its output starts a tag.
 const TOKEN = /<(\/?)([a-z][a-z0-9]*)([^>]*)>|([^<]+)/g;
 
@@ -63,10 +66,14 @@ function result({ html, problems }: { html: string; problems: Set<string> }): Re
 
 function render(src: string, allowed: ReadonlySet<string>) {
   const problems = new Set<string>();
-  // Bun silently closes an open fence at the end; an odd number of fence lines means one was never closed.
-  if (src.split("\n").filter((line) => FENCE.test(line)).length % 2 === 1) {
-    problems.add("an unclosed code fence (``` or ~~~)");
+  let fenced = false;
+  for (const line of src.split("\n")) {
+    if (FENCE.test(line)) fenced = !fenced;
+    else if (!fenced && REFERENCE.test(line))
+      problems.add("a link reference definition ([label]: …), which Markdown hides");
   }
+  // Bun silently closes an open fence at the end: an odd number of fence lines means one was never closed.
+  if (fenced) problems.add("an unclosed code fence (``` or ~~~)");
   const open: string[] = [];
   // A hard break comes out as `<br />` plus the line's own newline: one break, like a soft one.
   const html = Bun.markdown
