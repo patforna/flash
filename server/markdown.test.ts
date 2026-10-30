@@ -9,7 +9,7 @@
 // [x] rejects a heading (ATX and setext), a link, an image, a block quote, a rule and emphasis, each with its reason
 // [x] rejects a loose list, a list inside a list and a code block inside a list item
 // [x] rejects an unclosed fence, caught on the source
-// [ ] reports every reason at once, each once
+// [x] reports every reason at once, each once
 // [ ] renderQuestion: plain text without the outer <p>; inline code, bold and arrows
 // [ ] renderQuestion rejects a second line, block markup and emphasis
 import { describe, expect, test } from "bun:test";
@@ -88,4 +88,18 @@ describe("renderAnswer", () => {
       expect(renderAnswer(src)).toEqual({ problems: ["an unclosed code fence (``` or ~~~)"] });
     },
   );
+
+  test("reports every reason at once, each once, in order", () => {
+    const src = "# Title\n\n[a](https://a.dev) and [b](https://b.dev)\n\n- one\n\n- two\n\n*em*\n\n```\ncode";
+
+    expect(renderAnswer(src)).toEqual({
+      problems: [
+        "an unclosed code fence (``` or ~~~)",
+        "a heading (a line starting with #, or a line underlined with --- or ===)",
+        "a link",
+        "a loose list (blank lines between its items)",
+        "emphasis (*text* or _text_): only **bold** is allowed",
+      ],
+    });
+  });
 });
