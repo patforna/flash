@@ -51,3 +51,12 @@
 .counter {
   margin: 0;
 }
+
+/* Back: the question again in the header, above the red rule; the answer in pen on the blue ruling. */
+.header {
+  margin: 0;
+}
+
+.answer {
+  margin: 0;
+}

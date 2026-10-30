@@ -29,7 +29,13 @@ export function CardView({ card, side, position, total, colourOf }: CardViewProp
           </ul>
           <Counter position={position} total={total} />
         </div>
-        <div className={`${styles.face} ${styles.back}`} {...hiddenUnless(side === "back")} />
+        <div className={`${styles.face} ${styles.back}`} {...hiddenUnless(side === "back")}>
+          {/* biome-ignore lint/security/noDangerouslySetInnerHtml: the server renders the deck's Markdown through an allowlist of tags */}
+          <h2 className={styles.header} dangerouslySetInnerHTML={{ __html: card.questionHtml }} />
+          {/* biome-ignore lint/security/noDangerouslySetInnerHtml: the server renders the deck's Markdown through an allowlist of tags */}
+          <div className={styles.answer} dangerouslySetInnerHTML={{ __html: card.answerHtml }} />
+          <Counter position={position} total={total} />
+        </div>
       </div>
     </div>
   );

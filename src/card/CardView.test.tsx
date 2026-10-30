@@ -4,7 +4,7 @@
 // [x] the front: the question, and the band in the first topic's colour
 // [x] the front: the card's topics as dots with labels, each dot in its topic's colour
 // [x] the front: the counter, the position zero-padded to the total's width ("07 / 16")
-// [ ] the back: the question again in its header, then the answer
+// [x] the back: the question again in its header, then the answer
 // [ ] each face carries data-fit once measured
 import { configure, render, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -88,6 +88,17 @@ describe("CardView", () => {
     const front = container.querySelector<HTMLElement>(`.${styles.face}`) as HTMLElement;
     const counter = within(front).getByText(text);
     expect(counter.getAttribute("aria-live")).toBe("polite");
+  });
+
+  it("writes the question again in the back's header, the answer under it and the counter", () => {
+    const back = within(renderFace("back"));
+    expect(back.getByRole("heading").textContent).toBe("Why does Postgres need VACUUM?");
+    expect(back.getByText("UPDATE").tagName).toBe("CODE");
+    expect(back.getAllByRole("listitem").map((item) => item.textContent)).toEqual([
+      "It also freezes old transaction ids.",
+      "Autovacuum runs it in the background.",
+    ]);
+    expect(back.getByText("07 / 16")).toBeTruthy();
   });
 });
 
