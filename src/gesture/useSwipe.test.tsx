@@ -363,6 +363,20 @@ describe("ignoring", () => {
     expect(onTap).not.toHaveBeenCalled();
   });
 
+  test("a press on a button over the card is left to the button", () => {
+    const { stage, onTap } = setup();
+    const button = document.createElement("button");
+    stage.append(button);
+    press(stage, button, 700, 200).up(50);
+    expect(onTap).not.toHaveBeenCalled();
+  });
+
+  test("a mouse's other buttons are ignored", () => {
+    const { stage, layer, onTap } = setup();
+    press(stage, layer("current"), 700, 200, 0, { pointerType: "mouse", button: 2 }).up(50);
+    expect(onTap).not.toHaveBeenCalled();
+  });
+
   test("a pointercancel mid-drag springs the card back", () => {
     const { stage, layer, animations } = setup();
     const finger = press(stage, layer("current"), 700, 200);

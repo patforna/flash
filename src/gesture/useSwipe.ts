@@ -161,7 +161,8 @@ function swipe(stage: RefObject<HTMLElement | null>, options: RefObject<SwipeOpt
   const own = (e: PointerEvent) => (gesture?.pointer === e.pointerId ? gesture : null);
 
   const down = (e: PointerEvent) => {
-    if (gesture) return;
+    if (gesture || e.button !== 0) return;
+    if (e.target instanceof Element && e.target.closest("button")) return;
     const layers = options.current.layers();
     if (!layers) return;
     const start = sample(e);
