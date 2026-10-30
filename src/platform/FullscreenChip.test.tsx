@@ -7,7 +7,7 @@ import { FullscreenChip } from "./FullscreenChip";
 // [x] in a tab that can go fullscreen: a "Full screen" button with an icon hidden from assistive technology
 // [x] goes fullscreen when clicked
 // [x] hides once fullscreen and returns when fullscreen ends (fullscreenchange)
-// [ ] hides when the display mode stops being a browser tab (the query's change event)
+// [x] hides when the display mode stops being a browser tab (the query's change event)
 
 // happy-dom has no Fullscreen API: each test defines what it needs, removed afterwards.
 const defined: [object, string][] = [];
@@ -34,8 +34,21 @@ function fullscreenChange(element: Element | null) {
   });
 }
 
+// happy-dom's (display-mode: browser) never changes; this one does, and tells its listeners as a MediaQueryList does.
+function displayModeQuery() {
+  const query = Object.assign(new EventTarget(), { matches: true });
+  vi.stubGlobal("matchMedia", () => query);
+  return (browser: boolean) => {
+    query.matches = browser;
+    act(() => {
+      query.dispatchEvent(new Event("change"));
+    });
+  };
+}
+
 afterEach(() => {
   for (const [target, key] of defined.splice(0)) Reflect.deleteProperty(target, key);
+  vi.unstubAllGlobals();
 });
 
 function renderChip() {
@@ -79,5 +92,15 @@ describe("FullscreenChip", () => {
 
     fullscreenChange(null);
     expect(chip()).not.toBeNull();
+  });
+
+  it("hides when the display mode stops being a browser tab", () => {
+    fullscreenTab();
+    const setBrowser = displayModeQuery();
+    renderChip();
+
+    setBrowser(false);
+
+    expect(chip()).toBeNull();
   });
 });

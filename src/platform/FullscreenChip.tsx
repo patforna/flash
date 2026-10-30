@@ -2,10 +2,15 @@ import { type ReactNode, useSyncExternalStore } from "react";
 import { canFullscreen, toggleFullscreen } from "./fullscreen";
 import styles from "./platform.module.css";
 
+// Entering or leaving fullscreen, or the display mode changing (a desktop browser's own fullscreen fires no
+// fullscreenchange), may show or hide the chip.
 function subscribe(onChange: () => void) {
+  const tab = matchMedia("(display-mode: browser)");
   document.addEventListener("fullscreenchange", onChange);
+  tab.addEventListener("change", onChange);
   return () => {
     document.removeEventListener("fullscreenchange", onChange);
+    tab.removeEventListener("change", onChange);
   };
 }
 
