@@ -399,4 +399,15 @@ describe("the first card's mark", () => {
     await act(async () => {});
     expect(marks()).toBe(1);
   });
+
+  test("is set even when a font fails to load: the card shows in the fallback", async () => {
+    const failed = Promise.reject(new DOMException("A network error occurred.", "NetworkError"));
+    failed.catch(() => {});
+    Object.defineProperty(document, "fonts", { configurable: true, value: { check: () => false, load: () => failed } });
+
+    await reading();
+    await act(async () => {});
+
+    expect(marks()).toBe(1);
+  });
 });

@@ -106,15 +106,16 @@ function countTopics({ topics, cards }: Deck): Map<string, number> {
   return new Map(topics.map((topic) => [topic, cards.filter((card) => card.topics.includes(topic)).length]));
 }
 
-// The first card is on screen once the fonts it is written in are in: the performance budgets and the screenshots
-// wait for this mark, set once per page load.
+// The first card is on screen once the fonts it is written in are in (or have failed, leaving the fallback): the
+// performance budgets and the screenshots wait for this mark, set once per page load.
 const FIRST_CARD = "flash:first-card";
 
 function useFirstCardMark() {
   useEffect(() => {
-    Promise.all(FONTS.map((font) => document.fonts.load(font))).then(() => {
+    const mark = () => {
       if (performance.getEntriesByName(FIRST_CARD, "mark").length === 0) performance.mark(FIRST_CARD);
-    });
+    };
+    Promise.all(FONTS.map((font) => document.fonts.load(font))).then(mark, mark);
   }, []);
 }
 
