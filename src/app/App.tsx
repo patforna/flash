@@ -8,6 +8,7 @@ import type { DeckView } from "../deck/types";
 import { useDeck } from "../deck/useDeck";
 import { colourFor } from "../panel/colours";
 import { TopicPanel } from "../panel/TopicPanel";
+import { FullscreenChip } from "../platform/FullscreenChip";
 import { toggleFullscreen } from "../platform/fullscreen";
 import { tick } from "../platform/haptics";
 import { CardStage } from "../stage/CardStage";
@@ -50,6 +51,7 @@ function Reader({ deck }: { deck: Deck }) {
         // All with nothing selected changes nothing, so it doesn't buzz.
         onAll={view.selected.size > 0 ? ticked(view.clearTopics) : view.clearTopics}
         colourOf={colourOf}
+        lead={<FullscreenChip />}
       />
       <CardStage
         view={{ ...view, goNext: ticked(view.goNext), goPrev: ticked(view.goPrev), reshuffle: ticked(view.reshuffle) }}

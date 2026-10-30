@@ -8,7 +8,7 @@
 // [x] colours by the topic's declared index, on the chips and the card
 // [x] the end card closes the pass
 // [x] a live region says where you are: "Card 1 of 3", the end card's text
-// [ ] haptics on next, previous, reshuffle, the end card's reshuffle and a chip toggle; never on a flip
+// [x] haptics on next, previous, reshuffle, the end card's reshuffle and a chip toggle; never on a flip
 // [ ] the fullscreen chip leads the panel; f toggles fullscreen
 // [ ] the wake lock is asked for on the first input
 // [ ] performance mark flash:first-card once the fonts are in and the first card is on screen, once per page load
@@ -306,5 +306,42 @@ describe("haptics", () => {
     fireEvent.click(chip("All, 3 cards"));
 
     expect(vibrate.mock.calls).toEqual([[8], [8]]);
+  });
+});
+
+describe("fullscreen", () => {
+  // A browser tab that can go fullscreen; happy-dom has no Fullscreen API.
+  function fullscreenTab() {
+    const request = vi.fn(async () => {});
+    Object.defineProperty(document, "fullscreenEnabled", { configurable: true, value: true });
+    Object.defineProperty(document, "fullscreenElement", { configurable: true, value: null });
+    Object.defineProperty(document.documentElement, "requestFullscreen", { configurable: true, value: request });
+    return request;
+  }
+
+  afterEach(() => {
+    Reflect.deleteProperty(document, "fullscreenEnabled");
+    Reflect.deleteProperty(document, "fullscreenElement");
+    Reflect.deleteProperty(document.documentElement, "requestFullscreen");
+  });
+
+  test("in a tab, the fullscreen chip leads the panel and goes fullscreen", async () => {
+    const request = fullscreenTab();
+    await reading();
+
+    const [lead] = within(screen.getByRole("group", { name: "Topics" })).getAllByRole("button");
+    expect(lead?.getAttribute("aria-label")).toBe("Full screen");
+    fireEvent.click(lead as HTMLElement);
+
+    expect(request).toHaveBeenCalledWith({ navigationUI: "hide" });
+  });
+
+  test("f goes fullscreen too", async () => {
+    const request = fullscreenTab();
+    await reading();
+
+    fireEvent.keyDown(document.body, { key: "f" });
+
+    expect(request).toHaveBeenCalledWith({ navigationUI: "hide" });
   });
 });
