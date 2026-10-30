@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import type { Deck } from "../../shared/types";
-import { deal, flip, next, poolFor, prev, reselect, reshuffle } from "./deck";
+import { atEnd, deal, flip, next, poolFor, prev, reselect, reshuffle } from "./deck";
 import { loadSelection, saveSelection, toggle } from "./selection";
 import type { DeckView, Pass, Rng } from "./types";
 
@@ -47,7 +47,7 @@ export function useDeck(
     });
     return {
       flip: () => move((s) => flip(s.pass)),
-      goNext: () => move((s) => (s.pass.index < s.pass.order.length ? next(s.pass) : again(s))),
+      goNext: () => move((s) => (atEnd(s.pass) ? again(s) : next(s.pass))),
       goPrev: () => move((s) => prev(s.pass)),
       reshuffle: () => move(again),
       toggleTopic: (label: string) => setState((s) => choose(s, toggle(s.selected, label))),
@@ -58,7 +58,7 @@ export function useDeck(
   return {
     prev: at(pass.index - 1),
     current: at(pass.index) ?? "end",
-    next: pass.index < pass.order.length ? (at(pass.index + 1) ?? "end") : null,
+    next: atEnd(pass) ? null : (at(pass.index + 1) ?? "end"),
     side: pass.side,
     position: pass.index + 1,
     total: pass.order.length,

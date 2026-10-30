@@ -7,6 +7,7 @@ export function toggle(selected: ReadonlySet<string>, label: string): Set<string
   return out;
 }
 
+// The stored labels the deck still declares, in its order; anything unreadable is no selection.
 export function loadSelection(s: Pick<Storage, "getItem"> | null, known: readonly string[]): Set<string> {
   try {
     const stored: unknown = JSON.parse(s?.getItem(KEY) ?? "[]");

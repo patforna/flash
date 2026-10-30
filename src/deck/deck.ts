@@ -1,12 +1,15 @@
 import type { Card } from "../../shared/types";
 import type { Pass, Rng } from "./types";
 
-// The cards carrying any selected topic, in file order. Nothing selected, or only topics no card carries, means every card.
+// The cards carrying any selected topic, in file order; every card when none does (nothing selected, or only topics
+// no card carries).
 export function poolFor(cards: readonly Card[], selected: ReadonlySet<string>): string[] {
   const chosen = cards.filter((c) => c.topics.some((t) => selected.has(t)));
   return (chosen.length > 0 ? chosen : cards).map((c) => c.id);
 }
 
+// A shuffled pass of the pool, front up. `keep` (if the pool has it) is dealt first and `avoidFirst` (if there is
+// another card) is not; both are swaps, so the rest stays a fair shuffle.
 export function deal(
   pool: readonly string[],
   rng: Rng,
@@ -18,7 +21,9 @@ export function deal(
   return { order, index: 0, side: "front" };
 }
 
-const atEnd = (p: Pass) => p.index === p.order.length;
+export function atEnd(p: Pass): boolean {
+  return p.index === p.order.length;
+}
 
 export function flip(p: Pass): Pass {
   return atEnd(p) ? p : { ...p, side: p.side === "front" ? "back" : "front" };

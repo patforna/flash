@@ -196,7 +196,7 @@ describe("useDeck", () => {
     rerender({
       version: "v2",
       topics: ["Redis", "Postgres"],
-      cards: [card("a", "Redis"), card("b"), card("f", "Redis")],
+      cards: [card("a", "Redis"), card("b", "Postgres"), card("f", "Redis")],
     });
     expect(result.current.selected).toEqual(new Set(["Redis"]));
     expect(result.current).toMatchObject({
