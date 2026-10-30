@@ -1,6 +1,6 @@
 import { useState } from "react";
 import type { Deck } from "../../shared/types";
-import { deal, next, poolFor } from "./deck";
+import { deal, next, poolFor, prev } from "./deck";
 import type { DeckView, Rng } from "./types";
 
 const none = () => {};
@@ -19,7 +19,7 @@ export function useDeck(deck: Deck, { rng = Math.random }: { rng?: Rng; storage?
     topics: deck.topics,
     flip: none,
     goNext: () => setPass(next),
-    goPrev: none,
+    goPrev: () => setPass(prev),
     reshuffle: none,
     toggleTopic: none,
     clearTopics: none,
