@@ -9,12 +9,12 @@
 // [ ] a new card from elsewhere (a reshuffle, a topic change) is dealt; one that survives isn't, nor one swiped to
 // [ ] buttons: "Show answer" / "Show question", "Previous" and "Next", which go as a swipe does
 // [ ] shortcuts: → and ← go as a swipe does, Space flips, s reshuffles, f calls onFullscreen
-import { render } from "@testing-library/react";
+import { act, render } from "@testing-library/react";
 import { StrictMode, useState } from "react";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import type { Card } from "../../shared/types";
 import type { DeckView, Side } from "../deck/types";
-import { FakeAnimation, press } from "../gesture/testing";
+import { FakeAnimation, inline, press } from "../gesture/testing";
 import { CardStage } from "./CardStage";
 
 // The card: 600 × 360 at (280, 24), as the gesture's tests have it.
@@ -136,5 +136,30 @@ describe("taps", () => {
     const { stage, layer, calls } = setup({ start: 4 });
     press(stage, layer("current"), 700, 200).up(80);
     expect(calls).toEqual(["goNext"]);
+  });
+});
+
+// A flick left at 2.5 px/ms.
+function flick(stage: HTMLElement, layer: (role: string) => HTMLElement) {
+  const finger = press(stage, layer("current"), 700, 200);
+  for (let i = 1; i <= 8; i++) finger.move(700 - 20 * i, 200);
+  finger.up();
+}
+
+const land = () =>
+  act(async () => {
+    for (const animation of animations) animation.finish();
+  });
+
+describe("swipes", () => {
+  test("a flick left goes next once the card has flown, the new card at rest before paint", async () => {
+    const { stage, layer, calls } = setup();
+    flick(stage, layer);
+    expect(calls).toEqual([]);
+    await land();
+    expect(calls).toEqual(["goNext"]);
+    expect(layer("current").textContent).toBe("b?");
+    expect(animations.map((a) => a.playState)).toEqual(["idle", "idle"]);
+    for (const role of ["prev", "current", "next"]) expect(inline(layer(role))).toEqual({ transform: "", visibility: "" });
   });
 });
