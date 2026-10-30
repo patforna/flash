@@ -9,7 +9,7 @@ import { canFullscreen, toggleFullscreen } from "./fullscreen";
 // [x] toggleFullscreen: requests fullscreen on the document element, without navigation UI
 // [x] toggleFullscreen: then locks the orientation to landscape, once fullscreen has been entered
 // [x] toggleFullscreen: exits when fullscreen
-// [ ] toggleFullscreen: swallows a SecurityError, a NotSupportedError and a missing API
+// [x] toggleFullscreen: swallows a SecurityError, a NotSupportedError and a missing API
 
 // happy-dom has no Fullscreen API and no screen.orientation: each test defines what it needs, removed afterwards.
 const defined: [object, string][] = [];
@@ -108,6 +108,17 @@ describe("toggleFullscreen", () => {
     const { request } = fullscreenApi();
     request.mockRejectedValue(new DOMException("Not allowed", "SecurityError"));
 
+    await expect(toggleFullscreen()).resolves.toBeUndefined();
+  });
+
+  it("swallows a refused orientation lock (NotSupportedError)", async () => {
+    const { lock } = fullscreenApi();
+    lock.mockRejectedValue(new DOMException("Not on this device", "NotSupportedError"));
+
+    await expect(toggleFullscreen()).resolves.toBeUndefined();
+  });
+
+  it("swallows a missing API", async () => {
     await expect(toggleFullscreen()).resolves.toBeUndefined();
   });
 });
