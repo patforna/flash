@@ -14,7 +14,7 @@ import { StrictMode, useState } from "react";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import type { Card } from "../../shared/types";
 import type { DeckView, Side } from "../deck/types";
-import { FakeAnimation } from "../gesture/testing";
+import { FakeAnimation, press } from "../gesture/testing";
 import { CardStage } from "./CardStage";
 
 // The card: 600 × 360 at (280, 24), as the gesture's tests have it.
@@ -121,5 +121,20 @@ describe("layers", () => {
   test("the blank cards behind thin out: two while 3 cards remain after this one, one while 2 do, then none", () => {
     const blanks = (start: number) => setup({ start }).stage.querySelectorAll("[data-shown]").length;
     expect([0, 1, 2, 3, 4].map(blanks)).toEqual([2, 1, 0, 0, 0]);
+  });
+});
+
+describe("taps", () => {
+  test("a tap flips the card", () => {
+    const { stage, layer, calls } = setup();
+    press(stage, layer("current"), 700, 200).up(80);
+    expect(calls).toEqual(["flip"]);
+    expect(layer("current").querySelector("[data-side]")?.getAttribute("data-side")).toBe("back");
+  });
+
+  test("a tap on the end card goes next, which reshuffles", () => {
+    const { stage, layer, calls } = setup({ start: 4 });
+    press(stage, layer("current"), 700, 200).up(80);
+    expect(calls).toEqual(["goNext"]);
   });
 });
