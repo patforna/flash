@@ -6,7 +6,7 @@
 // - [x] poolFor: an empty selection gives every card id in file order
 // - [x] poolFor: OR across the selected topics, in file order
 // - [x] poolFor: unknown topics are ignored
-// - [ ] deal: a shuffled pass of the pool at index 0, front up
+// - [x] deal: a shuffled pass of the pool at index 0, front up
 // - [ ] deal: keep puts that id first; ignored when it isn't in the pool
 // - [ ] deal: avoidFirst never starts the pass with that id when there are at least 2 cards
 // - [ ] deal: avoidFirst moves it to any other position
@@ -21,7 +21,7 @@
 
 import { describe, expect, it } from "vitest";
 import type { Card } from "../../shared/types";
-import { poolFor, shuffle } from "./deck";
+import { deal, poolFor, shuffle } from "./deck";
 import type { Rng } from "./types";
 
 const card = (id: string, ...topics: string[]): Card => ({ id, topics, questionHtml: id, answerHtml: id });
@@ -77,5 +77,12 @@ describe("poolFor", () => {
   it("ignores unknown topics", () => {
     expect(poolFor(cards, new Set(["Redis", "Nope"]))).toEqual(["a", "c"]);
     expect(poolFor(cards, new Set(["Nope"]))).toEqual(["a", "b", "c", "d"]);
+  });
+});
+
+describe("deal", () => {
+  it("deals a shuffled pass of the pool at index 0, front up", () => {
+    const pool = ["a", "b", "c", "d", "e"];
+    expect(deal(pool, mulberry32(4))).toEqual({ order: shuffle(pool, mulberry32(4)), index: 0, side: "front" });
   });
 });

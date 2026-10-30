@@ -1,10 +1,14 @@
 import type { Card } from "../../shared/types";
-import type { Rng } from "./types";
+import type { Pass, Rng } from "./types";
 
 // The cards carrying any selected topic, in file order. Nothing selected, or only topics no card carries, means every card.
 export function poolFor(cards: readonly Card[], selected: ReadonlySet<string>): string[] {
   const chosen = cards.filter((c) => c.topics.some((t) => selected.has(t)));
   return (chosen.length > 0 ? chosen : cards).map((c) => c.id);
+}
+
+export function deal(pool: readonly string[], rng: Rng): Pass {
+  return { order: shuffle(pool, rng), index: 0, side: "front" };
 }
 
 // Fisher–Yates, on a copy.
