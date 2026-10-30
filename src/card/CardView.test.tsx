@@ -46,8 +46,8 @@ describe("CardView", () => {
     expect(frame.className).toBe(styles.frame);
     expect(flipper.className).toBe(styles.flipper);
     expect(flipper.dataset.side).toBe("front");
-    expect(faces.map((face) => face.classList.contains(styles.face))).toEqual([true, true]);
-    expect(faces.map((face) => face.classList.contains(styles.back))).toEqual([false, true]);
+    expect(faces.map((face) => face.matches(`.${styles.face}`))).toEqual([true, true]);
+    expect(faces.map((face) => face.matches(`.${styles.back}`))).toEqual([false, true]);
   });
 
   it.each([
