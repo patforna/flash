@@ -26,12 +26,19 @@ function wakeLockApi() {
   return { request, sentinels };
 }
 
+// The browser drops a screen lock while the page is hidden, then the reader comes back to it.
+function pageBecomes(state: DocumentVisibilityState) {
+  vi.spyOn(document, "visibilityState", "get").mockReturnValue(state);
+  document.dispatchEvent(new Event("visibilitychange"));
+}
+
 beforeEach(() => {
   vi.useFakeTimers();
 });
 
 afterEach(() => {
   Reflect.deleteProperty(navigator, "wakeLock");
+  vi.restoreAllMocks();
   vi.useRealTimers();
 });
 
@@ -105,6 +112,17 @@ describe("useWakeLock", () => {
     await vi.advanceTimersByTimeAsync(1000);
 
     fireEvent.pointerDown(document.body);
+
+    expect(request).toHaveBeenCalledTimes(2);
+  });
+
+  it("requests it again when the page becomes visible, if it was held", () => {
+    const { request } = wakeLockApi();
+    renderHook(() => useWakeLock(), { reactStrictMode: true });
+    fireEvent.pointerDown(document.body);
+
+    pageBecomes("hidden");
+    pageBecomes("visible");
 
     expect(request).toHaveBeenCalledTimes(2);
   });

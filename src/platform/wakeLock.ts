@@ -15,11 +15,16 @@ export function useWakeLock(idleMs = 300_000): void {
       clearTimeout(idle);
       idle = setTimeout(release, idleMs);
     };
+    const onVisibilityChange = () => {
+      if (document.visibilityState === "visible") lock = wakeLock.request("screen");
+    };
     window.addEventListener("pointerdown", onInput, true);
     window.addEventListener("keydown", onInput, true);
+    document.addEventListener("visibilitychange", onVisibilityChange);
     return () => {
       window.removeEventListener("pointerdown", onInput, true);
       window.removeEventListener("keydown", onInput, true);
+      document.removeEventListener("visibilitychange", onVisibilityChange);
     };
   }, [idleMs]);
 }
