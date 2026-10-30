@@ -7,6 +7,7 @@
 // [x] inline code and bold render; -> and <- are typeset as → and ← outside code
 // [x] <-> as ↔, --> as →, <-- as ←
 // [x] a word joiner after a hyphen inside a word, and after every hyphen in inline code; none in code blocks
+// [x] a range never breaks at its en dash (U+2060), a number never from the word after it (U+00A0)
 // [x] inline code holds together (U+00A0) where a break would split it: a span of up to 20 characters, a word of one or
 //     two characters at either end, a quoted value of up to 18
 // [x] raw HTML is escaped text, not an error; tables, strikethrough, task lists and autolinks stay text
@@ -64,6 +65,18 @@ describe("renderAnswer", () => {
   test("joins a hyphen to the word after it (U+2060), so a line never breaks inside a compound or an identifier", () => {
     expect(renderAnswer("A staff-level fan-out, `allkeys-lfu` and `--x`, but not a - b or -1\n```\na-b\n```")).toEqual({
       html: "<p>A staff-\u2060level fan-\u2060out, <code>allkeys-\u2060lfu</code> and <code>-\u2060-\u2060x</code>, but not a - b or -1</p><pre><code>a-b\n</code></pre>",
+    });
+  });
+
+  test("never breaks a range at its dash, nor a number from the word it counts", () => {
+    expect(
+      renderAnswer(
+        "About **2–4 queries**, 7 days, 1.5M requests, 100k writes, 50% hits, 1,000 users and 10–20 ms;\nbut v1.2 x, s3 bucket, 2024, then a – b",
+      ),
+    ).toEqual({
+      html:
+        "<p>About <strong>2–\u20604\u00a0queries</strong>, 7\u00a0days, 1.5M\u00a0requests, 100k\u00a0writes, 50%\u00a0hits, " +
+        "1,000\u00a0users and 10–\u206020\u00a0ms;<br>but v1.2 x, s3 bucket, 2024, then a – b</p>",
     });
   });
 

@@ -114,11 +114,17 @@ function render(src: string, allowed: ReadonlySet<string>) {
         // identifier (neither font has a non-breaking hyphen).
         if (open.includes("code")) return holdCode(lines).replaceAll("-", `-${JOIN}`);
         // The arrows arrive escaped: <->, -> and <-, however many dashes.
-        return lines
-          .replace(/&lt;-+&gt;/g, "↔")
-          .replace(/-+&gt;/g, "→")
-          .replace(/&lt;-+/g, "←")
-          .replace(/([\p{L}\p{N}])-(?=[\p{L}\p{N}])/gu, `$1-${JOIN}`);
+        return (
+          lines
+            .replace(/&lt;-+&gt;/g, "↔")
+            .replace(/-+&gt;/g, "→")
+            .replace(/&lt;-+/g, "←")
+            .replace(/([\p{L}\p{N}])-(?=[\p{L}\p{N}])/gu, `$1-${JOIN}`)
+            // A range never breaks at its dash (2–4, a–z), and a number holds on to the word it counts (7 days, 1 s,
+            // 100k writes), unless it is part of a word or a version (s3, v1.2).
+            .replace(/([\p{L}\p{N}])–(?=[\p{L}\p{N}])/gu, `$1–${JOIN}`)
+            .replace(/(?<![\p{L}\p{N}_.,])(\d+(?:[.,]\d+)*[kM%+]?) (?=\p{L})/gu, `$1${HOLD}`)
+        );
       }
       if (slash) {
         open.pop();
