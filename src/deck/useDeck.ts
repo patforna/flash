@@ -1,13 +1,14 @@
 import { useState } from "react";
 import type { Deck } from "../../shared/types";
 import { deal, flip, next, poolFor, prev, reshuffle } from "./deck";
-import type { DeckView, Rng } from "./types";
+import type { DeckView, Pass, Rng } from "./types";
 
 const none = () => {};
 
 export function useDeck(deck: Deck, { rng = Math.random }: { rng?: Rng; storage?: Storage | null } = {}): DeckView {
   const [pass, setPass] = useState(() => deal(poolFor(deck.cards, new Set()), rng));
   const at = (i: number) => deck.cards.find((c) => c.id === pass.order[i]) ?? null;
+  const again = (p: Pass) => reshuffle(p, poolFor(deck.cards, new Set()), rng);
   return {
     prev: at(pass.index - 1),
     current: at(pass.index) ?? "end",
@@ -18,10 +19,9 @@ export function useDeck(deck: Deck, { rng = Math.random }: { rng?: Rng; storage?
     selected: new Set(),
     topics: deck.topics,
     flip: () => setPass(flip),
-    goNext: () =>
-      setPass((p) => (p.index < p.order.length ? next(p) : reshuffle(p, poolFor(deck.cards, new Set()), rng))),
+    goNext: () => setPass((p) => (p.index < p.order.length ? next(p) : again(p))),
     goPrev: () => setPass(prev),
-    reshuffle: () => setPass((p) => reshuffle(p, poolFor(deck.cards, new Set()), rng)),
+    reshuffle: () => setPass(again),
     toggleTopic: none,
     clearTopics: none,
   };
