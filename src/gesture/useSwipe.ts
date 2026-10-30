@@ -1,5 +1,5 @@
 import { type RefObject, useEffect, useLayoutEffect, useRef } from "react";
-import { classify, GESTURE, isTap, type Sample } from "./gesture";
+import { classify, GESTURE, isTap, rubberBand, type Sample } from "./gesture";
 
 export interface SwipeOptions {
   layers(): { current: HTMLElement; next: HTMLElement | null; prev: HTMLElement | null } | null;
@@ -54,8 +54,11 @@ export function useSwipe(stage: RefObject<HTMLElement | null>, o: SwipeOptions):
         layers.prev.style.transform = `translateX(${dx - rect.right - OFF_SCREEN}px)`;
         return;
       }
-      layers.current.style.transform = `translateX(${dx}px) rotate(${tilt(dx)}deg)`;
-      if (layers.next) layers.next.style.transform = underneath(Math.min(-dx / rect.width / GESTURE.commitFraction, 1));
+      const x = dx > 0 ? rubberBand(dx) : dx;
+      layers.current.style.transform = `translateX(${fixed(x)}px) rotate(${fixed(tilt(x))}deg)`;
+      if (layers.next && dx < 0) {
+        layers.next.style.transform = underneath(Math.min(-dx / rect.width / GESTURE.commitFraction, 1));
+      }
     };
     const up = (e: PointerEvent) => {
       if (gesture?.axis === "pending" && isTap(gesture.start, sample(e))) options.current.onTap();

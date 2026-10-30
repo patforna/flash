@@ -65,7 +65,7 @@ class FakeAnimation {
   }
 }
 
-function setup(options: Partial<SwipeOptions> = {}) {
+function setup(options: Partial<SwipeOptions> = {}, { prev = true } = {}) {
   const animations: FakeAnimation[] = [];
   const onTap = vi.fn();
   const onCommit = vi.fn();
@@ -77,7 +77,7 @@ function setup(options: Partial<SwipeOptions> = {}) {
       layers: () => {
         const find = (role: string) => stage.current?.querySelector<HTMLElement>(`[data-role="${role}"]`) ?? null;
         const current = find("current");
-        return current && { current, next: find("next"), prev: find("prev") };
+        return current && { current, next: find("next"), prev: prev ? find("prev") : null };
       },
       can: () => ({ prev: true, next: true }),
       onTap,
@@ -200,6 +200,14 @@ describe("following the finger", () => {
     finger.move(600, 200);
     expect(layer("prev").style.transform).toBe("translateX(-760px)");
     expect(layer("current").style.transform).toBe("");
+    expect(layer("next").style.transform).toBe("");
+  });
+
+  test("with no previous card, a right drag only gives a little, like a rubber band", () => {
+    const { stage, layer } = setup({}, { prev: false });
+    const finger = press(stage, layer("current"), 400, 200);
+    finger.move(480, 200);
+    expect(layer("current").style.transform).toBe("translateX(28.3871px) rotate(0.8516deg)");
     expect(layer("next").style.transform).toBe("");
   });
 });
