@@ -104,7 +104,8 @@ function swipe(stage: RefObject<HTMLElement | null>, options: RefObject<SwipeOpt
       return;
     }
     const x = dx > 0 ? rubberBand(dx) : dx;
-    write(layers.current, `translateX(${fixed(x)}px) rotate(${fixed(tilt(x))}deg)`);
+    const deg = options.current.reducedMotion() ? 0 : tilt(x);
+    write(layers.current, `translateX(${fixed(x)}px) rotate(${fixed(deg)}deg)`);
     if (layers.next && dx < 0) write(layers.next, underneath(Math.min(-dx / rect.width / GESTURE.commitFraction, 1)));
   }
 

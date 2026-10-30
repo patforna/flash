@@ -412,3 +412,13 @@ describe("input during an animation", () => {
     expect(inline(layer("prev"))).toEqual({ transform: "", visibility: "" });
   });
 });
+
+describe("reduced motion", () => {
+  const reducedMotion = () => true;
+
+  test("the card still follows the finger, without tilting", () => {
+    const { stage, layer } = setup({ reducedMotion });
+    press(stage, layer("current"), 700, 200).move(650, 200);
+    expect(layer("current").style.transform).toBe("translateX(-50px) rotate(0deg)");
+  });
+});
