@@ -2,7 +2,7 @@
 // - [x] shuffle is a permutation of its input
 // - [ ] shuffle is deterministic for a seeded rng
 // - [ ] shuffle never mutates its input
-// - [ ] shuffle puts every item in every position (a real shuffle, not a fixed rearrangement)
+// - [x] shuffle puts every item in every position (a real shuffle, not a fixed rearrangement)
 // - [ ] poolFor: an empty selection gives every card id in file order
 // - [ ] poolFor: OR across the selected topics, in file order
 // - [ ] poolFor: unknown topics are ignored
@@ -38,5 +38,14 @@ describe("shuffle", () => {
   it("is a permutation of its input", () => {
     const xs = ["a", "b", "c", "d", "e"];
     expect(shuffle(xs, mulberry32(1)).toSorted()).toEqual(xs);
+  });
+
+  it("puts every item in every position", () => {
+    const rng = mulberry32(2);
+    const placings = new Set<string>();
+    for (let n = 0; n < 100; n++) {
+      for (const [i, x] of shuffle(["a", "b", "c", "d"], rng).entries()) placings.add(`${x} at ${i}`);
+    }
+    expect(placings.size).toBe(4 * 4);
   });
 });
