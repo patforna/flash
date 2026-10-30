@@ -9,7 +9,7 @@ import { measure } from "./budget";
 // [x] JS: the gzipped size of the scripts index.html references, and nothing else
 // [x] CSS: the gzipped size of the stylesheets index.html references
 // [x] fonts: the raw size of every woff2 file
-// [ ] precache: the raw size of every file sw.js precaches, each counted once
+// [x] precache: the raw size of every file sw.js precaches, each counted once
 // [ ] breaches: none at the limits; one line per budget exceeded, with the size and the limit
 // [ ] table: one aligned row per budget, with the size, the limit and the share used
 // [ ] the command: within budget it prints the table and exits 0
@@ -83,4 +83,16 @@ test("fonts are the raw size of every woff2 file", () => {
     "assets/icon.png": new Uint8Array(5_000),
   });
   expect(measure(dir).fonts).toBe(1_234);
+});
+
+// vite-plugin-pwa lists manifest.webmanifest twice: it adds it itself, and the glob matches it too.
+test("precache is the raw size of every file sw.js precaches, each counted once", () => {
+  const dir = dist({
+    "index.html": html(""),
+    "sw.js": sw(["index.html", "manifest.webmanifest", "assets/app.js", "manifest.webmanifest"]),
+    "manifest.webmanifest": new Uint8Array(400),
+    "assets/app.js": new Uint8Array(200_000),
+    "workbox-1.js": new Uint8Array(22_000),
+  });
+  expect(measure(dir).precache).toBe(html("").length + 400 + 200_000);
 });
