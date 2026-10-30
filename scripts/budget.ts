@@ -60,5 +60,12 @@ const sum = (paths: Iterable<string>, size: (path: string) => number) =>
   Array.from(paths, (path) => size(path)).reduce((a, b) => a + b, 0);
 
 if (import.meta.main) {
-  console.log(table(measure(process.argv[2] ?? "dist")));
+  const sizes = measure(process.argv[2] ?? "dist");
+  const over = breaches(sizes);
+  if (over.length > 0) {
+    console.error(over.join("\n"));
+    process.exitCode = 1;
+  } else {
+    console.log(table(sizes));
+  }
 }

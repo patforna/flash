@@ -14,7 +14,7 @@ import { breaches, measure, table } from "./budget";
 // [x] breaches: one line per budget exceeded, with the size and the limit
 // [x] table: one aligned row per budget, with the size, the limit and the share used
 // [x] the command: within budget it prints the table and exits 0
-// [ ] the command: over budget it prints the breaches and exits 1
+// [x] the command: over budget it prints the breaches and exits 1
 // [ ] the command: reads dist by default
 
 const dirs: string[] = [];
@@ -129,4 +129,18 @@ const run = (args: string[], cwd?: string) => {
 test("within every budget the command prints the table and exits 0", () => {
   const dir = dist({ "index.html": html(""), "sw.js": sw([]) });
   expect(run([dir])).toEqual({ exitCode: 0, out: `${table({ js: 0, css: 0, fonts: 0, precache: 0 })}\n`, err: "" });
+});
+
+test("over a budget the command prints one line per breach and exits 1", () => {
+  const dir = dist({
+    "index.html": html(""),
+    "sw.js": sw(["assets/hand.woff2", "assets/icon.png"]),
+    "assets/hand.woff2": new Uint8Array(241_000),
+    "assets/icon.png": new Uint8Array(509_000),
+  });
+  expect(run([dir])).toEqual({
+    exitCode: 1,
+    out: "",
+    err: "fonts: 241.00 kB, over the 240 kB budget\nprecache: 750.00 kB, over the 700 kB budget\n",
+  });
 });
