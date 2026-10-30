@@ -9,7 +9,7 @@
 // [ ] a new card from elsewhere (a reshuffle, a topic change) is dealt; one that survives isn't, nor one swiped to
 // [ ] buttons: "Show answer" / "Show question", "Previous" and "Next", which go as a swipe does
 // [ ] shortcuts: → and ← go as a swipe does, Space flips, s reshuffles, f calls onFullscreen
-import { act, render } from "@testing-library/react";
+import { act, fireEvent, render, screen } from "@testing-library/react";
 import { StrictMode, useState } from "react";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import type { Card } from "../../shared/types";
@@ -302,5 +302,14 @@ describe("dealing", () => {
     expect(layer("current").textContent).toBe("b?");
     expect(animations.at(-1)?.el).toBe(layer("current"));
     expect(animations.at(-1)?.keyframes).toEqual(deal);
+  });
+});
+
+describe("buttons", () => {
+  test("\"Show answer\" flips the card, then reads \"Show question\"", () => {
+    const { calls } = setup();
+    fireEvent.click(screen.getByRole("button", { name: "Show answer" }));
+    expect(calls).toEqual(["flip"]);
+    expect(screen.getByRole("button", { name: "Show question" })).toBeTruthy();
   });
 });

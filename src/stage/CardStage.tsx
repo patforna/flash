@@ -100,6 +100,9 @@ export function CardStage({ view, renderCard }: CardStageProps) {
           </div>
         );
       })}
+      <button type="button" className={styles.flip} onClick={swipe.tap}>
+        {view.side === "front" ? "Show answer" : "Show question"}
+      </button>
     </div>
   );
 }
