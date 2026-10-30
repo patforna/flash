@@ -15,7 +15,8 @@ function subscribe(onChange: () => void) {
 }
 
 export function FullscreenChip(): ReactNode {
-  if (!useSyncExternalStore(subscribe, canFullscreen)) return null;
+  const shown = useSyncExternalStore(subscribe, canFullscreen);
+  if (!shown) return null;
   return (
     <button type="button" className={styles.chip} onClick={toggleFullscreen}>
       <svg className={styles.icon} viewBox="0 0 16 16" aria-hidden="true">
