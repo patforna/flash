@@ -1,0 +1,109 @@
+# Fixture deck for deterministic tests (served on port 4173 in e2e). Valid by every rule in docs/plan.md §9: keep it so.
+# Between them the cards use every markup feature; the comments mark the cards that sit at a limit.
+topics = ["Redis", "Postgres", "Queues", "Consistency", "Sharding", "Real-time", "Case studies"]
+
+[[card]]
+question = "What does `SETNX` do in Redis, and what is it used for?"
+topics = ["Redis"]
+answer = '''
+Sets a key **only if it does not exist**: it returns 1 if it set the key, 0 if not.
+Used for simple locks and for deduplicating work.
+Prefer `SET key value NX PX 30000`: it also sets an expiry atomically.
+'''
+
+[[card]]
+question = "Why does Postgres need VACUUM?"
+topics = ["Postgres"]
+answer = '''
+MVCC never changes a row in place: an `UPDATE` writes a new row version and leaves the old one as a dead tuple.
+VACUUM makes that space reusable.
+- It also freezes old transaction ids before they wrap around.
+- Autovacuum runs it in the background: tune it, never turn it off.
+'''
+
+[[card]]
+question = "How does consistent hashing limit data movement when a node joins?"
+topics = ["Sharding"]
+answer = '''
+Nodes and keys hash onto one ring; a key belongs to the first node clockwise from it.
+1. A new node takes over only the keys between it and its predecessor.
+2. Only about K/N keys move (K keys, N nodes); with `hash mod N`, almost all would.
+3. Virtual nodes give each server many small arcs, which evens out the load.
+'''
+
+[[card]]
+question = "What is the difference between at-least-once and exactly-once delivery?"
+topics = ["Queues", "Consistency"]
+answer = '''
+At-least-once: the broker redelivers until the consumer acks, so a message can arrive twice.
+Exactly-once: each message takes effect once, however often it arrives.
+
+In practice: at-least-once delivery plus an idempotent consumer.
+Dedupe on a message id -> a redelivery becomes a no-op.
+'''
+
+[[card]]
+question = "How can several workers take jobs from one Postgres table without blocking each other?"
+topics = ["Postgres", "Queues"]
+answer = '''
+Each worker locks the row it claims and skips rows that others hold:
+```sql
+SELECT id FROM jobs
+WHERE status = 'queued'
+ORDER BY id
+LIMIT 1
+FOR UPDATE SKIP LOCKED;
+```
+Do the job in that transaction, then mark it done.
+'''
+
+# Three topics, the most a card may carry.
+[[card]]
+question = "Sketch how a group chat delivers a message to the members who are online."
+topics = ["Real-time", "Queues", "Case studies"]
+answer = '''
+1. The sender's gateway appends the message to the chat's log, then acks.
+2. A fan-out worker looks up which gateway holds each member's connection.
+3. Each of those gateways pushes the message down that member's WebSocket.
+
+Offline members catch up on reconnect by sending their last seen id.
+'''
+
+# Question of exactly 100 characters, the limit.
+[[card]]
+question = "Sketch the read path of a URL shortener that serves 10k redirects per second: what does each hop do?"
+topics = ["Case studies", "Redis"]
+answer = '''
+Browser -> load balancer -> stateless app servers -> Redis -> database.
+- Redis holds the hot short codes; on a miss, read the database and fill the cache.
+- Answer 302 to count every click; 301 lets browsers cache the redirect.
+'''
+
+# Near the limits: 12 lines and about 500 characters, so it needs a smaller fit step.
+[[card]]
+question = "How do you choose a shard key?"
+topics = ["Sharding", "Postgres"]
+answer = '''
+Pick the key that most of your queries filter on;
+it must also spread **reads, writes and data** evenly.
+
+- High cardinality: many distinct key values.
+- Even frequency: no hot key, such as a celebrity.
+- With ranges, not monotonic: new ids hit one shard.
+- Co-locate what you join, for example by tenant id.
+
+A query without the key has to ask every shard.
+Hash the key for an even spread; use ranges only
+when range scans matter more than balance.
+Changing it later means moving most of the data.
+'''
+
+[[card]]
+question = "When would you choose WebSockets over long polling?"
+topics = ["Real-time"]
+answer = '''
+When both sides send often: one long-lived, full-duplex connection replaces a request per message.
+- Lower latency and less overhead per message.
+- Costs: stateful servers, sticky routing and reconnect logic.
+- For server-to-client only, Server-Sent Events are simpler.
+'''

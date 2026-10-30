@@ -1,0 +1,47 @@
+/* Design tokens, "midnight desk" (docs/plan.md §7). The WAAPI timings live in src/motion/timing.ts. */
+:root {
+  /* Desk: the page, theme and manifest colour; the glow is the radial ellipse behind the card. */
+  --desk: #11131a;
+  --desk-glow: #1a1e2b;
+
+  /* Paper: the card; the blank cards peeking out behind it; the card's 1 px edge. */
+  --paper: #fffdf6;
+  --paper-shade: #f1ebdb;
+  --paper-edge: #e2d9c2;
+
+  /* Ruling on the back: the lines the answer is written on; the line under the header. */
+  --rule-blue: #a9cbea;
+  --rule-red: #ee5d6c;
+
+  /* Inks, contrast on --paper: marker for the question (17.6:1); pen for the answer (12.5:1); soft pen for the
+     back's header (7.0:1); pencil for the counter and the on-card topics (5.8:1). */
+  --ink-marker: #15171f;
+  --ink-pen: #1f2d6b;
+  --ink-pen-soft: #4a5585;
+  --ink-pencil: #5f6475;
+
+  /* Highlighter: bold in answers, the focus ring, the wordmark. The wash sits behind inline code and code blocks. */
+  --hl: #fff04d;
+  --code-wash: rgb(31 45 107 / 7%);
+
+  /* On the desk: chip labels (15.4:1); secondary text (6.9:1). Text on a sticker (at least 7.6:1 on all eight). */
+  --chalk: #eceae3;
+  --chalk-dim: #9a9daa;
+  --sticker-ink: #121318;
+
+  /* Stickers: a topic's colour is its declared index mod 8, in this order. */
+  --s-pink: #ff7aa8;
+  --s-marigold: #ffc93c;
+  --s-mint: #45e0a0;
+  --s-sky: #6cb6ff;
+  --s-lilac: #bfa2ff;
+  --s-tangerine: #ff9150;
+  --s-teal: #34d1c1;
+  --s-lime: #d7f25a;
+
+  /* Flip: a CSS transition (rotateX), so a tap mid-flip reverses from the current angle. Under reduced motion the
+     faces cross-fade instead. */
+  --flip-duration: 380ms;
+  --flip-easing: cubic-bezier(0.3, 1.2, 0.45, 1);
+  --flip-fade-duration: 140ms;
+}

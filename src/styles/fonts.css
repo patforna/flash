@@ -1,0 +1,22 @@
+/* Self-hosted fonts, OFL-1.1 (licences beside the files in src/fonts/). One latin file per family, so no
+   unicode-range: the browser uses every glyph a file has and falls back only for what is missing.
+   Measure text only after document.fonts.load(), never on document.fonts.status. */
+
+/* Handwriting, everywhere but code: variable, wght 300–800 plus the INFM 0–100, BNCE −100–100 and SPAC 0–100 axes
+   (font-variation-settings: "INFM" 100, "BNCE" 35). Preloaded by index.html; blocks rather than flashing a fallback. */
+@font-face {
+  font-family: "Shantell Sans";
+  font-style: normal;
+  font-weight: 300 800;
+  font-display: block;
+  src: url("../fonts/shantell-sans-latin-full-normal.woff2") format("woff2");
+}
+
+/* Code and the counter's digits. */
+@font-face {
+  font-family: "Monaspace Radon";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("../fonts/monaspace-radon-latin-400-normal.woff2") format("woff2");
+}
