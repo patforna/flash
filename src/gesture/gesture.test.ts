@@ -1,11 +1,11 @@
 // To do:
-// - classify: under the slop pending; horizontal when |dx| ≥ 1.2·|dy| as the slop is crossed, otherwise vertical
-// - isTap: moved under 10 px and lasted at most 350 ms
-// - velocityX: least squares over the last 80 ms; older samples ignored; one sample gives 0
-// - release: 28 % of the width, or 0.45 px/ms with |dx| ≥ 24; a fling against the drag cancels; only what `can` allows
-// - rubberBand: 0 gives 0, monotonic, always below 80
+// [x] classify: under the slop pending; horizontal when |dx| ≥ 1.2·|dy| as the slop is crossed, otherwise vertical
+// [x] isTap: moved under 10 px and lasted at most 350 ms
+// [x] velocityX: least squares over the last 80 ms; older samples ignored; one sample gives 0
+// [x] release: 28 % of the width, or 0.45 px/ms with |dx| ≥ 24; a fling against the drag cancels; only what `can` allows
+// [x] rubberBand: 0 gives 0, monotonic, always below 80
 import { describe, expect, test } from "vitest";
-import { classify, isTap, release, velocityX } from "./gesture";
+import { classify, isTap, release, rubberBand, velocityX } from "./gesture";
 
 const at = (x: number, y: number, t = 0) => ({ t, x, y });
 
@@ -95,5 +95,19 @@ describe("release", () => {
   test("commits only where there is a card to go to", () => {
     expect(release(300, 0, width, { prev: false, next: true })).toBe("cancel");
     expect(release(-300, 0, width, { prev: true, next: false })).toBe("cancel");
+  });
+});
+
+describe("rubberBand", () => {
+  test("no drag gives no offset", () => {
+    expect(rubberBand(0)).toBe(0);
+  });
+
+  test("resists more the further it goes, and never reaches 80 px", () => {
+    const offsets = [10, 40, 80, 160, 400, 10_000].map(rubberBand);
+    expect(offsets).toEqual([...offsets].sort((a, b) => a - b));
+    expect(new Set(offsets).size).toBe(offsets.length);
+    expect(offsets.at(-1)).toBeLessThan(80);
+    expect(rubberBand(80)).toBeCloseTo(28.39, 2);
   });
 });

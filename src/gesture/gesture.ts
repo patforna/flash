@@ -58,3 +58,9 @@ export function release(
   const dir = dx < 0 ? "next" : "prev";
   return (far || flung) && !flungBack && can[dir] ? dir : "cancel";
 }
+
+// How far the card gives when there is no previous card: 1:1-ish at first, approaching rubberLimit.
+export function rubberBand(dx: number): number {
+  const limit = GESTURE.rubberLimit;
+  return limit * (1 - 1 / ((0.55 * dx) / limit + 1));
+}
