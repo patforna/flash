@@ -17,5 +17,9 @@ export function loadSelection(s: Pick<Storage, "getItem"> | null, known: readonl
 }
 
 export function saveSelection(s: Pick<Storage, "setItem"> | null, selected: ReadonlySet<string>): void {
-  s?.setItem(KEY, JSON.stringify([...selected]));
+  try {
+    s?.setItem(KEY, JSON.stringify([...selected]));
+  } catch {
+    // Blocked or full storage: the selection just won't outlive the page.
+  }
 }

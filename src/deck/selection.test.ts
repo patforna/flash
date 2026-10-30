@@ -6,7 +6,7 @@
 // - [x] loadSelection gives the empty set for nothing stored, invalid JSON or a non-array
 // - [x] loadSelection gives the empty set for a throwing storage or no storage
 // - [x] saveSelection writes the JSON array under flash:v1:topics
-// - [ ] saveSelection swallows a throwing storage and does nothing without one
+// - [x] saveSelection swallows a throwing storage and does nothing without one
 
 import { describe, expect, it } from "vitest";
 import { loadSelection, saveSelection, toggle } from "./selection";
@@ -58,5 +58,15 @@ describe("saveSelection", () => {
     const writes: string[][] = [];
     saveSelection({ setItem: (key, value) => writes.push([key, value]) }, new Set(["Redis", "Queues"]));
     expect(writes).toEqual([["flash:v1:topics", '["Redis","Queues"]']]);
+  });
+
+  it("swallows a throwing storage and does nothing without one", () => {
+    const full = {
+      setItem: () => {
+        throw new DOMException("The quota has been exceeded.", "QuotaExceededError");
+      },
+    };
+    expect(() => saveSelection(full, new Set(["Redis"]))).not.toThrow();
+    expect(() => saveSelection(null, new Set(["Redis"]))).not.toThrow();
   });
 });
