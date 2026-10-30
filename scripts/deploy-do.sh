@@ -67,8 +67,9 @@ health() {
 }
 
 up() {
-  # The gate: nothing reaches the droplet unless every check passes. No flag skips it.
-  (cd "$root" && bun install --frozen-lockfile && bun run verify)
+  # The gate: nothing reaches the droplet unless every check passes. No flag skips it. CI=1 makes Playwright start its
+  # own servers, so a stale one left on 4173 or 4174 fails the gate instead of being tested.
+  (cd "$root" && bun install --frozen-lockfile && CI=1 bun run verify)
   stage
 
   if [[ -z $(ip) ]]; then
@@ -137,7 +138,7 @@ cards() {
   (cd "$root" && bun run cards:check)
   # The fit test runs the built server: build only when there is none, so shipping cards never rebuilds the code.
   [[ -d $root/dist && -f $root/build/server.js ]] || (cd "$root" && bun run build)
-  (cd "$root" && bun run e2e tests/e2e/fit.spec.ts)
+  (cd "$root" && CI=1 bun run e2e tests/e2e/fit.spec.ts)
   rsync -az -e "$SSH" "$root/cards/cards.toml" "root@$(ip):$APP/app/cards/"
   remote "chown app: $APP/app/cards/cards.toml && systemctl restart flash"
   health
