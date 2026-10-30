@@ -402,4 +402,13 @@ describe("input during an animation", () => {
     await act(async () => {});
     expect(onCommit).toHaveBeenCalledOnce();
   });
+  test("a pointerdown mid-cancel finishes it", () => {
+    const { stage, layer, animations } = setup();
+    const finger = press(stage, layer("current"), 400, 200);
+    finger.move(450, 200, 50);
+    finger.up(100);
+    press(stage, layer("current"), 700, 200, 200);
+    expect(animations[0]?.playState).toBe("finished");
+    expect(inline(layer("prev"))).toEqual({ transform: "", visibility: "" });
+  });
 });
