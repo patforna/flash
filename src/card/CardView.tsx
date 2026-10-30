@@ -10,7 +10,7 @@ export interface CardViewProps {
   colourOf(topic: string): string;
 }
 
-export function CardView({ card, side, colourOf }: CardViewProps) {
+export function CardView({ card, side, position, total, colourOf }: CardViewProps) {
   const colours = card.topics.map(colourOf);
   return (
     <div className={styles.frame}>
@@ -27,10 +27,20 @@ export function CardView({ card, side, colourOf }: CardViewProps) {
               </li>
             ))}
           </ul>
+          <Counter position={position} total={total} />
         </div>
         <div className={`${styles.face} ${styles.back}`} {...hiddenUnless(side === "back")} />
       </div>
     </div>
+  );
+}
+
+// "07 / 16": the position padded to the total's width, so the digits never shift as you read on.
+function Counter({ position, total }: { position: number; total: number }) {
+  return (
+    <p className={styles.counter} aria-live="polite">
+      {String(position).padStart(String(total).length, "0")} / {total}
+    </p>
   );
 }
 

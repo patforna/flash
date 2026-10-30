@@ -46,3 +46,8 @@
 .dot {
   display: inline-block;
 }
+
+/* "07 / 16", bottom right on both faces, in Radon so the digits keep still. */
+.counter {
+  margin: 0;
+}
