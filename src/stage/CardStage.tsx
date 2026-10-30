@@ -22,7 +22,9 @@ export function CardStage({ view, renderCard }: CardStageProps) {
   const stage = useRef<HTMLDivElement>(null);
   const layers = useRef<Record<Role, HTMLDivElement | null>>({ next: null, current: null, prev: null });
 
-  useSwipe(stage, {
+  // The card a commit lands on: arriving by a swipe, it isn't dealt.
+  const landing = useRef<string | null>(null);
+  const swipe = useSwipe(stage, {
     layers: () => {
       const { current, next, prev } = layers.current;
       return current && { current, next: view.next && next, prev: view.prev && prev };
@@ -30,7 +32,12 @@ export function CardStage({ view, renderCard }: CardStageProps) {
     can: () => ({ prev: view.prev !== null, next: view.next !== null || view.current === "end" }),
     // The end card has no back: a tap deals the next pass.
     onTap: () => (view.current === "end" ? view.goNext() : view.flip()),
-    onCommit: (dir) => (dir === "next" ? view.goNext() : view.goPrev()),
+    onCommit: (dir) => {
+      const to = view[dir];
+      landing.current = to && keyOf(to);
+      if (dir === "next") view.goNext();
+      else view.goPrev();
+    },
     reducedMotion,
   });
 
@@ -46,8 +53,10 @@ export function CardStage({ view, renderCard }: CardStageProps) {
   useLayoutEffect(() => {
     const key = keyOf(view.current);
     const el = stage.current;
-    if (key !== shown.current.key) stopFlip();
-    else if (el && view.side !== shown.current.side) {
+    if (key !== shown.current.key) {
+      stopFlip();
+      if (key !== landing.current) swipe.deal();
+    } else if (el && view.side !== shown.current.side) {
       el.setAttribute("data-flipping", "");
       clearTimeout(flipEnd.current);
       const duration = getComputedStyle(el).getPropertyValue(
@@ -56,6 +65,7 @@ export function CardStage({ view, renderCard }: CardStageProps) {
       flipEnd.current = setTimeout(stopFlip, parseFloat(duration) || 0);
     }
     shown.current = { key, side: view.side };
+    landing.current = null;
   });
   useEffect(() => {
     return () => clearTimeout(flipEnd.current);

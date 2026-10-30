@@ -44,7 +44,14 @@ interface Pass {
 }
 
 // A pass as useDeck gives it: every move lands front up; past the last card, the end card, whose next reshuffles.
-function Reader({ calls, onFullscreen, start }: { calls: string[]; onFullscreen(): void; start: number }) {
+interface ReaderProps {
+  calls: string[];
+  onFullscreen(): void;
+  start: number;
+  held: { view?: DeckView };
+}
+
+function Reader({ calls, onFullscreen, start, held }: ReaderProps) {
   const [pass, setPass] = useState<Pass>({ order: ["a", "b", "c", "d"].map(card), index: start, side: "front" });
   const { order, index, side } = pass;
   const n = order.length;
@@ -72,6 +79,7 @@ function Reader({ calls, onFullscreen, start }: { calls: string[]; onFullscreen(
     toggleTopic: move("toggleTopic", (p) => ({ ...p, order: [p.order[p.index] ?? card("x"), card("y"), card("z")] })),
     clearTopics: move("clearTopics", (p) => p),
   };
+  held.view = view;
   return (
     <CardStage
       view={view}
@@ -89,18 +97,24 @@ function Reader({ calls, onFullscreen, start }: { calls: string[]; onFullscreen(
 function setup({ start = 0 } = {}) {
   const calls: string[] = [];
   const onFullscreen = vi.fn();
+  const held: { view?: DeckView } = {};
   const view = render(
     <StrictMode>
-      <Reader calls={calls} onFullscreen={onFullscreen} start={start} />
+      <Reader calls={calls} onFullscreen={onFullscreen} start={start} held={held} />
     </StrictMode>,
   );
+  // The view as the reader last rendered it, for changes that come from elsewhere (keys, the topic panel).
+  const deck = () => {
+    if (!held.view) throw new Error("not rendered");
+    return held.view;
+  };
   const stage = view.container.firstElementChild as HTMLElement;
   const layer = (role: string) => {
     const el = stage.querySelector<HTMLElement>(`[data-role="${role}"]`);
     if (!el) throw new Error(`no ${role} layer`);
     return el;
   };
-  return { stage, layer, calls, onFullscreen };
+  return { stage, layer, calls, onFullscreen, deck };
 }
 
 describe("layers", () => {
@@ -258,5 +272,19 @@ describe("flipping", () => {
     await land();
     expect(layer("current").textContent).toBe("b?");
     expect(stage.hasAttribute("data-flipping")).toBe(false);
+  });
+});
+
+describe("dealing", () => {
+  const deal = [
+    { transform: "translateY(14px)", opacity: 0 },
+    { transform: "translateY(0px)", opacity: 1 },
+  ];
+
+  test("a new card from elsewhere, here a reshuffle, is dealt", () => {
+    const { layer, deck } = setup();
+    act(() => deck().reshuffle());
+    expect(layer("current").textContent).toBe("b?");
+    expect(animations.map((a) => [a.el, a.keyframes])).toEqual([[layer("current"), deal]]);
   });
 });
