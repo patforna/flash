@@ -158,4 +158,11 @@ describe("useDeck", () => {
     expect(result.current.current).not.toBe(shown);
     expect(walk(result).toSorted()).toEqual(deck.cards.filter((c) => c.topics.includes(topic)).map((c) => c.id));
   });
+
+  it("saves the selection when a topic is toggled", () => {
+    const { result, storage } = setup();
+    act(() => result.current.toggleTopic("Queues"));
+    act(() => result.current.toggleTopic("Redis"));
+    expect(storage.getItem("flash:v1:topics")).toBe('["Queues","Redis"]');
+  });
 });

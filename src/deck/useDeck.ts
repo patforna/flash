@@ -1,7 +1,7 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { Deck } from "../../shared/types";
 import { deal, flip, next, poolFor, prev, reselect, reshuffle } from "./deck";
-import { loadSelection, toggle } from "./selection";
+import { loadSelection, saveSelection, toggle } from "./selection";
 import type { DeckView, Pass, Rng } from "./types";
 
 interface State {
@@ -19,6 +19,9 @@ export function useDeck(
     const selected = loadSelection(storage, deck.topics);
     return { selected, pass: deal(poolFor(deck.cards, selected), rng) };
   });
+  useEffect(() => {
+    saveSelection(storage, selected);
+  }, [storage, selected]);
   const move = (f: (s: State) => Pass) => setState((s) => ({ ...s, pass: f(s) }));
   const again = (s: State) => reshuffle(s.pass, poolFor(deck.cards, s.selected), rng);
   const at = (i: number) => deck.cards.find((c) => c.id === pass.order[i]) ?? null;
