@@ -194,3 +194,26 @@ describe("the press", () => {
     expect(layer("current").hasAttribute("data-pressed")).toBe(false);
   });
 });
+
+// happy-dom's TransitionEvent drops propertyName, so it is set as timeStamp is on pointers.
+function transitionEnd(el: Element, propertyName: string) {
+  act(() => {
+    const event = new Event("transitionend", { bubbles: true });
+    Object.defineProperty(event, "propertyName", { value: propertyName });
+    el.dispatchEvent(event);
+  });
+}
+
+describe("flipping", () => {
+  test("data-flipping is set when the side changes, until the flipper's transform transition ends", () => {
+    const { stage, layer } = setup();
+    press(stage, layer("current"), 700, 200).up(80);
+    expect(stage.hasAttribute("data-flipping")).toBe(true);
+    const flipper = layer("current").querySelector("[data-side]");
+    if (!flipper) throw new Error("no flipper");
+    transitionEnd(flipper, "opacity");
+    expect(stage.hasAttribute("data-flipping")).toBe(true);
+    transitionEnd(flipper, "transform");
+    expect(stage.hasAttribute("data-flipping")).toBe(false);
+  });
+});

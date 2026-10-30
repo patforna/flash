@@ -1,4 +1,4 @@
-import { type ReactNode, useRef } from "react";
+import { type ReactNode, useLayoutEffect, useRef } from "react";
 import type { Card } from "../../shared/types";
 import type { DeckView } from "../deck/types";
 import { useSwipe } from "../gesture/useSwipe";
@@ -14,6 +14,8 @@ export interface CardStageProps {
 
 // Painted in this order: the previous card comes back over the current one, which lies over the next.
 const ROLES = ["next", "current", "prev"] as const;
+
+const keyOf = (card: Card | "end") => (card === "end" ? "end" : card.id);
 
 export function CardStage({ view, renderCard }: CardStageProps) {
   const stage = useRef<HTMLDivElement>(null);
@@ -31,10 +33,26 @@ export function CardStage({ view, renderCard }: CardStageProps) {
     reducedMotion: () => matchMedia("(prefers-reduced-motion: reduce)").matches,
   });
 
+  // While a flip runs, the card underneath shows blank paper (data-flipping): edge-on, the flipping card hides little.
+  const shown = useRef({ key: keyOf(view.current), side: view.side });
+  useLayoutEffect(() => {
+    const key = keyOf(view.current);
+    if (key === shown.current.key && view.side !== shown.current.side) stage.current?.setAttribute("data-flipping", "");
+    shown.current = { key, side: view.side };
+  });
+
   // The stack thins as the pass runs out: the cards after the current one, beyond the one underneath it.
   const remaining = view.total - view.position;
   return (
-    <div ref={stage} className={styles.stage}>
+    <div
+      ref={stage}
+      className={styles.stage}
+      onTransitionEnd={(e) => {
+        if (e.propertyName === "transform" && e.target instanceof Element && e.target.matches("[data-side]")) {
+          stage.current?.removeAttribute("data-flipping");
+        }
+      }}
+    >
       <div className={styles.blank} data-shown={remaining >= 3 || undefined} />
       <div className={styles.blank} data-shown={remaining >= 2 || undefined} />
       {ROLES.map((role) => {
