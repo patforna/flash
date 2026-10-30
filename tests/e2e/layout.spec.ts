@@ -89,7 +89,8 @@ test("the card keeps 48 px clear of the right edge, where the back gesture start
   expect(width - ((box?.x ?? 0) + (box?.width ?? 0))).toBeGreaterThanOrEqual(48);
 });
 
-// The panel stands beside the card: its first chip level with the card's top edge, the wordmark's foot with its foot.
+// The panel stands beside the card: its first chip level with the card's top edge, the wordmark's letters standing on
+// the line of its foot.
 async function besideTheCard(page: Page) {
   const card = await layer(page).boundingBox();
   // Where the chip is laid out: a selected chip is tilted, which grows its bounding box.
@@ -98,11 +99,22 @@ async function besideTheCard(page: Page) {
     .getByRole("button")
     .first()
     .evaluate((el) => (el as HTMLElement).offsetTop);
-  const wordmark = await page.getByText("flash", { exact: true }).boundingBox();
-  if (!card || !wordmark) throw new Error("no card or wordmark");
+  // The wordmark's baseline, where an empty inline block sits.
+  const baseline = await page.getByText("flash", { exact: true }).evaluate((el) => {
+    const probe = document.createElement("span");
+    probe.style.display = "inline-block";
+    el.append(probe);
+    const y = probe.getBoundingClientRect().bottom;
+    probe.remove();
+    return y;
+  });
+  if (!card) throw new Error("no card");
   expect(Math.abs(chip - card.y), `the first chip at ${chip}, the card at ${card.y}`).toBeLessThanOrEqual(1);
-  const [foot, cardFoot] = [wordmark.y + wordmark.height, card.y + card.height];
-  expect(Math.abs(foot - cardFoot), `the wordmark's foot at ${foot}, the card's at ${cardFoot}`).toBeLessThanOrEqual(1);
+  const foot = card.y + card.height;
+  expect(
+    Math.abs(baseline - foot),
+    `the wordmark stands at ${baseline}, the card's foot at ${foot}`,
+  ).toBeLessThanOrEqual(1);
 }
 
 test("the panel stands beside the card, from its top edge to its foot", async ({ page }) => {

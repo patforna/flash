@@ -58,7 +58,7 @@ Look and motion:
 - Reduced motion: animations become short fades, but the drag still follows the finger, without rotation; direct manipulation is not motion.
 - The fullscreen chip shows only in a browser tab: the installed app is already fullscreen (`display: fullscreen`), locked to landscape.
 - The fullscreen chip is an icon-only 44 px sticker named "Full screen": a visible label (121 px) breaks the six-row panel.
-- The panel stands beside the card from its top edge to its foot: the shell's one row is exactly as tall as the card, `min(100%, stage width × 3/5)`, and centred. A camera cutout or a wide screen narrows the card; the panel follows.
+- The panel stands beside the card from its top edge to its foot: the shell's one row is exactly as tall as the card, `min(100%, stage width × 3/5)`, and centred. A camera cutout or a wide screen narrows the card; the panel follows. The first chip is level with the card's top edge and the wordmark's letters stand on its bottom edge (its baseline there, the box hanging 0.18 em below the panel): it had floated 4 px above the edge, near both that and the card's foot text and on neither. Not on the foot text, as the M3 review proposed: that took 11 px from a panel with 2.6 px to spare under a 40 px camera cutout, where the fade then covered the last row of chips.
 
 Stack:
 
