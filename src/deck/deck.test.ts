@@ -188,4 +188,8 @@ describe("reselect", () => {
     for (const p of passes) expect(p).toMatchObject({ index: 0, side: "back" });
     expect(new Set(passes.map((p) => p.order.join("")))).toEqual(new Set(["bde", "bed"]));
   });
+
+  it("deals afresh, front up, when the new pool hasn't the card on screen", () => {
+    expect(reselect(at(1, "back"), ["d", "e", "f"], mulberry32(14))).toEqual(deal(["d", "e", "f"], mulberry32(14)));
+  });
 });

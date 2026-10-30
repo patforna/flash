@@ -38,8 +38,11 @@ export function reshuffle(p: Pass, pool: readonly string[], rng: Rng): Pass {
   return deal(pool, rng, { avoidFirst: p.order[atEnd(p) ? p.index - 1 : p.index] });
 }
 
+// After a selection change the card on screen stays, first and on the same side, if the new pool has it.
 export function reselect(p: Pass, pool: readonly string[], rng: Rng): Pass {
-  return { ...deal(pool, rng, { keep: p.order[p.index] }), side: p.side };
+  const current = p.order[p.index];
+  if (current === undefined || !pool.includes(current)) return deal(pool, rng);
+  return { ...deal(pool, rng, { keep: current }), side: p.side };
 }
 
 // Fisher–Yates, on a copy.
