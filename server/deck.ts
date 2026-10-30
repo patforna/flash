@@ -56,16 +56,19 @@ export function loadDeck(toml: string): Deck {
   if (Array.isArray(file.card) && cards.length === 0) report(undefined, "no cards");
   if (cards.length > LIMITS.cards) report(undefined, `${cards.length} cards (max ${LIMITS.cards})`);
 
-  const seen = new Map<string, number>(); // question, ignoring case → card
+  // Questions equal but for case share an id, so one map finds both kinds of duplicate.
+  const ids = new Map<string, number>();
   const rendered: Card[] = [];
   cards.forEach((raw, i) => {
     if (!intact("card", i)) return;
     const { card, problems } = readCard(raw, intact("topics") ? file.topics : undefined);
     for (const text of problems) report(i, text);
-    const question = raw.question.trim().toLowerCase();
-    const first = seen.get(question);
-    if (first === undefined) seen.set(question, i);
-    else report(i, `question duplicates card ${first + 1}`);
+    const first = ids.get(card.id);
+    if (first === undefined) ids.set(card.id, i);
+    else {
+      const same = cards[first]?.question.trim().toLowerCase() === raw.question.trim().toLowerCase();
+      report(i, `${same ? "question" : "id"} duplicates card ${first + 1}`);
+    }
     rendered.push(card);
   });
 

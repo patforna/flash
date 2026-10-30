@@ -11,7 +11,7 @@
 // [x] question: 8–100 characters after trimming, one line, inline markup only, unique ignoring case
 // [x] answer: 1–520 characters after trimming, at most 12 lines, code lines at most 46 characters, no tabs, markup
 // [x] characters the fonts don't cover fail, named with their code point
-// [ ] ids unique: different questions with the same slug
+// [x] ids unique: different questions with the same slug
 // [ ] the fixture deck loads cleanly
 import { describe, expect, test } from "bun:test";
 import { stringify } from "smol-toml";
@@ -263,5 +263,11 @@ answer = "Dead tuples."
       'card 1 "why-and-again": answer has "字" (U+5B57), which neither font covers',
       'card 2 "which-question-has-a-tab": question has a tab',
     ]);
+  });
+
+  test("gives every card its own id: questions that differ only in punctuation clash", () => {
+    const toml = file([card({ question: "What is Redis for?" }), card({ question: "What is Redis for!" })]);
+
+    expect(problemsOf(toml)).toEqual(['card 2 "what-is-redis-for": id duplicates card 1']);
   });
 });
