@@ -8,7 +8,8 @@
 // [x] declared topics: 1–30, 1–20 characters, the pattern, no trailing space, no repeats, each used
 // [x] cards: 1–500
 // [x] a card's topics: 1–3, declared, no repeats
-// [x] question: 8–100 characters after trimming, one line, inline markup only, unique ignoring case
+// [x] question: 1–100 characters after trimming (a topic alone will do), a letter or digit for its id, one line,
+//     inline markup only, unique ignoring case
 // [x] answer: 1–520 characters after trimming, at most 11 lines (what fit step 2 holds), code lines at most 46
 //     characters, no tabs, markup
 // [x] characters the fonts don't cover fail, named with their code point
@@ -210,17 +211,20 @@ answer = "Dead tuples."
     ]);
   });
 
-  test("checks each question: 8–100 characters after trimming, one line, inline markup only", () => {
+  test("checks each question: 1–100 characters after trimming, one line, inline markup only, letters for its id", () => {
     const toml = file([
-      card({ question: "  Short?  " }),
+      card({ question: "  TLS  " }),
+      card({ question: "   " }),
+      card({ question: " ?! " }),
       card({ question: "What is\nthis card?" }),
       card({ question: "What is *Redis* for?" }),
     ]);
 
     expect(problemsOf(toml)).toEqual([
-      'card 1 "short": question is 6 characters (min 8)',
-      'card 2 "what-is-this-card": question has more than one line',
-      'card 3 "what-is-redis-for": question has emphasis (*text* or _text_): only **bold** is allowed',
+      "card 2: question is 0 characters (min 1)",
+      "card 3: question has no letters or digits to make its id from",
+      'card 4 "what-is-this-card": question has more than one line',
+      'card 5 "what-is-redis-for": question has emphasis (*text* or _text_): only **bold** is allowed',
     ]);
   });
 

@@ -7,7 +7,7 @@ export const LIMITS = {
   cards: 500,
   id: 64,
   cardTopics: 3,
-  questionMin: 8,
+  questionMin: 1, // a topic alone makes a front
   questionMax: 100,
   answerMax: 520,
   answerLines: 11, // what the smallest fit step holds

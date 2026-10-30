@@ -51,7 +51,6 @@ describe("check-cards", () => {
       stdout: "",
       stderr: [
         'topic "Edge" is not used by any card',
-        'card 1 "short": question is 6 characters (min 8)',
         'card 1 "short": answer has a heading (a line starting with #, or a line underlined with --- or ===)',
         "",
       ].join("\n"),

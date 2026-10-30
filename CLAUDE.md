@@ -69,6 +69,7 @@ Data:
 
 - A card is `question`, `topics` and `answer`, as Patric specified. Its id derives from the question: ids would only matter for spaced repetition, which is out of scope. No version key in the file: nothing would read it.
 - Validation is strict and reports every problem at once; the server refuses to start on a bad deck.
+- A question is 1–100 characters with a letter or digit for its id, not plan §9's 8–100: the brief's front is "a short sentence (question, tell me about..., topic, etc.)", so a topic alone ("TLS") is one.
 - An answer has at most 11 lines, not plan §9's 12: the smallest fit step holds 11.5 rules, so a 12-line answer passed `cards:check` and could only scroll, which the fit test fails at ship time.
 - Corrections of the source notes live in TOML comments and `docs/seed.md`, never on a card: commentary about the source is not study material. The notes' stubs get no cards.
 - The deck's version (the first 12 characters of the base64url SHA-256 of its canonical JSON) is the ETag and what `/healthz` reports, so a deploy can confirm what it shipped.

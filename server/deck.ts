@@ -40,7 +40,8 @@ export function loadDeck(toml: string): Deck {
   const problems: [card: number, text: string][] = [];
   const label = (card: number) => {
     const question = cards[card]?.question;
-    return typeof question === "string" ? `card ${card + 1} "${slug(question.trim())}"` : `card ${card + 1}`;
+    const id = typeof question === "string" ? slug(question.trim()) : "";
+    return id ? `card ${card + 1} "${id}"` : `card ${card + 1}`;
   };
   const report = (card: number | undefined, text: string) => {
     problems.push(card === undefined ? [-1, text] : [card, `${label(card)}: ${text}`]);
@@ -65,7 +66,8 @@ export function loadDeck(toml: string): Deck {
     for (const text of problems) report(i, text);
     const first = ids.get(card.id);
     if (first === undefined) ids.set(card.id, i);
-    else {
+    // A question with nothing to make an id from has no id to clash on, and says so itself.
+    else if (card.id) {
       const same = cards[first]?.question.trim().toLowerCase() === raw.question.trim().toLowerCase();
       report(i, `${same ? "question" : "id"} duplicates card ${first + 1}`);
     }
@@ -102,7 +104,7 @@ function readQuestion(question: string) {
   const problems: string[] = [];
   if (question.length < LIMITS.questionMin) {
     problems.push(`question is ${question.length} characters (min ${LIMITS.questionMin})`);
-  }
+  } else if (slug(question) === "") problems.push("question has no letters or digits to make its id from");
   if (question.length > LIMITS.questionMax) {
     problems.push(`question is ${question.length} characters (max ${LIMITS.questionMax})`);
   }

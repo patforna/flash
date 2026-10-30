@@ -47,7 +47,7 @@ Do the job in that transaction, then mark it done.
 - **The file** has exactly two keys at the top level: `topics` and `card`.
 - **`topics`**: 1–30 labels, no repeats. A label is 1–20 characters: unaccented letters, digits, spaces and `& + . / -`, starting with a letter or a digit, with no space at the end. Every label is used by at least one card. Their order is the panel's order.
 - **Cards**: 1–500 `[[card]]` tables, each with exactly `question`, `topics` and `answer`. Any other key fails, which catches a typo such as `topic =`.
-- **`question`**: 8–100 characters once trimmed, on one line, with inline markup only (`code` and `**bold**`). No two questions may be the same, ignoring case.
+- **`question`**: 1–100 characters once trimmed, with at least one letter or digit (the id is made of them), on one line, with inline markup only (`code` and `**bold**`). No two questions may be the same, ignoring case.
 - **A card's `topics`**: 1–3 of the declared labels, no repeats.
 - **`answer`**: 1–520 characters once trimmed and at most 11 lines, counting blank lines and code lines: the most the smallest writing holds. Code lines are at most 46 characters. No tabs.
 - **Characters**: only those the two fonts have (the list is `shared/glyphs.ts`). Anything else fails, naming the character and its code point.
@@ -105,7 +105,7 @@ These don't fail but show exactly as typed: HTML tags such as `<b>`, tables, `~~
 ## Writing a good card
 
 - **One idea per card**: what you could answer aloud in 20–40 seconds. Two facts share a card only when one explains the other.
-- **The question** is what you would be asked: What, Why, How, When, "Walk through", "Sketch"; never a bare noun. Aim for 40–80 characters.
+- **The question** is a question, a prompt ("Tell me about…") or just a topic. Write what you would be asked: What, Why, How, When, "Walk through", "Sketch", in about 40–80 characters.
 - **The answer** gives the gist first, in one line, then up to 4 bullets. Aim for 150–350 characters. Highlight one or two key facts at most.
 - Tight lists only, with no blank lines between items. Numbers with units. British spelling.
 - **Self-contained**: it makes sense without the notes or any other card.
