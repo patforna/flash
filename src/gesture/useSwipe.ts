@@ -109,39 +109,40 @@ function swipe(stage: RefObject<HTMLElement | null>, options: RefObject<SwipeOpt
     if (layers.next && dx < 0) write(layers.next, underneath(Math.min(-dx / rect.width / GESTURE.commitFraction, 1)));
   }
 
-  function fling(g: Gesture, dx: number, vx: number) {
-    const { current, next } = g.layers;
+  // A commit's motion, from a release at dx and vx, or from rest for a key or a button (easing given).
+  function fling(layers: Layers, rect: DOMRect, dx: number, vx: number, easing?: string) {
+    const { current, next } = layers;
     if (options.current.reducedMotion()) {
       if (next) write(next, underneath(1));
       const fade = animate(current, [{ opacity: 1 }, { opacity: 0 }], { duration: MOTION.fadeMs, fill: "forwards" });
       return play([fade], "next");
     }
-    const to = gone(g.rect);
-    const timing = { duration: flingDuration(dx - to, vx), easing: flingEasing(dx - to, vx) };
+    const to = gone(rect);
+    const timing = { duration: flingDuration(dx - to, vx), easing: easing ?? flingEasing(dx - to, vx) };
+    const from = current.style.transform || "translateX(0px) rotate(0deg)";
     const animations = [
-      animate(
-        current,
-        [{ transform: current.style.transform }, { transform: `translateX(${to}px) rotate(${-FLING_TILT}deg)` }],
-        { ...timing, fill: "forwards" },
-      ),
+      animate(current, [{ transform: from }, { transform: `translateX(${to}px) rotate(${-FLING_TILT}deg)` }], {
+        ...timing,
+        fill: "forwards",
+      }),
     ];
     if (next) {
-      const from = next.style.transform;
+      const below = next.style.transform || underneath(0);
       write(next, underneath(1));
-      animations.push(animate(next, [{ transform: from }, { transform: underneath(1) }], timing));
+      animations.push(animate(next, [{ transform: below }, { transform: underneath(1) }], timing));
     }
     play(animations, "next");
   }
 
-  function slideIn(g: Gesture, dx: number, vx: number) {
-    const { prev } = g.layers;
+  function slideIn(layers: Layers, rect: DOMRect, dx: number, vx: number) {
+    const { prev } = layers;
     if (!prev) return;
     if (options.current.reducedMotion()) {
       write(prev, "translateX(0px)");
       const fade = animate(prev, [{ opacity: 0 }, { opacity: 1 }], { duration: MOTION.fadeMs, fill: "forwards" });
       return play([fade], "prev");
     }
-    const from = gone(g.rect) + dx;
+    const from = gone(rect) + dx;
     const timing = { duration: flingDuration(-from, vx), easing: flingEasing(-from, vx) };
     play(
       [
@@ -152,6 +153,14 @@ function swipe(stage: RefObject<HTMLElement | null>, options: RefObject<SwipeOpt
       ],
       "prev",
     );
+  }
+
+  function commit(dir: Dir) {
+    if (gesture) return;
+    finishRunning();
+    const layers = options.current.layers();
+    if (!layers) return;
+    if (dir === "next") fling(layers, layers.current.getBoundingClientRect(), 0, 0, MOTION.commitEase);
   }
 
   // Each moved card animates from where it is to its resting style, which it has again as soon as this starts.
@@ -212,8 +221,8 @@ function swipe(stage: RefObject<HTMLElement | null>, options: RefObject<SwipeOpt
     const dx = e.clientX - g.start.x;
     const vx = velocityX(g.samples);
     const decision = release(dx, vx, g.rect.width, options.current.can());
-    if (decision === "next") fling(g, dx, vx);
-    if (decision === "prev") slideIn(g, dx, vx);
+    if (decision === "next") fling(g.layers, g.rect, dx, vx);
+    if (decision === "prev") slideIn(g.layers, g.rect, dx, vx);
     if (decision === "cancel") springBack(g);
   };
 
@@ -240,7 +249,7 @@ function swipe(stage: RefObject<HTMLElement | null>, options: RefObject<SwipeOpt
     };
   }
 
-  return { listen, settle };
+  return { listen, settle, commit };
 }
 
 export function useSwipe(
@@ -256,5 +265,5 @@ export function useSwipe(
   useLayoutEffect(() => {
     machine.settle();
   });
-  return { commit() {} };
+  return { commit: machine.commit };
 }

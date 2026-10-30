@@ -66,10 +66,12 @@ class FakeAnimation {
 }
 
 // A stage with real layer elements. Each commit brings new ones, as a new card would.
-function Stage({ options, prev }: { options: SwipeOptions; prev: boolean }) {
+type Swipe = ReturnType<typeof useSwipe>;
+
+function Stage({ options, prev, held }: { options: SwipeOptions; prev: boolean; held: { swipe?: Swipe } }) {
   const stage = useRef<HTMLDivElement>(null);
   const [commits, setCommits] = useState(0);
-  useSwipe(stage, {
+  held.swipe = useSwipe(stage, {
     ...options,
     layers: () => {
       const find = (role: string) => stage.current?.querySelector<HTMLElement>(`[data-role="${role}"]`) ?? null;
@@ -106,9 +108,10 @@ function setup(overrides: Partial<SwipeOptions> = {}, { prev = true } = {}) {
     ...overrides,
   };
   let renders = 0;
+  const held: { swipe?: Swipe } = {};
   const view = render(
     <Profiler id="stage" onRender={() => renders++}>
-      <Stage options={options} prev={prev} />
+      <Stage options={options} prev={prev} held={held} />
     </Profiler>,
   );
   const stage = view.getByTestId("stage");
@@ -117,7 +120,11 @@ function setup(overrides: Partial<SwipeOptions> = {}, { prev = true } = {}) {
     if (!el) throw new Error(`no ${role} layer`);
     return el;
   };
-  return { stage, layer, animations, onTap: options.onTap, onCommit: options.onCommit, renders: () => renders };
+  const swipe = () => {
+    if (!held.swipe) throw new Error("not rendered");
+    return held.swipe;
+  };
+  return { stage, layer, animations, onTap: options.onTap, onCommit: options.onCommit, renders: () => renders, swipe };
 }
 
 // A finger (or mouse) going down on `target` at (x, y) at time `t` ms; later events go to the stage, as captured.
@@ -449,5 +456,29 @@ describe("reduced motion", () => {
     finger.up(100);
     expect(animations).toEqual([]);
     expect(inline(layer("prev"))).toEqual({ transform: "", visibility: "" });
+  });
+});
+
+describe("commit(dir), for keys and buttons", () => {
+  test("flings the card from rest as a swipe does, leaving at once", async () => {
+    const { layer, animations, onCommit, swipe } = setup();
+    act(() => swipe().commit("next"));
+    const timing = { duration: 320, easing: "cubic-bezier(0.2, 0.7, 0.3, 1)" };
+    expect(animations.map((a) => [a.el, a.keyframes, a.options])).toEqual([
+      [
+        layer("current"),
+        [{ transform: "translateX(0px) rotate(0deg)" }, { transform: "translateX(-960px) rotate(-10deg)" }],
+        { ...timing, fill: "forwards" },
+      ],
+      [
+        layer("next"),
+        [{ transform: "scale(0.965) translateY(8px)" }, { transform: "scale(1) translateY(0px)" }],
+        timing,
+      ],
+    ]);
+    await act(async () => {
+      for (const animation of animations) animation.finish();
+    });
+    expect(onCommit).toHaveBeenCalledExactlyOnceWith("next");
   });
 });
