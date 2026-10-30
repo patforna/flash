@@ -27,12 +27,12 @@ function Reader({ deck }: { deck: Deck }) {
   return (
     <CardStage
       view={view}
-      renderCard={(card) =>
+      renderCard={(card, role) =>
         card === "end" ? null : (
           <CardView
             key={card.id}
             card={card}
-            side="front"
+            side={role === "current" ? view.side : "front"}
             position={view.position}
             total={view.total}
             colourOf={() => ""}

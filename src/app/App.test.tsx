@@ -137,4 +137,13 @@ describe("reading", () => {
     expect([question(layer("current")), side(layer("current"))]).toEqual(["What is Redis?", "front"]);
     expect([question(layer("next")), side(layer("next"))]).toEqual(["Why cache Postgres?", "front"]);
   });
+
+  test("turning the card over shows its back; the card underneath stays front up", async () => {
+    await reading();
+
+    fireEvent.click(screen.getByRole("button", { name: "Show answer" }));
+
+    expect(side(layer("current"))).toBe("back");
+    expect(side(layer("next"))).toBe("front");
+  });
 });
