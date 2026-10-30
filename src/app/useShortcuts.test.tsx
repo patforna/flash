@@ -51,4 +51,10 @@ describe("useShortcuts", () => {
     expect(fireEvent.keyDown(document.body, { key: "PageDown" })).toBe(false);
     expect(fireEvent.keyDown(document.body, { key: "x" })).toBe(true);
   });
+
+  test.each(["altKey", "ctrlKey", "metaKey"])("nothing fires with %s held, and the browser keeps the key", (modifier) => {
+    const { h } = setup();
+    expect(fireEvent.keyDown(document.body, { key: "l", [modifier]: true })).toBe(true);
+    expect(h.next).not.toHaveBeenCalled();
+  });
 });

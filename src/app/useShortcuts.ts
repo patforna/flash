@@ -30,7 +30,7 @@ export function useShortcuts(h: Handlers): void {
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       const action = KEYS[e.key];
-      if (!action) return;
+      if (!action || e.altKey || e.ctrlKey || e.metaKey) return;
       e.preventDefault();
       h[action]();
     };
