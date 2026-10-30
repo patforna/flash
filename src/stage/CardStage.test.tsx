@@ -317,6 +317,34 @@ describe("dealing", () => {
     expect(animations.map((a) => [a.el, a.keyframes])).toEqual([[layer("current"), deal]]);
   });
 
+  test("so is the first card, when the stage is told to deal it (after the loading card)", () => {
+    render(
+      <CardStage
+        view={{
+          prev: null,
+          current: card("a"),
+          next: card("b"),
+          side: "front",
+          position: 1,
+          total: 2,
+          selected: new Set(),
+          topics: ["Redis"],
+          flip: () => {},
+          goNext: () => {},
+          goPrev: () => {},
+          reshuffle: () => {},
+          toggleTopic: () => {},
+          clearTopics: () => {},
+        }}
+        renderCard={(c) => <div key={c === "end" ? "end" : c.id}>{c === "end" ? "end" : c.questionHtml}</div>}
+        onFullscreen={() => {}}
+        onMove={() => {}}
+        dealFirst
+      />,
+    );
+    expect(animations.map((a) => a.keyframes)).toEqual([deal]);
+  });
+
   test("a card that survives a topic change isn't", () => {
     const { layer, deck } = setup();
     act(() => deck().toggleTopic("Redis"));

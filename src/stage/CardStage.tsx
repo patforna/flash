@@ -14,6 +14,8 @@ export interface CardStageProps {
   // A move is decided, before its card has flown: a swipe let go past its threshold, a key, a button, or a tap on the
   // end card (which deals the next pass).
   onMove(): void;
+  // Deal the first card onto the stack, as after the loading card, rather than show it at once.
+  dealFirst?: boolean;
 }
 
 // Painted in this order: the previous card comes back over the current one, which lies over the next.
@@ -27,7 +29,7 @@ const reducedMotion = () => matchMedia("(prefers-reduced-motion: reduce)").match
 // A CSS time in ms, whichever unit it is written in: the build's minifier turns 380ms into .38s.
 const ms = (time: string) => Number.parseFloat(time) * (/ms\s*$/.test(time) ? 1 : 1000) || 0;
 
-export function CardStage({ view, renderCard, onFullscreen, onMove }: CardStageProps) {
+export function CardStage({ view, renderCard, onFullscreen, onMove, dealFirst = false }: CardStageProps) {
   const stage = useRef<HTMLDivElement>(null);
   const layers = useRef<Record<Role, HTMLDivElement | null>>({ next: null, current: null, prev: null });
 
@@ -54,6 +56,11 @@ export function CardStage({ view, renderCard, onFullscreen, onMove }: CardStageP
     },
     reducedMotion,
   });
+
+  const dealtFirst = useRef(dealFirst);
+  useLayoutEffect(() => {
+    if (dealtFirst.current) swipe.deal();
+  }, [swipe.deal]);
 
   useShortcuts({
     flip: swipe.tap,

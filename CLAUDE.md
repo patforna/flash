@@ -33,6 +33,7 @@ Reading:
 - The card follows the finger 1:1, never clamped: a card that stops following fails "extremely smooth".
 - A pass is a Fisher–Yates shuffle with no repeats, closed by an end card; a reshuffle never starts with the card just seen, and happens only at launch, at the end card, on `s` and on a selection change. The brief: "cards are just shuffled and shown randomly".
 - The card on screen survives a topic change when it still matches: changing topics shouldn't throw away the card being read.
+- After the loading card ("shuffling…"), the first card is dealt onto the stack with the 220 ms deal instead of swapped in: shuffling, then dealing, where the swap read as a flicker. `src/main.tsx` starts loading both fonts at boot, since a card is measured only once both are in and nothing else asks for Radon before the first card mounts (it showed blank for a frame).
 - No scrolling inside a card: validation limits, three fit steps and an end-to-end fit test over the real deck. A card that scrolls is not an index card and fights the swipe.
 - Each face is measured once per page load: `useFit` keeps the step it found for each card's face. A card mounts again whenever it moves between the stage's layers (they are keyed by role), and card units make its step the same at any size; measuring forces layout after layout, inside a commit that may land under a thumb.
 - Code lines at most 46 characters, never scrolled: a scroller inside a swipeable card fights the swipe.

@@ -26,7 +26,8 @@ export function App() {
   useWakeLock();
   const deck = useDeckQuery();
   const late = useElapsed(LOADING_AFTER_MS);
-  if (deck.data && deck.data.cards.length > 0) return <Reader deck={deck.data} />;
+  // After the loading card, the first card is dealt onto the stack: shuffling, then dealing.
+  if (deck.data && deck.data.cards.length > 0) return <Reader deck={deck.data} dealt={late} />;
   // The card on the stack while there is nothing to read, read out as it shows.
   const message = say(deck, late);
   return (
@@ -76,7 +77,7 @@ function say(deck: UseQueryResult<Deck, Error>, late: boolean): MessageCardProps
 // Where each layer's card sits in the pass, from the card on top.
 const OFFSET = { prev: -1, current: 0, next: 1 } as const;
 
-function Reader({ deck }: { deck: Deck }) {
+function Reader({ deck, dealt }: { deck: Deck; dealt: boolean }) {
   const view = useDeck(deck);
   useFirstCardMark();
   const counts = useMemo(() => countTopics(deck), [deck]);
@@ -120,6 +121,7 @@ function Reader({ deck }: { deck: Deck }) {
           )
         }
         onFullscreen={toggleFullscreen}
+        dealFirst={dealt}
       />
     </Desk>
   );

@@ -3,6 +3,7 @@
 // [x] the error card once the deck can't be fetched; tapping it fetches again
 // [x] the empty card for a deck without cards
 // [x] the first card of a pass on the stage, front up; the next card underneath, front up too
+// [x] after the loading card, the first card is dealt; one that comes within 200 ms is simply there
 // [x] only the card on top shows the side it was turned to
 // [x] each layer's card counts its own place in the pass
 // [x] the panel: All with the deck's total, the topics in order with their counts, the wordmark at its foot
@@ -156,6 +157,29 @@ describe("the live region while there is nothing to read", () => {
 
     await screen.findByRole("button", { name: "Can't reach the deck. Tap to try again" });
     expect([...live()].map((region) => region.textContent)).toEqual(["Can't reach the deck. Tap to try again"]);
+  });
+});
+
+describe("launch", () => {
+  const deal = [
+    { transform: "translateY(14px)", opacity: 0 },
+    { transform: "translateY(0px)", opacity: 1 },
+  ];
+
+  test("a deck that comes after the loading card is dealt onto the stack, the card shuffled before it is dealt", async () => {
+    inFileOrder();
+    serve(() => new Promise((resolve) => setTimeout(() => resolve(json(deck)), 250)));
+    renderApp();
+    expect(await screen.findByText("shuffling…", onCard)).toBeTruthy();
+
+    await waitFor(() => expect(document.querySelector('[data-role="current"] h2')).not.toBeNull());
+
+    expect(animations.map((a) => [a.el, a.keyframes])).toContainEqual([layer("current"), deal]);
+  });
+
+  test("one that comes at once is simply there", async () => {
+    await reading();
+    expect(animations).toEqual([]);
   });
 });
 
