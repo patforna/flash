@@ -8,8 +8,10 @@ export function useWakeLock(_idleMs = 300_000): void {
       wakeLock.request("screen");
     };
     window.addEventListener("pointerdown", onInput, true);
+    window.addEventListener("keydown", onInput, true);
     return () => {
       window.removeEventListener("pointerdown", onInput, true);
+      window.removeEventListener("keydown", onInput, true);
     };
   }, []);
 }
