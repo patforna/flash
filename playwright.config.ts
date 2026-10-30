@@ -38,14 +38,25 @@ export default defineConfig({
     {
       name: "pixel11",
       use: { ...pixel11, viewport: { width: 923, height: 412 }, screen: { width: 923, height: 412 } },
+      testIgnore: "perf.spec.ts",
     },
     {
       name: "portrait",
       use: { ...pixel11, viewport: { width: 412, height: 923 }, screen: { width: 412, height: 923 } },
+      testIgnore: "perf.spec.ts",
     },
     {
       name: "laptop",
       use: { ...devices["Desktop Chrome"], viewport: { width: 1280, height: 800 } },
+      testIgnore: "perf.spec.ts",
+    },
+    // The Pixel 11 again, for the performance budgets alone, after every other project: timings taken while the other
+    // specs share the CPU are noise.
+    {
+      name: "perf",
+      use: { ...pixel11, viewport: { width: 923, height: 412 }, screen: { width: 923, height: 412 } },
+      testMatch: "perf.spec.ts",
+      dependencies: ["pixel11", "portrait", "laptop"],
     },
   ],
   webServer: [server(4173, "tests/fixtures/cards.toml"), server(4174, "cards/cards.toml")],

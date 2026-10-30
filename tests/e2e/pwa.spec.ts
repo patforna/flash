@@ -1,5 +1,6 @@
 import { expect, type Page, test } from "@playwright/test";
 import type { Deck } from "../../shared/types";
+import { cdp, firstCard } from "./helpers";
 
 // The installable app and its service worker (plan §6 and §12).
 
@@ -129,4 +130,24 @@ test("the first load requests the deck once: the app takes the preloaded respons
   await workerInControl(page);
 
   expect(deckRequests).toHaveLength(1);
+});
+
+test("installed and offline, the first card shows within 350 ms with the CPU slowed 4×", async ({ page, context }) => {
+  await page.goto("/");
+  await workerInControl(page);
+  // The first load's preload ran before the worker took control, so the deck reaches the worker's cache only now.
+  await page.reload();
+  await firstCard(page);
+  await expect
+    .poll(() => page.evaluate(async () => (await caches.match("/api/cards", { ignoreVary: true })) !== undefined))
+    .toBe(true);
+  await context.setOffline(true);
+  await (await cdp(page)).send("Emulation.setCPUThrottlingRate", { rate: 4 });
+
+  await page.reload();
+  await firstCard(page);
+
+  const ms = await page.evaluate(() => performance.getEntriesByName("flash:first-card")[0]?.startTime ?? Infinity);
+  test.info().annotations.push({ type: "first card, warm and offline", description: `${Math.round(ms)} ms` });
+  expect(ms).toBeLessThanOrEqual(350);
 });

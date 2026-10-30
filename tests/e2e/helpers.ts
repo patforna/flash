@@ -91,11 +91,13 @@ export async function swipe(page: Page, { from, to, ms }: { from: Point; to: Poi
   await f.up();
 }
 
-// A tap: down and up in 40 ms without moving.
+// A tap: down and up 40 ms apart without moving. Chromium stamps each event as it arrives, as a touch screen would:
+// Event Timing measures from that stamp, and nothing here needs a speed.
 export async function tap(page: Page, at: Point): Promise<void> {
-  const f = await finger(page, at);
-  await f.wait(40);
-  await f.up();
+  const session = await cdp(page);
+  await session.send("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: [{ x: at.x, y: at.y, id: 1 }] });
+  await sleep(40);
+  await session.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
 }
 
 // Nothing moving: no animation or transition running, no flip under way, every stage idle.
