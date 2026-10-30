@@ -66,7 +66,7 @@ Answers use a small part of Markdown; questions only `code` and `**bold**`.
 | `**words**`                                   | highlighted                                                              |
 | `` `code` ``                                  | code, inline                                                             |
 | three backticks on the lines before and after | a block of code, exactly as typed                                        |
-| `->` and `<-`                                 | → and ←, except inside code                                              |
+| `->`, `<-` and `<->`                          | →, ← and ↔ (`-->` and `<--` too), except inside code                     |
 
 ```markdown
 Sets a key **only if it doesn't exist**: 1 if it set it, 0 if not.

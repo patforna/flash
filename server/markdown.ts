@@ -78,8 +78,12 @@ function render(src: string, allowed: ReadonlySet<string>) {
         if (open.includes("pre")) return text;
         if (!open.some((t) => t === "p" || t === "li")) return "";
         const lines = text.replaceAll("\n", "<br>");
-        // The arrows arrive escaped.
-        return open.includes("code") ? lines : lines.replaceAll("-&gt;", "→").replaceAll("&lt;-", "←");
+        if (open.includes("code")) return lines;
+        // The arrows arrive escaped: <->, -> and <-, however many dashes.
+        return lines
+          .replace(/&lt;-+&gt;/g, "↔")
+          .replace(/-+&gt;/g, "→")
+          .replace(/&lt;-+/g, "←");
       }
       if (slash) {
         open.pop();
