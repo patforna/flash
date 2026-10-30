@@ -8,6 +8,7 @@
 // [x] useFit: walks the steps while a part overflows down
 // [x] useFit: a part overflowing across (a code line wider than its column) also steps down
 // [x] useFit: "scroll" when no step fits
+// [x] useFit: measures once per key, not on every render (a flip re-renders the card; measuring forces layout)
 // [ ] useFit: measures again when its key changes
 import { render, screen, waitFor } from "@testing-library/react";
 import { useLayoutEffect, useRef } from "react";
@@ -49,7 +50,10 @@ function overflowing({ until, axis }: Overflow) {
     if (!part || !face) return;
     const [scroll, client] = axis === "down" ? ["scrollHeight", "clientHeight"] : ["scrollWidth", "clientWidth"];
     Object.defineProperty(part, client, { configurable: true, value: 100 });
-    Object.defineProperty(part, scroll, { configurable: true, get: () => (Number(face.dataset.fit) < until ? 101 : 100) });
+    Object.defineProperty(part, scroll, {
+      configurable: true,
+      get: () => (Number(face.dataset.fit) < until ? 101 : 100),
+    });
   };
 }
 
@@ -118,5 +122,13 @@ describe("useFit", () => {
     const face = screen.getByTestId("face");
     expect(face.dataset.fit).toBe("scroll");
     expect(face.dataset.step).toBe("scroll");
+  });
+
+  it("measures once per key, not on every render", () => {
+    const fonts = stubFonts(BOTH);
+    const { rerender } = render(<Face fitKey="vacuum" />);
+    const checks = fonts.check.mock.calls.length;
+    rerender(<Face fitKey="vacuum" />);
+    expect(fonts.check.mock.calls.length).toBe(checks);
   });
 });

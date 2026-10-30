@@ -17,8 +17,9 @@ function overflows(face: HTMLElement): boolean {
   );
 }
 
-export function useFit(ref: RefObject<HTMLElement | null>, steps: number, _key: string): number | "scroll" {
+export function useFit(ref: RefObject<HTMLElement | null>, steps: number, key: string): number | "scroll" {
   const [fit, setFit] = useState<number | "scroll">(0);
+  // biome-ignore lint/correctness/useExhaustiveDependencies: the key names the content; measure again only when it changes.
   useLayoutEffect(() => {
     const el = ref.current;
     if (!el) return;
@@ -37,6 +38,6 @@ export function useFit(ref: RefObject<HTMLElement | null>, steps: number, _key: 
     return () => {
       live = false;
     };
-  });
+  }, [ref, steps, key]);
   return fit;
 }
