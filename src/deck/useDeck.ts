@@ -22,6 +22,10 @@ export function useDeck(
   }, [storage, selected]);
   const move = (f: (s: State) => Pass) => setState((s) => ({ ...s, pass: f(s) }));
   const again = (s: State) => reshuffle(s.pass, poolFor(deck.cards, s.selected), rng);
+  const choose = (s: State, selected: ReadonlySet<string>): State => ({
+    selected,
+    pass: reselect(s.pass, poolFor(deck.cards, selected), rng),
+  });
   const at = (i: number) => deck.cards.find((c) => c.id === pass.order[i]) ?? null;
   return {
     prev: at(pass.index - 1),
@@ -36,15 +40,7 @@ export function useDeck(
     goNext: () => move((s) => (s.pass.index < s.pass.order.length ? next(s.pass) : again(s))),
     goPrev: () => move((s) => prev(s.pass)),
     reshuffle: () => move(again),
-    toggleTopic: (label) =>
-      setState((s) => {
-        const chosen = toggle(s.selected, label);
-        return { selected: chosen, pass: reselect(s.pass, poolFor(deck.cards, chosen), rng) };
-      }),
-    clearTopics: () =>
-      setState((s) => {
-        const chosen = new Set<string>();
-        return { selected: chosen, pass: reselect(s.pass, poolFor(deck.cards, chosen), rng) };
-      }),
+    toggleTopic: (label) => setState((s) => choose(s, toggle(s.selected, label))),
+    clearTopics: () => setState((s) => choose(s, new Set())),
   };
 }
