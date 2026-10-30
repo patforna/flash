@@ -29,4 +29,9 @@ describe("flingEasing", () => {
     // T = 320 ms; to start at 2.5 px/ms the curve's initial slope is 2.5·320/800 = 1, so y1 = 0.2·1.
     expect(flingEasing(800, -2.5)).toBe("cubic-bezier(0.2, 0.2, 0.3, 1)");
   });
+
+  test("never starts steeper than the 3.5 the duration assumes", () => {
+    expect(flingEasing(700, 10)).toBe("cubic-bezier(0.2, 0.7, 0.3, 1)");
+    expect(flingEasing(300, 10)).toBe("cubic-bezier(0.2, 0.7, 0.3, 1)");
+  });
 });
