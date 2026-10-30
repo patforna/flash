@@ -11,6 +11,12 @@ export interface TopicPanelProps {
   lead?: ReactNode;
 }
 
-export function TopicPanel(_props: TopicPanelProps) {
-  return <fieldset aria-label="Topics" />;
+export function TopicPanel({ total }: TopicPanelProps) {
+  return (
+    <fieldset aria-label="Topics">
+      <button type="button" aria-pressed={true}>
+        All · {total}
+      </button>
+    </fieldset>
+  );
 }

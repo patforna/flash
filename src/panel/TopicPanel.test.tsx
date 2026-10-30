@@ -1,6 +1,6 @@
 // To do:
 // [x] a group named "Topics"
-// [ ] All reads "All · 65" and is pressed when nothing is selected
+// [x] All reads "All · 65" and is pressed when nothing is selected
 // [ ] All is not pressed while a topic is selected
 // [ ] the topics follow All in the given order, each pressed while selected
 // [ ] each chip's accessible name carries its count, "1 card" for one
@@ -41,5 +41,12 @@ describe("TopicPanel", () => {
   it('is a group named "Topics"', () => {
     renderPanel();
     expect(screen.getByRole("group", { name: "Topics" })).toBeTruthy();
+  });
+
+  it('reads "All · 65" on the All chip, pressed while nothing is selected', () => {
+    renderPanel();
+    const all = screen.getByRole("button", { name: /^All/ });
+    expect(all.textContent).toBe("All · 65");
+    expect(all.getAttribute("aria-pressed")).toBe("true");
   });
 });
