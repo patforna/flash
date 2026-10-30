@@ -19,7 +19,8 @@ async function slowCPU(page: Page) {
 // long animation frames (over 50 ms, by definition).
 interface Seen {
   // Each entry with where its time went: waiting to be handled, the handlers, then until the next frame was shown.
-  events: { name: string; duration: number; delay: number; processing: number }[];
+  // Its interactionId groups the entries of one tap or key press; 0 for events that are no interaction (pointerover).
+  events: { name: string; interaction: number; duration: number; delay: number; processing: number }[];
   frames: number[];
 }
 
@@ -50,6 +51,7 @@ async function seenSince(page: Page, since: number): Promise<Seen> {
         .filter((e) => e.startTime >= t)
         .map((e) => ({
           name: e.name,
+          interaction: e.interactionId,
           duration: e.duration,
           delay: Math.round(e.processingStart - e.startTime),
           processing: Math.round(e.processingEnd - e.processingStart),
@@ -82,6 +84,17 @@ test("cold, the first card shows within 1,200 ms", async ({ page }) => {
   expect(ms).toBeLessThanOrEqual(1200);
 });
 
+// Each interaction (a tap, a key press) as INP counts it: its slowest entry. Entries of no interaction, such as the
+// pointerover a touch fires, are pipeline only.
+function interactions(events: Seen["events"]): Seen["events"] {
+  const slowest = new Map<number, Seen["events"][number]>();
+  for (const e of events) {
+    const seen = slowest.get(e.interaction);
+    if (e.interaction > 0 && (!seen || e.duration > seen.duration)) slowest.set(e.interaction, e);
+  }
+  return [...slowest.values()];
+}
+
 test("a tap turns the card and a key deals the next, each within 48 ms (Event Timing)", async ({ page }) => {
   await page.goto("/");
   await firstCard(page);
@@ -96,17 +109,19 @@ test("a tap turns the card and a key deals the next, each within 48 ms (Event Ti
   await quiet(700);
 
   const { events } = await seenSince(page, since);
-  const worst = events.reduce((a, b) => (b.duration > a.duration ? b : a), {
+  const each = interactions(events);
+  const worst = each.reduce((a, b) => (b.duration > a.duration ? b : a), {
     name: "",
+    interaction: 0,
     duration: 0,
     delay: 0,
     processing: 0,
   });
   test.info().annotations.push({
-    type: "worst Event Timing entry",
-    description: `${worst.name} ${worst.duration} ms: ${worst.delay} ms waiting, ${worst.processing} ms in handlers (${events.length} entries of 16 ms or more)`,
+    type: "slowest interaction",
+    description: `${worst.name} ${worst.duration} ms: ${worst.delay} ms waiting, ${worst.processing} ms in handlers (${each.length} interactions with entries of 16 ms or more)`,
   });
-  expect(events.filter((e) => e.duration > 48)).toEqual([]);
+  expect(each.filter((e) => e.duration > 48)).toEqual([]);
 });
 
 test("no animation frame takes over 50 ms while a card turns and is swiped away", async ({ page }) => {
