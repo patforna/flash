@@ -60,3 +60,20 @@
 .answer {
   margin: 0;
 }
+
+/* The end card and the message cards (loading, error, empty): one face, centred. */
+.end {
+  display: flex;
+}
+
+.tick {
+  display: block;
+}
+
+.title {
+  margin: 0;
+}
+
+.hint {
+  margin: 0;
+}
