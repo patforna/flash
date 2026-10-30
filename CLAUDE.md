@@ -83,7 +83,7 @@ Hosting:
 
 - Its own droplet, `flash` in fra1, Caddy in front with `encode zstd gzip`, the server bundled into one `server.js` with no `node_modules`: in line with Patric's other apps.
 - `deploy-do.sh up` runs `bun install --frozen-lockfile && bun run verify` first, and no flag skips it: there is no CI, so the gate lives in the deploy.
-- `deploy-do.sh cards` ships the deck without code: the most frequent change gets a fast path (about 30 s) that can't touch the code.
+- `deploy-do.sh cards` ships the deck without code: the most frequent change gets a fast path (about 30 s) that can't touch the code. It ships only onto the code it checked the deck against, and puts the last deck back if the server refuses the new one: the M3 review alone changed the rules or the renderer five times, each enough for a deck checked on other code to crash the server or fail the version check.
 - Bun on the droplet is pinned to the laptop's `bun --version`: the droplet runs what the gate tested, and `Bun.markdown` is unstable.
 - No robots.txt: a crawler that is disallowed never sees the `noindex`, so `X-Robots-Tag` and the meta tag do the work.
 
@@ -160,7 +160,7 @@ docs/                      original-request.md, plan.md, cards.md, seed.md
 
 ## Shipping cards versus code
 
-- **Cards**: edit `cards/cards.toml`, `bun run cards:check`, commit and push, then `scripts/deploy-do.sh cards`: the check, the fit test on the real deck (`tests/e2e/fit.spec.ts`, which the script runs by name: every card fits both faces and every topic chip is in full view in the panel; building first only if `dist/` or `build/server.js` is missing), one file uploaded, a restart, and the health check. It never ships code. The phone shows the new deck on the next launch.
+- **Cards**: edit `cards/cards.toml`, `bun run cards:check`, commit and push, then `scripts/deploy-do.sh cards`: the check, a build (about a second), a stop unless the droplet runs exactly that code (Bun's version and the checksum of every file of `server.js` and `dist/`, the same command on both sides: on other code a deck the droplet refuses, or renders to another version, would pass), the fit test on the real deck (`tests/e2e/fit.spec.ts`, which the script runs by name: every card fits both faces and every topic chip is in full view in the panel), one file uploaded with the last deck kept as `cards.toml.prev`, a restart, and the health check; should the server refuse the deck all the same, the last one goes back and the server restarts, so the app is never left down. It never ships code. The phone shows the new deck on the next launch.
 - **Code**: commit and push, then `scripts/deploy-do.sh up`: the gate, `build/release/` staged (`server.js`, `dist/`, `cards/cards.toml`) and sent with one `rsync -az --delete`, a restart, and the health check. The phone runs the new code one launch late.
 - **The health check**: `/healthz` on the droplet first (its journal printed if the server won't start), then https://flash.patforna.com/healthz from the laptop, whose `version` must equal `bun scripts/check-cards.ts --version cards/cards.toml`, retried for up to 2 minutes while a new droplet's DNS record and certificate come up.
 - `link` prints the address, `logs` the server's journal; `down` deletes the droplet and its A record.

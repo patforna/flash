@@ -49,13 +49,20 @@ stage() {
   cp "$root/cards/cards.toml" "$out/cards/"
 }
 
-# First on the droplet, where a server that won't start shows its log; then from here, through DNS, Caddy and TLS,
-# where /healthz must report the deck just shipped. Retried for up to 2 minutes: a new droplet waits for its DNS
-# record and its certificate; a running one answers at once.
-health() {
-  local want got deadline=$((SECONDS + 120))
+# What a deck is checked against: Bun's version and the checksum of every file of the server and the client, in the
+# app's layout at $1. The same command here and on the droplet.
+code() { bun --version && cd "$1" && find server.js dist -type f -print0 | LC_ALL=C sort -z | xargs -0 sha256sum; }
+
+# On the droplet: the server answers within 15 s, or its log is printed.
+started() {
   remote "for _ in \$(seq 15); do curl -fs 127.0.0.1:3000/healthz >/dev/null && exit; sleep 1; done; exit 1" ||
-    { remote "journalctl -u flash -n 30 --no-pager"; exit 1; }
+    { remote "journalctl -u flash -n 30 --no-pager"; return 1; }
+}
+
+# From here, through DNS, Caddy and TLS: /healthz must report the deck just shipped. Retried for up to 2 minutes: a new
+# droplet waits for its DNS record and its certificate; a running one answers at once.
+serving() {
+  local want got deadline=$((SECONDS + 120))
   want=$(cd "$root" && bun scripts/check-cards.ts --version cards/cards.toml)
   until got=$(curl -fs --max-time 10 "https://$DOMAIN/healthz" | sed -n 's/.*"version":"\([^"]*\)".*/\1/p') && [[ $got == "$want" ]]; do
     if ((SECONDS >= deadline)); then
@@ -128,20 +135,31 @@ EOF
 
   rsync -az --delete -e "$SSH" "$root/build/release/" "root@$(ip):$APP/app/"
   remote "chown -R app: $APP/app && systemctl daemon-reload && systemctl enable -q flash && systemctl restart flash && systemctl reload caddy"
-  health
+  started || exit 1
+  serving
   link
 }
 
-# The deck alone, never code: checked, fit-tested against the app as built here, then the one file and a restart.
+# The deck alone, never code: checked and fit-tested against the code the droplet runs, then the one file and a
+# restart. Should the server refuse it all the same, the last deck goes back, so the app is never left down.
 cards() {
   [[ -n $(ip) ]] || { echo "no droplet named $NAME: run up first" >&2; exit 1; }
-  (cd "$root" && bun run cards:check)
-  # The fit test runs the built server: build only when there is none, so shipping cards never rebuilds the code.
-  [[ -d $root/dist && -f $root/build/server.js ]] || (cd "$root" && bun run build)
+  # The check, the fit test and the version run the code built here (in about a second): on other code, a deck the
+  # droplet refuses or renders otherwise would pass.
+  (cd "$root" && bun run cards:check && bun run build >/dev/null)
+  stage
+  [[ $(code "$root/build/release") == "$(remote "$(declare -f code); code $APP/app")" ]] ||
+    { echo "the droplet runs other code than this checkout builds: ship it with up first" >&2; exit 1; }
   (cd "$root" && CI=1 bun run e2e tests/e2e/fit.spec.ts)
-  rsync -az -e "$SSH" "$root/cards/cards.toml" "root@$(ip):$APP/app/cards/"
-  remote "chown app: $APP/app/cards/cards.toml && systemctl restart flash"
-  health
+  rsync -az -e "$SSH" "$root/cards/cards.toml" "root@$(ip):$APP/app/cards/cards.toml.next"
+  remote "cd $APP/app/cards && cp -p cards.toml cards.toml.prev && mv cards.toml.next cards.toml && chown app: cards.toml && systemctl restart flash"
+  if ! started; then
+    remote "cd $APP/app/cards && mv cards.toml.prev cards.toml; systemctl reset-failed flash; systemctl restart flash"
+    if started; then echo "the server refused this deck (its log is above): the last one is back" >&2
+    else echo "the server refused this deck, and the last one too (their logs are above)" >&2; fi
+    exit 1
+  fi
+  serving
   link
 }
 

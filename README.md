@@ -63,7 +63,7 @@ One droplet on DigitalOcean (`flash`, fra1), Bun behind Caddy, like the other ap
 
 ```sh
 scripts/deploy-do.sh up      # verify, then create the droplet if needed, provision, upload, check it's healthy
-scripts/deploy-do.sh cards   # the deck alone: check, fit test, upload, restart, check; never code
+scripts/deploy-do.sh cards   # the deck alone: check, fit test on the droplet's code, upload, restart, check; never code
 scripts/deploy-do.sh link    # print https://flash.patforna.com/
 scripts/deploy-do.sh logs    # the server's log
 scripts/deploy-do.sh down    # delete the droplet and its DNS record
