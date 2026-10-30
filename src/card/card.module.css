@@ -1,0 +1,26 @@
+/* The card (docs/plan.md §7, the DOM contract in §11). Everything inside the frame is sized in card units: the
+   card is designed at 600 × 360 and --u is one unit, so it lays out identically at any size. */
+
+.frame {
+  position: absolute;
+  inset: 0;
+  container-type: size;
+  /* Unregistered, so it resolves where it is used: against the frame, never against the stage. */
+  --u: calc(100cqh / 360);
+}
+
+.flipper {
+  position: absolute;
+  inset: 0;
+  transform-style: preserve-3d;
+}
+
+.face {
+  position: absolute;
+  inset: 0;
+  backface-visibility: hidden;
+}
+
+.back {
+  transform: rotateX(180deg);
+}
