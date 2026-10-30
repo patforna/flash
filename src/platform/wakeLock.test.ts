@@ -11,7 +11,7 @@ import { useWakeLock } from "./wakeLock";
 // [x] releases it after idleMs without input; each input restarts the countdown
 // [x] acquires it again on the next input
 // [x] requests it again when the page becomes visible, if it was held
-// [ ] a refused request is not an error
+// [x] a refused request is not an error
 // [ ] cleans up on unmount: releases the lock, stops listening, leaves no timer
 
 // happy-dom has no Screen Wake Lock API: this one hands out sentinels and keeps them for the test to inspect.
@@ -142,12 +142,14 @@ describe("useWakeLock", () => {
   });
 
   // Vitest fails the run on an unhandled rejection.
-  it("shrugs off a refused request", async () => {
+  it("shrugs off refused requests, on input and on return", async () => {
     const { request } = wakeLockApi();
     request.mockRejectedValue(new DOMException("Battery saver is on", "NotAllowedError"));
     renderHook(() => useWakeLock(1000), { reactStrictMode: true });
 
     fireEvent.pointerDown(document.body);
+    pageBecomes("hidden");
+    pageBecomes("visible");
     await vi.advanceTimersByTimeAsync(1000);
   });
 });
