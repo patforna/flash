@@ -26,7 +26,13 @@ const card = (id: string, ...topics: string[]): Card => ({ id, topics, questionH
 const deck: Deck = {
   version: "v1",
   topics: ["Redis", "Postgres", "Queues"],
-  cards: [card("a", "Redis"), card("b", "Postgres"), card("c", "Redis", "Queues"), card("d", "Queues"), card("e", "Postgres")],
+  cards: [
+    card("a", "Redis"),
+    card("b", "Postgres"),
+    card("c", "Redis", "Queues"),
+    card("d", "Queues"),
+    card("e", "Postgres"),
+  ],
 };
 
 // A seeded generator, so every run deals the same way.
@@ -187,9 +193,19 @@ describe("useDeck", () => {
     const { result, rerender } = setup({ stored: '["Redis","Queues"]' });
     act(() => result.current.goNext());
     act(() => result.current.flip());
-    rerender({ version: "v2", topics: ["Redis", "Postgres"], cards: [card("a", "Redis"), card("b"), card("f", "Redis")] });
+    rerender({
+      version: "v2",
+      topics: ["Redis", "Postgres"],
+      cards: [card("a", "Redis"), card("b"), card("f", "Redis")],
+    });
     expect(result.current.selected).toEqual(new Set(["Redis"]));
-    expect(result.current).toMatchObject({ prev: null, side: "front", position: 1, total: 2, topics: ["Redis", "Postgres"] });
+    expect(result.current).toMatchObject({
+      prev: null,
+      side: "front",
+      position: 1,
+      total: 2,
+      topics: ["Redis", "Postgres"],
+    });
     expect(walk(result).toSorted()).toEqual(["a", "f"]);
   });
 
