@@ -29,13 +29,13 @@ interface Run {
   dir: Dir | null;
 }
 
-// How far past the screen's left edge a card rests once it has gone, and where the previous card comes back from.
-const OFF_SCREEN = 80;
 const FLING_TILT = 10; // degrees, as a flung card leaves
 
 const sample = (e: PointerEvent): Sample => ({ t: e.timeStamp, x: e.clientX, y: e.clientY });
 const tilt = (dx: number) => Math.min(GESTURE.tiltMax, Math.max(-GESTURE.tiltMax, dx * GESTURE.tiltPerPx));
 const fixed = (n: number) => Math.round(n * 1e4) / 1e4;
+// Where a card rests once it has gone, 80 px past the screen's left edge, and where the previous card comes back from.
+const gone = (card: DOMRect) => -(card.right + 80);
 // The card underneath, from resting (p = 0) to in place (p = 1).
 const underneath = (p: number) => `scale(${fixed(0.965 + 0.035 * p)}) translateY(${fixed(8 * (1 - p))}px)`;
 
@@ -85,7 +85,7 @@ function swipe(stage: RefObject<HTMLElement | null>, options: RefObject<SwipeOpt
     const { layers, rect } = g;
     if (dx > 0 && layers.prev) {
       layers.prev.style.visibility = "visible";
-      write(layers.prev, `translateX(${dx - rect.right - OFF_SCREEN}px)`);
+      write(layers.prev, `translateX(${gone(rect) + dx}px)`);
       return;
     }
     const x = dx > 0 ? rubberBand(dx) : dx;
@@ -95,12 +95,12 @@ function swipe(stage: RefObject<HTMLElement | null>, options: RefObject<SwipeOpt
 
   function fling(g: Gesture, dx: number, vx: number) {
     const { current, next } = g.layers;
-    const gone = -(g.rect.right + OFF_SCREEN);
-    const timing = { duration: flingDuration(dx - gone, vx), easing: flingEasing(dx - gone, vx) };
+    const to = gone(g.rect);
+    const timing = { duration: flingDuration(dx - to, vx), easing: flingEasing(dx - to, vx) };
     const animations = [
       animate(
         current,
-        [{ transform: current.style.transform }, { transform: `translateX(${gone}px) rotate(${-FLING_TILT}deg)` }],
+        [{ transform: current.style.transform }, { transform: `translateX(${to}px) rotate(${-FLING_TILT}deg)` }],
         { ...timing, fill: "forwards" },
       ),
     ];
@@ -115,7 +115,7 @@ function swipe(stage: RefObject<HTMLElement | null>, options: RefObject<SwipeOpt
   function slideIn(g: Gesture, dx: number, vx: number) {
     const { prev } = g.layers;
     if (!prev) return;
-    const from = dx - g.rect.right - OFF_SCREEN;
+    const from = gone(g.rect) + dx;
     const timing = { duration: flingDuration(-from, vx), easing: flingEasing(-from, vx) };
     play(
       [
