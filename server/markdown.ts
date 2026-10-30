@@ -12,5 +12,5 @@ const OPTIONS = {
 type Rendered = { html: string } | { problems: string[] };
 
 export function renderAnswer(src: string): Rendered {
-  return { html: Bun.markdown.html(src, OPTIONS).trim() };
+  return { html: Bun.markdown.html(src, OPTIONS).trim().replaceAll("\n", "<br>") };
 }

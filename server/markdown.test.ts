@@ -1,6 +1,6 @@
 // To do:
 // [x] renderAnswer: a line renders as a paragraph
-// [ ] each source line of a paragraph is a line on the card: soft breaks become <br>
+// [x] each source line of a paragraph is a line on the card: soft breaks become <br>
 // [ ] a hard break (two trailing spaces or a backslash) is one <br>, not two
 // [ ] `-` and `1.` lists render tight, `start` kept on `ol`; a lead-in line stays a paragraph; items keep their breaks
 // [ ] fenced code renders as pre > code without its class, its lines and escapes intact
@@ -18,5 +18,9 @@ import { renderAnswer } from "./markdown";
 describe("renderAnswer", () => {
   test("renders a line as a paragraph", () => {
     expect(renderAnswer("One line.")).toEqual({ html: "<p>One line.</p>" });
+  });
+
+  test("makes each source line of a paragraph a line on the card", () => {
+    expect(renderAnswer("First line\nsecond line")).toEqual({ html: "<p>First line<br>second line</p>" });
   });
 });
