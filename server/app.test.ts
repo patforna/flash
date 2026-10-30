@@ -3,7 +3,7 @@
 // [x] serves index.html at / and /index.html, revalidated on every use
 // [x] serves hashed assets as immutable for a year
 // [x] serves the service worker, its helpers, the manifest and the icons, revalidated on every use
-// [ ] answers 404 for anything else: missing files, other methods, traversal attempts raw and percent-encoded
+// [x] answers 404 for anything else: missing files, other methods, traversal attempts raw and percent-encoded
 // [ ] sets the robots, sniffing and referrer headers on every response: static, API, 304 and 404
 // [ ] HEAD answers like GET for static files
 import { afterAll, describe, expect, test } from "bun:test";
@@ -78,5 +78,32 @@ describe("createApp", () => {
     expect(res.status).toBe(200);
     expect(res.headers.get("Content-Type")).toStartWith(type);
     expect(res.headers.get("Cache-Control")).toBe("no-cache");
+  });
+
+  test.each([
+    "/missing.html",
+    "/assets/missing.js",
+    "/assets",
+    "/api/missing",
+    "/../secret.txt",
+    "/assets/../../secret.txt",
+    "/%2e%2e/secret.txt",
+    "/..%2fsecret.txt",
+    "/%2e%2e%2fsecret.txt",
+    "/assets/..%2f..%2fsecret.txt",
+    "/..%5csecret.txt",
+  ])("answers 404 for %s", async (path) => {
+    const res = await app.request(path);
+
+    expect(res.status).toBe(404);
+    expect(await res.text()).not.toContain("secret");
+  });
+
+  test.each([
+    ["POST", "/"],
+    ["PUT", "/index.html"],
+    ["DELETE", "/api/cards"],
+  ])("answers 404 to %s %s", async (method, path) => {
+    expect((await app.request(path, { method })).status).toBe(404);
   });
 });
