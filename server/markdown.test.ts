@@ -4,7 +4,7 @@
 // [x] a hard break (two trailing spaces or a backslash) is one <br>, not two
 // [x] `-` and `1.` lists render tight, `start` kept on `ol`; a lead-in line stays a paragraph; items keep their breaks
 // [x] fenced code renders as pre > code without its class, its lines and escapes intact
-// [ ] inline code and bold render; -> and <- are typeset as → and ← outside code
+// [x] inline code and bold render; -> and <- are typeset as → and ← outside code
 // [ ] raw HTML is escaped text, not an error; tables, strikethrough, task lists and autolinks stay text
 // [ ] rejects a heading (ATX and setext), a link, an image, a block quote, a rule and emphasis, each with its reason
 // [ ] rejects a loose list, a list inside a list and a code block inside a list item
@@ -39,6 +39,12 @@ describe("renderAnswer", () => {
   test("renders fenced code without its class, its lines and escapes intact", () => {
     expect(renderAnswer("Run:\n```sql\nSELECT 1\n  WHERE a <> b;\n```")).toEqual({
       html: "<p>Run:</p><pre><code>SELECT 1\n  WHERE a &lt;&gt; b;\n</code></pre>",
+    });
+  });
+
+  test("renders inline code and bold, and typesets -> and <- as arrows outside code", () => {
+    expect(renderAnswer("A -> B, `a -> b`, **x <- y**\n- c -> d\n```\ne <- f\n```")).toEqual({
+      html: "<p>A → B, <code>a -&gt; b</code>, <strong>x ← y</strong></p><ul><li>c → d</li></ul><pre><code>e &lt;- f\n</code></pre>",
     });
   });
 });

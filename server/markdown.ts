@@ -24,7 +24,10 @@ export function renderAnswer(src: string): Rendered {
       if (text !== undefined) {
         // Code keeps its lines; in a paragraph or an item each line is a line on the card; whitespace between blocks goes.
         if (open.includes("pre")) return text;
-        return open.some((t) => t === "p" || t === "li") ? text.replaceAll("\n", "<br>") : "";
+        if (!open.some((t) => t === "p" || t === "li")) return "";
+        const lines = text.replaceAll("\n", "<br>");
+        // The arrows arrive escaped.
+        return open.includes("code") ? lines : lines.replaceAll("-&gt;", "→").replaceAll("&lt;-", "←");
       }
       if (slash) {
         open.pop();
