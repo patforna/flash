@@ -138,7 +138,8 @@
   outline-offset: 2px;
 }
 
-.prev:disabled {
+/* Off on a pass's first card, but still focusable while it has the focus. */
+.prev[aria-disabled="true"]:not(:focus-visible) {
   visibility: hidden;
 }
 

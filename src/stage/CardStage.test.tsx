@@ -10,6 +10,8 @@
 // [x] a new card from elsewhere (a reshuffle, a topic change) is dealt; one that survives isn't, nor one swiped to
 // [x] a swipe on the end card deals the next pass at once, under a copy of the end card flying off
 // [x] buttons: "Show answer" / "Show question", "Previous" and "Next", which go as a swipe does
+// [x] the buttons stay put, so focus never falls to the page: "Previous" is aria-disabled on a first card; on the end
+//     card the third reads "Shuffle again"
 // [x] shortcuts: → and ← go as a swipe does, Space flips, s reshuffles, f calls onFullscreen
 // (Styles aren't computed here: happy-dom gets no CSS modules. The feel check covers them in Chromium.)
 import { act, fireEvent, render, screen } from "@testing-library/react";
@@ -366,15 +368,22 @@ describe("buttons", () => {
     expect(calls).toEqual(["move", "goNext", "move", "goPrev"]);
   });
 
-  test('"Previous" is off on a pass\'s first card', () => {
-    setup();
-    expect(screen.getByRole("button", { name: "Previous" })).toHaveProperty("disabled", true);
-    expect(screen.getByRole("button", { name: "Next" })).toHaveProperty("disabled", false);
+  test('"Previous" is off on a pass\'s first card, yet keeps the focus it has: pressed, it does nothing', () => {
+    const { calls } = setup();
+    const previous = screen.getByRole("button", { name: "Previous" });
+    expect(previous.getAttribute("aria-disabled")).toBe("true");
+    expect(previous).toHaveProperty("disabled", false);
+    fireEvent.click(previous);
+    expect(calls).toEqual([]);
+    expect(animations).toEqual([]);
+    expect(screen.getByRole("button", { name: "Next" }).hasAttribute("aria-disabled")).toBe(false);
   });
 
-  test("the end card has nothing to show on its back", () => {
-    setup({ start: 4 });
+  test('the end card has no back: its third button reads "Shuffle again" and deals the next pass', () => {
+    const { calls } = setup({ start: 4 });
     expect(screen.queryByRole("button", { name: "Show answer" })).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Shuffle again" }));
+    expect(calls).toEqual(["move", "goNext"]);
   });
 });
 

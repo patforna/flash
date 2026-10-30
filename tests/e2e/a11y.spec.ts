@@ -168,6 +168,22 @@ test("the keys alone read the deck, the focus always in sight", async ({ page })
   await page.keyboard.press("Enter");
   await expect(announcer(page)).toHaveText("Card 1 of 9");
   await expect(question(page)).toHaveText(first ?? "");
+  // Previous has nowhere to go now, and still holds the focus, in sight.
+  await settled(page);
+  await expect(await focusRing(page)).toMatchObject({ name: "Previous", shown: true });
+
+  // Onto the end card with the third button focused: it stays, to shuffle again.
+  await page.keyboard.press("Tab");
+  await expect(await focusRing(page)).toMatchObject({ name: "Show answer", shown: true });
+  for (let i = 0; i < 9; i++) {
+    await page.keyboard.press("ArrowRight");
+    await settled(page);
+  }
+  await expect(announcer(page)).toHaveText("That's all 9. Tap or swipe to shuffle again.");
+  await expect(await focusRing(page)).toMatchObject({ name: "Shuffle again", shown: true });
+  await page.keyboard.press("Enter");
+  await expect(announcer(page)).toHaveText("Card 1 of 9");
+  await expect(await focusRing(page)).toMatchObject({ name: "Show answer", shown: true });
 });
 
 test("under reduced motion only opacity animates: the flip, a move and a deal fade", async ({ page }) => {

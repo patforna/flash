@@ -25,6 +25,7 @@ Reading:
 - Counts only on All and in each chip's accessible name: a count widens every chip by about 20 px and costs rows.
 - One live region in the app reads out where you are ("Card 7 of 16", or the end card's text): the cards remount on every move, so a live region inside one never announces.
 - Topics in the file's order, coloured by declared index mod 8: the author groups related topics, the order never shifts, and neighbours never share a colour.
+- The buttons for keyboards and screen readers never leave as the cards change, so focus never falls back to the page: Previous is `aria-disabled` on a pass's first card (a commit with nowhere to go does nothing), and on the end card the third button reads "Shuffle again" (plan §4 has no such label).
 - Tap flips; swipe left is next, right is previous within the pass; keys add vim's `h j k l` as in Patric's plant-selection, `s` to reshuffle and `f` for fullscreen.
 - A tap is under 10 px and at most 350 ms: a thumb resting on the card must not flip it when it lifts.
 - The 8 ms haptic tick comes as a move is decided (a swipe let go past its threshold, a key, a button, a tap on the end card), not as its card lands about 330 ms later, when it confirms nothing and, in rapid flicks, falls on the next touch. `useSwipe`'s `onDecide` and `CardStage`'s `onMove` carry it, beyond plan §11's interfaces. A reshuffle (`s`) and a chip tick at once; a flip never.

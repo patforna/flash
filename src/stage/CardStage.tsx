@@ -20,6 +20,9 @@ export interface CardStageProps {
 const ROLES = ["next", "current", "prev"] as const;
 
 const keyOf = (card: Card | "end") => (card === "end" ? "end" : card.id);
+// What a tap does, for the button that does it: the end card has no back, and a tap deals the next pass.
+const turnLabel = (view: DeckView) =>
+  view.current === "end" ? "Shuffle again" : view.side === "front" ? "Show answer" : "Show question";
 const reducedMotion = () => matchMedia("(prefers-reduced-motion: reduce)").matches;
 // A CSS time in ms, whichever unit it is written in: the build's minifier turns 380ms into .38s.
 const ms = (time: string) => Number.parseFloat(time) * (/ms\s*$/.test(time) ? 1 : 1000) || 0;
@@ -122,20 +125,20 @@ export function CardStage({ view, renderCard, onFullscreen, onMove }: CardStageP
             </div>
           );
         })}
+        {/* The buttons stay put as the cards change, so the keyboard's focus never falls back to the page: Previous is
+            only marked disabled (a commit with nowhere to go does nothing), and the end card's third button deals. */}
         <button
           type="button"
           className={styles.prev}
           aria-label="Previous"
-          disabled={view.prev === null}
+          aria-disabled={view.prev === null}
           onClick={() => swipe.commit("prev")}
         >
           ‹
         </button>
-        {view.current !== "end" && (
-          <button type="button" className={styles.flip} onClick={swipe.tap}>
-            {view.side === "front" ? "Show answer" : "Show question"}
-          </button>
-        )}
+        <button type="button" className={styles.flip} onClick={swipe.tap}>
+          {turnLabel(view)}
+        </button>
         <button type="button" className={styles.next} aria-label="Next" onClick={() => swipe.commit("next")}>
           ›
         </button>
