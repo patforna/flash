@@ -77,4 +77,16 @@ describe("useShortcuts", () => {
     expect(h.reshuffle).not.toHaveBeenCalled();
     field.remove();
   });
+
+  test("Space and Enter are left to a focused button; other keys still work there", () => {
+    const { h } = setup();
+    const button = document.createElement("button");
+    document.body.append(button);
+    expect(fireEvent.keyDown(button, { key: " " })).toBe(true);
+    fireEvent.keyDown(button, { key: "Enter" });
+    expect(h.flip).not.toHaveBeenCalled();
+    fireEvent.keyDown(button, { key: "ArrowRight" });
+    expect(h.next).toHaveBeenCalledOnce();
+    button.remove();
+  });
 });

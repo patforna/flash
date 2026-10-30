@@ -26,14 +26,17 @@ const KEYS: Record<string, keyof Handlers> = {
   f: "fullscreen",
 };
 
-const typing = (target: EventTarget | null) =>
-  target instanceof Element && target.closest('input, textarea, [contenteditable]:not([contenteditable="false"])') !== null;
+const within = (target: EventTarget | null, selector: string) =>
+  target instanceof Element && target.closest(selector) !== null;
+const FIELDS = 'input, textarea, [contenteditable]:not([contenteditable="false"])';
 
 export function useShortcuts(h: Handlers): void {
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       const action = KEYS[e.key];
-      if (!action || e.repeat || e.altKey || e.ctrlKey || e.metaKey || typing(e.target)) return;
+      if (!action || e.repeat || e.altKey || e.ctrlKey || e.metaKey || within(e.target, FIELDS)) return;
+      // A focused button presses itself on Space and Enter.
+      if ((e.key === " " || e.key === "Enter") && within(e.target, "button")) return;
       e.preventDefault();
       h[action]();
     };
