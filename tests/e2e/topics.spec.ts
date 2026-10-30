@@ -6,6 +6,7 @@ import {
   firstCard,
   flick,
   flipper,
+  insets,
   question,
   settled,
   tap,
@@ -134,26 +135,35 @@ test("the selection outlives a reload", async ({ page }) => {
 test.describe("the real deck", () => {
   test.use({ baseURL: "http://127.0.0.1:4174" });
 
-  test("at 923 × 412 every chip is in full view, none under the panel's fade, nothing to scroll", async ({ page }) => {
+  // Every chip in full view, none under the panel's fade, nothing to scroll. In a tab, so the fullscreen chip leads:
+  // the fullest panel, with All and the 13 topics after it.
+  async function inFullView(page: Page) {
     const panel = page.getByRole("group", { name: "Topics" });
     const chips = panel.getByRole("button");
-    // In a tab, so the fullscreen chip leads: the fullest panel. Then All and the 13 topics.
     await expect(chips).toHaveCount(15);
-    const fits = await panel.evaluate((el) => el.scrollHeight <= el.clientHeight);
-    expect(fits).toBe(true);
+    expect(await panel.evaluate((el) => el.scrollHeight <= el.clientHeight)).toBe(true);
     const box = await panel.boundingBox();
     if (!box) throw new Error("no panel");
     const fade = 24;
     for (const chip of await chips.all()) {
       const b = await chip.boundingBox();
-      expect(b, (await chip.getAttribute("aria-label")) ?? "").not.toBeNull();
-      if (!b) continue;
-      expect(b.x).toBeGreaterThanOrEqual(box.x);
-      expect(b.y).toBeGreaterThanOrEqual(box.y);
-      expect(b.x + b.width).toBeLessThanOrEqual(box.x + box.width);
-      expect(b.y + b.height, `${await chip.getAttribute("aria-label")} clear of the fade`).toBeLessThanOrEqual(
-        box.y + box.height - fade,
-      );
+      const name = (await chip.getAttribute("aria-label")) ?? "";
+      if (!b) throw new Error(`${name} has no box`);
+      expect(b.x, name).toBeGreaterThanOrEqual(box.x);
+      expect(b.y, name).toBeGreaterThanOrEqual(box.y);
+      expect(b.x + b.width, name).toBeLessThanOrEqual(box.x + box.width);
+      expect(b.y + b.height, `${name} clear of the fade`).toBeLessThanOrEqual(box.y + box.height - fade);
     }
+  }
+
+  test("at 923 × 412 every chip is in full view, none under the panel's fade, nothing to scroll", async ({ page }) => {
+    await inFullView(page);
+  });
+
+  test("so they are with a 40 px camera cutout, which shortens the panel with the card", async ({ page }) => {
+    await insets(page, { left: 40 });
+    await expect.poll(() => page.locator("main").evaluate((el) => getComputedStyle(el).paddingLeft)).toBe("48px");
+    await settled(page);
+    await inFullView(page);
   });
 });

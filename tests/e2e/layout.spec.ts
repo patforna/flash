@@ -89,9 +89,39 @@ test("the card keeps 48 px clear of the right edge, where the back gesture start
   expect(width - ((box?.x ?? 0) + (box?.width ?? 0))).toBeGreaterThanOrEqual(48);
 });
 
+// The panel stands beside the card: its first chip level with the card's top edge, the wordmark's foot with its foot.
+async function besideTheCard(page: Page) {
+  const card = await layer(page).boundingBox();
+  // Where the chip is laid out: a selected chip is tilted, which grows its bounding box.
+  const chip = await page
+    .getByRole("group", { name: "Topics" })
+    .getByRole("button")
+    .first()
+    .evaluate((el) => (el as HTMLElement).offsetTop);
+  const wordmark = await page.getByText("flash", { exact: true }).boundingBox();
+  if (!card || !wordmark) throw new Error("no card or wordmark");
+  expect(Math.abs(chip - card.y), `the first chip at ${chip}, the card at ${card.y}`).toBeLessThanOrEqual(1);
+  const [foot, cardFoot] = [wordmark.y + wordmark.height, card.y + card.height];
+  expect(Math.abs(foot - cardFoot), `the wordmark's foot at ${foot}, the card's at ${cardFoot}`).toBeLessThanOrEqual(1);
+}
+
+test("the panel stands beside the card, from its top edge to its foot", async ({ page }) => {
+  test.skip(project() === "portrait", "portrait stacks the card over the chips");
+  await open(page);
+  await besideTheCard(page);
+});
+
 test.describe("on the Pixel 11 with a camera cutout", () => {
   test.beforeEach(() => {
     test.skip(project() !== "pixel11", "the phone's safe areas");
+  });
+
+  test("a 40 px cutout on the left: the card narrows, and the panel still stands beside it", async ({ page }) => {
+    await open(page);
+    await insets(page, { left: 40 });
+    await expect.poll(() => page.locator("main").evaluate((el) => getComputedStyle(el).paddingLeft)).toBe("48px");
+    await settled(page);
+    await besideTheCard(page);
   });
 
   test("a 40 px cutout on the left covers nothing", async ({ page }) => {

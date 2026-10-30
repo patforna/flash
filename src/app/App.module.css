@@ -2,13 +2,20 @@
    doesn't, so a flung card leaves over the panel and off the screen. The right padding is the strip the Android back
    gesture owns (an edge swipe means back in the installed app): nothing draggable sits in it. */
 .shell {
+  --panel: 232px;
+  --gap: 24px;
+  --left: max(12px, calc(env(safe-area-inset-left) + 8px));
+  --right: max(48px, calc(env(safe-area-inset-right) + 16px));
   display: grid;
-  grid-template-columns: 232px minmax(0, 1fr);
-  /* A definite row: the stage is a size container, and an auto row would collapse it. */
-  grid-template-rows: minmax(0, 1fr);
-  column-gap: 24px;
+  grid-template-columns: var(--panel) minmax(0, 1fr);
+  /* One row, exactly as tall as the card: the largest 5:3 box that fits the stage's width and the screen's height.
+     Centred, it keeps the panel beside the card from its top edge to its foot, also when a camera cutout or a wide
+     screen narrows the card. (A definite row, too: the stage is a size container, and an auto row would collapse it.) */
+  grid-template-rows: min(100%, (100vw - var(--left) - var(--right) - var(--panel) - var(--gap)) * 3 / 5);
+  align-content: center;
+  column-gap: var(--gap);
   height: 100dvh;
-  padding: 24px max(48px, calc(env(safe-area-inset-right) + 16px)) 24px max(12px, calc(env(safe-area-inset-left) + 8px));
+  padding: 24px var(--right) 24px var(--left);
   overflow: hidden;
 }
 
@@ -39,6 +46,7 @@
   .shell {
     grid-template-columns: minmax(0, 1fr);
     grid-template-rows: calc((100vw - 32px) * 3 / 5) minmax(0, 1fr);
+    align-content: normal;
     row-gap: 16px;
     padding: 16px;
   }
