@@ -6,7 +6,7 @@ import { measure } from "./budget";
 
 // To do:
 // [x] an empty build measures zero
-// [ ] JS: the gzipped size of the scripts index.html references, and nothing else
+// [x] JS: the gzipped size of the scripts index.html references, and nothing else
 // [ ] CSS: the gzipped size of the stylesheets index.html references
 // [ ] fonts: the raw size of every woff2 file
 // [ ] precache: the raw size of every file sw.js precaches, each counted once
@@ -38,6 +38,27 @@ const html = (head: string) => `<!doctype html><html><head>${head}</head><body><
 const sw = (urls: string[]) =>
   `define(["./workbox-1"],function(e){"use strict";e.precacheAndRoute([${urls.map((url) => `{url:"${url}",revision:null}`).join(",")}],{})});`;
 
+const gzipped = (text: string) => Bun.gzipSync(text).length;
+
 test("an empty build measures zero", () => {
   expect(measure(dist({ "index.html": html(""), "sw.js": sw([]) }))).toEqual({ js: 0, css: 0, fonts: 0, precache: 0 });
+});
+
+test("JS is the gzipped size of the scripts index.html references, and nothing else", () => {
+  const app = "export const app = 1;\n".repeat(40);
+  const vendor = "export const vendor = 2;\n".repeat(30);
+  const register = "navigator.serviceWorker.register('/sw.js');";
+  const dir = dist({
+    "index.html": html(
+      '<script type="module" crossorigin src="/assets/app.js"></script>' +
+        '<link rel="modulepreload" crossorigin href="/assets/vendor.js">' +
+        '<script id="vite-plugin-pwa:register-sw" src="/registerSW.js" defer></script>',
+    ),
+    "assets/app.js": app,
+    "assets/vendor.js": vendor,
+    "assets/lazy.js": "export const lazy = 3;",
+    "registerSW.js": register,
+    "sw.js": sw([]),
+  });
+  expect(measure(dir).js).toBe(gzipped(app) + gzipped(vendor) + gzipped(register));
 });
