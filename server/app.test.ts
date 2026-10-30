@@ -4,7 +4,7 @@
 // [x] serves hashed assets as immutable for a year
 // [x] serves the service worker, its helpers, the manifest and the icons, revalidated on every use
 // [x] answers 404 for anything else: missing files, other methods, traversal attempts raw and percent-encoded
-// [ ] sets the robots, sniffing and referrer headers on every response: static, API, 304 and 404
+// [x] sets the robots, sniffing and referrer headers on every response: static, API, 304 and 404
 // [ ] HEAD answers like GET for static files
 import { afterAll, describe, expect, test } from "bun:test";
 import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
@@ -105,5 +105,19 @@ describe("createApp", () => {
     ["DELETE", "/api/cards"],
   ])("answers 404 to %s %s", async (method, path) => {
     expect((await app.request(path, { method })).status).toBe(404);
+  });
+
+  test.each<[string, string, RequestInit]>([
+    ["a static file", "/", {}],
+    ["the API", "/api/cards", {}],
+    ["a 304", "/api/cards", { headers: { "If-None-Match": `"${deck.version}"` } }],
+    ["a 404", "/missing.html", {}],
+    ["a HEAD", "/healthz", { method: "HEAD" }],
+  ])("keeps %s out of search engines, unsniffed and without a referrer", async (_, path, init) => {
+    const res = await app.request(path, init);
+
+    expect(res.headers.get("X-Robots-Tag")).toBe("noindex, nofollow");
+    expect(res.headers.get("X-Content-Type-Options")).toBe("nosniff");
+    expect(res.headers.get("Referrer-Policy")).toBe("no-referrer");
   });
 });

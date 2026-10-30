@@ -8,13 +8,21 @@ import { createApi } from "./api";
 const IMMUTABLE = "public, max-age=31536000, immutable";
 
 export function createApp({ deck, distDir }: { deck: Deck; distDir: string }): Hono {
-  return new Hono().route("/", createApi(deck)).get(
-    "*",
-    serveStatic({
-      root: distDir,
-      onFound: (_, c) => {
-        c.header("Cache-Control", c.req.path.startsWith("/assets/") ? IMMUTABLE : "no-cache");
-      },
-    }),
-  );
+  return new Hono()
+    .use(async (c, next) => {
+      await next();
+      c.header("X-Robots-Tag", "noindex, nofollow");
+      c.header("X-Content-Type-Options", "nosniff");
+      c.header("Referrer-Policy", "no-referrer");
+    })
+    .route("/", createApi(deck))
+    .get(
+      "*",
+      serveStatic({
+        root: distDir,
+        onFound: (_, c) => {
+          c.header("Cache-Control", c.req.path.startsWith("/assets/") ? IMMUTABLE : "no-cache");
+        },
+      }),
+    );
 }
