@@ -5,7 +5,7 @@
 // - release: 28 % of the width, or 0.45 px/ms with |dx| ≥ 24; a fling against the drag cancels; only what `can` allows
 // - rubberBand: 0 gives 0, monotonic, always below 80
 import { describe, expect, test } from "vitest";
-import { classify, isTap } from "./gesture";
+import { classify, isTap, velocityX } from "./gesture";
 
 const at = (x: number, y: number, t = 0) => ({ t, x, y });
 
@@ -38,5 +38,15 @@ describe("isTap", () => {
 
   test("lifting 10 px away is not a tap", () => {
     expect(isTap(at(100, 100, 0), at(106, 108, 100))).toBe(false);
+  });
+});
+
+describe("velocityX", () => {
+  test("one sample gives no velocity", () => {
+    expect(velocityX([at(100, 100, 0)])).toBe(0);
+  });
+
+  test("a steady drag left gives its speed in px/ms", () => {
+    expect(velocityX([at(700, 0, 0), at(680, 0, 8), at(660, 0, 16), at(640, 0, 24)])).toBeCloseTo(-2.5);
   });
 });

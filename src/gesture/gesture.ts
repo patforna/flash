@@ -28,3 +28,10 @@ export function classify(start: Sample, now: Sample): "pending" | "horizontal" |
 export function isTap(start: Sample, end: Sample): boolean {
   return withinSlop(start, end) && end.t - start.t <= GESTURE.tapMaxMs;
 }
+
+export function velocityX(samples: readonly Sample[]): number {
+  const first = samples[0];
+  const last = samples.at(-1);
+  if (!first || !last || last.t === first.t) return 0;
+  return (last.x - first.x) / (last.t - first.t);
+}
