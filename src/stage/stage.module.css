@@ -1,0 +1,163 @@
+/* The stage (docs/plan.md §2, §4, §11): the cards over the largest centred 5:3 box, the blank cards peeking out
+   behind them, and the buttons for keyboards and screen readers. Only transforms and opacity ever move. */
+
+/* Fills its grid cell (the grid gives the row a definite height) and never clips: a flung card leaves over the
+   panel, so the stage sits above it. Horizontal drags are ours anywhere on it, even between two cards mid-fling. */
+.stage {
+  position: relative;
+  z-index: 1;
+  min-width: 0;
+  min-height: 0;
+  container-type: size;
+  touch-action: pan-y;
+}
+
+/* The largest 5:3 box that fits the stage, centred: the card's place. Everything else on the stage is laid over it. */
+.box {
+  --card-height: min(100cqh, 100cqw * 3 / 5);
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  width: min(100cqw, 100cqh * 5 / 3);
+  height: var(--card-height);
+}
+
+.blank,
+.layer {
+  position: absolute;
+  inset: 0;
+}
+
+/* Blank cards peek out behind the stack, the deeper one only while 3 cards remain after this one; they fade as the
+   pass runs out. The card's radius is 6 of its 360 units. */
+.blank {
+  border: 1px solid var(--paper-edge);
+  border-radius: calc(var(--card-height) / 60);
+  background: var(--paper-shade);
+  box-shadow: 0 12px 28px -10px rgb(0 0 0 / 55%);
+  opacity: 0;
+  transform: rotate(1.1deg);
+  transition: opacity 160ms ease-out;
+}
+
+.blank + .blank {
+  transform: rotate(-1.8deg);
+}
+
+.blank[data-shown] {
+  opacity: 1;
+}
+
+/* A layer not in play takes no space on screen and no pointer: the previous card rests here, hidden, until a drag
+   brings it back (the gesture writes its transform and visibility inline, and clears them). */
+.layer {
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.layer[data-role="current"] {
+  visibility: visible;
+  pointer-events: auto;
+  transform-origin: 50% 140%; /* a dragged card pivots under the thumb */
+}
+
+/* The card underneath waits a little smaller and lower: underneath(0) in gesture/useSwipe.ts. */
+.layer[data-role="next"] {
+  visibility: visible;
+  transform: scale(0.965) translateY(8px);
+}
+
+.stage[data-state="dragging"] .layer {
+  will-change: transform;
+}
+
+/* The press lifts the card on its lift, never on the layer that drags, so it never trails the finger. */
+.lift {
+  height: 100%;
+  transition: transform 120ms ease-out;
+}
+
+[data-pressed] > .lift {
+  transform: scale(1.012);
+}
+
+/* Buttons for keyboards and screen readers: visually hidden until focused. With a fine pointer, ‹ and › wait at the
+   card's side edges and fade in while it is hovered. */
+.prev,
+.next,
+.flip {
+  position: absolute;
+  height: 44px;
+  border: 0;
+  border-radius: 22px;
+  background: color-mix(in srgb, var(--desk) 80%, transparent);
+  box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--chalk) 35%, transparent);
+  color: var(--chalk);
+  font-family: var(--font-hand);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.prev,
+.next {
+  top: 50%;
+  width: 44px;
+  font-size: 26px;
+  line-height: 1;
+}
+
+.prev {
+  left: 0;
+  translate: -50% -50%;
+}
+
+.next {
+  right: 0;
+  translate: 50% -50%;
+}
+
+.flip {
+  bottom: 0;
+  left: 50%;
+  padding: 0 16px;
+  font-size: 15px;
+  white-space: nowrap;
+  translate: -50% 50%;
+}
+
+.prev:not(:focus-visible),
+.next:not(:focus-visible),
+.flip:not(:focus-visible) {
+  clip-path: inset(50%);
+}
+
+.prev:focus-visible,
+.next:focus-visible,
+.flip:focus-visible {
+  outline: 3px solid var(--hl);
+  outline-offset: 2px;
+}
+
+.prev:disabled {
+  visibility: hidden;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .prev:not(:focus-visible),
+  .next:not(:focus-visible) {
+    clip-path: none;
+    opacity: 0;
+    transition: opacity 160ms ease-out;
+  }
+
+  .box:hover .prev,
+  .box:hover .next {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-pressed] > .lift {
+    transform: none;
+  }
+}
