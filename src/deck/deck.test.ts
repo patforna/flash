@@ -17,7 +17,7 @@
 // - [x] reshuffle: a new pass of the pool that never starts with the current card
 // - [x] reshuffle: on the end card, never starts with the last card
 // - [x] reselect: the current card, if still in the pool, first and on the same side
-// - [ ] reselect: otherwise, or from the end card, a fresh deal, front up
+// - [x] reselect: otherwise, or from the end card, a fresh deal, front up
 
 import { describe, expect, it } from "vitest";
 import type { Card } from "../../shared/types";
@@ -191,5 +191,9 @@ describe("reselect", () => {
 
   it("deals afresh, front up, when the new pool hasn't the card on screen", () => {
     expect(reselect(at(1, "back"), ["d", "e", "f"], mulberry32(14))).toEqual(deal(["d", "e", "f"], mulberry32(14)));
+  });
+
+  it("deals afresh from the end card", () => {
+    expect(reselect(at(3), ["a", "b", "c"], mulberry32(15))).toEqual(deal(["a", "b", "c"], mulberry32(15)));
   });
 });
