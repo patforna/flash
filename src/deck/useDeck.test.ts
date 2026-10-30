@@ -165,4 +165,13 @@ describe("useDeck", () => {
     act(() => result.current.toggleTopic("Redis"));
     expect(storage.getItem("flash:v1:topics")).toBe('["Queues","Redis"]');
   });
+
+  it("returns to every card with clearTopics, keeping the card on screen, and saves the empty selection", () => {
+    const { result, storage } = setup({ stored: '["Queues"]' });
+    const shown = result.current.current;
+    act(() => result.current.clearTopics());
+    expect(result.current).toMatchObject({ current: shown, position: 1, total: 5 });
+    expect(result.current.selected).toEqual(new Set());
+    expect(storage.getItem("flash:v1:topics")).toBe("[]");
+  });
 });

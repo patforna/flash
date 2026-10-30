@@ -9,8 +9,6 @@ interface State {
   pass: Pass;
 }
 
-const none = () => {};
-
 export function useDeck(
   deck: Deck,
   { rng = Math.random, storage = null }: { rng?: Rng; storage?: Storage | null } = {},
@@ -43,6 +41,10 @@ export function useDeck(
         const chosen = toggle(s.selected, label);
         return { selected: chosen, pass: reselect(s.pass, poolFor(deck.cards, chosen), rng) };
       }),
-    clearTopics: none,
+    clearTopics: () =>
+      setState((s) => {
+        const chosen = new Set<string>();
+        return { selected: chosen, pass: reselect(s.pass, poolFor(deck.cards, chosen), rng) };
+      }),
   };
 }
