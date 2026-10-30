@@ -11,7 +11,7 @@
 // [x] haptics on next, previous, reshuffle, the end card's reshuffle and a chip toggle; never on a flip
 // [x] the fullscreen chip leads the panel; f toggles fullscreen
 // [x] the wake lock is asked for on the first input
-// [ ] performance mark flash:first-card once the fonts are in and the first card is on screen, once per page load
+// [x] performance mark flash:first-card once the fonts are in and the first card is on screen, once per page load
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { StrictMode } from "react";
@@ -224,6 +224,12 @@ describe("topics", () => {
       "Why queue work?",
       2,
     ]);
+  });
+
+  test("the wordmark sits at the foot of the panel, under the topics", async () => {
+    await reading();
+
+    expect(screen.getByRole("group", { name: "Topics" }).nextElementSibling?.textContent).toBe("flash");
   });
 
   test("colours each topic by its place in the deck, on its chip and on every card carrying it", async () => {

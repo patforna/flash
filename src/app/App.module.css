@@ -1,3 +1,24 @@
+/* The desk (docs/plan.md §2): the panel's column, then the stage, filling the screen. Only the shell clips: the stage
+   doesn't, so a flung card leaves over the panel and off the screen. The right padding is the strip the Android back
+   gesture owns (an edge swipe means back in the installed app): nothing draggable sits in it. */
+.shell {
+  display: grid;
+  grid-template-columns: 232px minmax(0, 1fr);
+  /* A definite row: the stage is a size container, and an auto row would collapse it. */
+  grid-template-rows: minmax(0, 1fr);
+  column-gap: 24px;
+  height: 100dvh;
+  padding: 24px max(48px, calc(env(safe-area-inset-right) + 16px)) 24px max(12px, calc(env(safe-area-inset-left) + 8px));
+  overflow: hidden;
+}
+
+/* The panel's column: the topics, which own their scroll when they outgrow it, then the wordmark at its foot. */
+.panel {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
 /* Read out, never seen. */
 .announcer {
   position: absolute;
@@ -8,4 +29,19 @@
   overflow: hidden;
   clip-path: inset(50%);
   white-space: nowrap;
+}
+
+/* Portrait (a browser tab only; the installed app is locked to landscape): the card on top at full width with 16 px
+   gutters, the chips wrapping below it in a scrolling area. Functional, not polished. */
+@media (orientation: portrait) {
+  .shell {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: calc((100vw - 32px) * 3 / 5) minmax(0, 1fr);
+    row-gap: 16px;
+    padding: 16px;
+  }
+
+  .panel {
+    order: 1;
+  }
 }

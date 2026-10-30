@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useState } from "react";
+import type { UseQueryResult } from "@tanstack/react-query";
+import { type ReactNode, useEffect, useMemo, useState } from "react";
 import type { Deck } from "../../shared/types";
 import { useDeckQuery } from "../api/useDeckQuery";
 import { CardView } from "../card/CardView";
@@ -7,6 +8,7 @@ import { FONTS } from "../card/fit";
 import { MessageCard } from "../card/MessageCard";
 import type { DeckView } from "../deck/types";
 import { useDeck } from "../deck/useDeck";
+import { Wordmark } from "../desk/Wordmark";
 import { colourFor } from "../panel/colours";
 import { TopicPanel } from "../panel/TopicPanel";
 import { FullscreenChip } from "../platform/FullscreenChip";
@@ -22,10 +24,32 @@ const LOADING_AFTER_MS = 200;
 export function App() {
   useWakeLock();
   const deck = useDeckQuery();
+  if (deck.data && deck.data.cards.length > 0) return <Reader deck={deck.data} />;
+  return (
+    <Desk>
+      <Message deck={deck} />
+    </Desk>
+  );
+}
+
+// The desk (docs/plan.md §2): the panel's column, the wordmark at its foot, and the stage beside it.
+function Desk({ panel, children }: { panel?: ReactNode; children: ReactNode }) {
+  return (
+    <main className={styles.shell}>
+      <div className={styles.panel}>
+        {panel}
+        <Wordmark />
+      </div>
+      {children}
+    </main>
+  );
+}
+
+// The card on the stage while there is nothing to read.
+function Message({ deck }: { deck: UseQueryResult<Deck, Error> }) {
   const late = useElapsed(LOADING_AFTER_MS);
   // Validation makes an empty deck impossible; should one come, it says so rather than show an end card.
-  if (deck.data)
-    return deck.data.cards.length > 0 ? <Reader deck={deck.data} /> : <MessageCard title="No cards here." />;
+  if (deck.data) return <MessageCard title="No cards here." />;
   // Tapping the error card asks again (nothing else does: no refetch on focus or reconnect); it shuffles meanwhile.
   if (deck.isError && !deck.isFetching) {
     const retry = () => void deck.refetch();
@@ -47,18 +71,21 @@ function Reader({ deck }: { deck: Deck }) {
     return (topic: string) => colourFor(place.get(topic) ?? 0);
   }, [deck]);
   return (
-    <>
-      <TopicPanel
-        topics={deck.topics}
-        counts={counts}
-        total={deck.cards.length}
-        selected={view.selected}
-        onToggle={ticked(view.toggleTopic)}
-        // All with nothing selected changes nothing, so it doesn't buzz.
-        onAll={view.selected.size > 0 ? ticked(view.clearTopics) : view.clearTopics}
-        colourOf={colourOf}
-        lead={<FullscreenChip />}
-      />
+    <Desk
+      panel={
+        <TopicPanel
+          topics={deck.topics}
+          counts={counts}
+          total={deck.cards.length}
+          selected={view.selected}
+          onToggle={ticked(view.toggleTopic)}
+          // All with nothing selected changes nothing, so it doesn't buzz.
+          onAll={view.selected.size > 0 ? ticked(view.clearTopics) : view.clearTopics}
+          colourOf={colourOf}
+          lead={<FullscreenChip />}
+        />
+      }
+    >
       <CardStage
         view={{ ...view, goNext: ticked(view.goNext), goPrev: ticked(view.goPrev), reshuffle: ticked(view.reshuffle) }}
         renderCard={(card, role) =>
@@ -81,7 +108,7 @@ function Reader({ deck }: { deck: Deck }) {
       <p className={styles.announcer} aria-live="polite">
         {whereYouAre(view)}
       </p>
-    </>
+    </Desk>
   );
 }
 
