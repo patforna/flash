@@ -287,4 +287,20 @@ describe("dealing", () => {
     expect(layer("current").textContent).toBe("b?");
     expect(animations.map((a) => [a.el, a.keyframes])).toEqual([[layer("current"), deal]]);
   });
+
+  test("a card that survives a topic change isn't", () => {
+    const { layer, deck } = setup();
+    act(() => deck().toggleTopic("Redis"));
+    expect(layer("next").textContent).toBe("y?");
+    expect(animations).toEqual([]);
+  });
+
+  test("swiping on from the end card deals the new pass", async () => {
+    const { stage, layer } = setup({ start: 4 });
+    flick(stage, layer);
+    await land();
+    expect(layer("current").textContent).toBe("b?");
+    expect(animations.at(-1)?.el).toBe(layer("current"));
+    expect(animations.at(-1)?.keyframes).toEqual(deal);
+  });
 });
