@@ -12,7 +12,7 @@ import { useWakeLock } from "./wakeLock";
 // [x] acquires it again on the next input
 // [x] requests it again when the page becomes visible, if it was held
 // [x] a refused request is not an error
-// [ ] cleans up on unmount: releases the lock, stops listening, leaves no timer
+// [x] cleans up on unmount: releases the lock, stops listening, leaves no timer
 
 // happy-dom has no Screen Wake Lock API: this one hands out sentinels and keeps them for the test to inspect.
 function wakeLockApi() {
@@ -151,5 +151,19 @@ describe("useWakeLock", () => {
     pageBecomes("hidden");
     pageBecomes("visible");
     await vi.advanceTimersByTimeAsync(1000);
+  });
+
+  it("cleans up on unmount: releases the lock, stops listening, leaves no timer", async () => {
+    const { request, sentinels } = wakeLockApi();
+    const { unmount } = renderHook(() => useWakeLock(), { reactStrictMode: true });
+    fireEvent.pointerDown(document.body);
+
+    unmount();
+    await vi.advanceTimersByTimeAsync(0);
+    fireEvent.pointerDown(document.body);
+
+    expect(sentinels[0]?.release).toHaveBeenCalled();
+    expect(request).toHaveBeenCalledTimes(1);
+    expect(vi.getTimerCount()).toBe(0);
   });
 });

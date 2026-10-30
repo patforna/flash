@@ -28,6 +28,8 @@ export function useWakeLock(idleMs = 300_000): void {
       window.removeEventListener("pointerdown", onInput, true);
       window.removeEventListener("keydown", onInput, true);
       document.removeEventListener("visibilitychange", onVisibilityChange);
+      clearTimeout(idle);
+      release();
     };
   }, [idleMs]);
 }
