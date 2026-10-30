@@ -32,6 +32,10 @@ function pageBecomes(state: DocumentVisibilityState) {
   document.dispatchEvent(new Event("visibilitychange"));
 }
 
+function renderWakeLock(idleMs?: number) {
+  return renderHook(() => useWakeLock(idleMs), { reactStrictMode: true });
+}
+
 beforeEach(() => {
   vi.useFakeTimers();
 });
@@ -44,14 +48,14 @@ afterEach(() => {
 
 describe("useWakeLock", () => {
   it("does nothing where unsupported", () => {
-    renderHook(() => useWakeLock(), { reactStrictMode: true });
+    renderWakeLock();
 
     expect(() => fireEvent.pointerDown(document.body)).not.toThrow();
   });
 
   it("requests a screen lock on the first pointerdown", () => {
     const { request } = wakeLockApi();
-    renderHook(() => useWakeLock(), { reactStrictMode: true });
+    renderWakeLock();
     expect(request).not.toHaveBeenCalled();
 
     fireEvent.pointerDown(document.body);
@@ -61,7 +65,7 @@ describe("useWakeLock", () => {
 
   it("requests a screen lock on the first keydown", () => {
     const { request } = wakeLockApi();
-    renderHook(() => useWakeLock(), { reactStrictMode: true });
+    renderWakeLock();
 
     fireEvent.keyDown(document.body, { key: "ArrowRight" });
 
@@ -70,7 +74,7 @@ describe("useWakeLock", () => {
 
   it("keeps the one lock while input continues", () => {
     const { request } = wakeLockApi();
-    renderHook(() => useWakeLock(), { reactStrictMode: true });
+    renderWakeLock();
 
     fireEvent.pointerDown(document.body);
     fireEvent.keyDown(document.body, { key: "ArrowRight" });
@@ -81,7 +85,7 @@ describe("useWakeLock", () => {
 
   it("releases it after five minutes without input", async () => {
     const { sentinels } = wakeLockApi();
-    renderHook(() => useWakeLock(), { reactStrictMode: true });
+    renderWakeLock();
     fireEvent.pointerDown(document.body);
 
     await vi.advanceTimersByTimeAsync(5 * 60_000 - 1);
@@ -93,7 +97,7 @@ describe("useWakeLock", () => {
 
   it("releases it after idleMs without input, each input restarting the countdown", async () => {
     const { sentinels } = wakeLockApi();
-    renderHook(() => useWakeLock(1000), { reactStrictMode: true });
+    renderWakeLock(1000);
     fireEvent.pointerDown(document.body);
     await vi.advanceTimersByTimeAsync(600);
     fireEvent.keyDown(document.body, { key: "ArrowRight" });
@@ -107,7 +111,7 @@ describe("useWakeLock", () => {
 
   it("acquires it again on the next input", async () => {
     const { request } = wakeLockApi();
-    renderHook(() => useWakeLock(1000), { reactStrictMode: true });
+    renderWakeLock(1000);
     fireEvent.pointerDown(document.body);
     await vi.advanceTimersByTimeAsync(1000);
 
@@ -118,7 +122,7 @@ describe("useWakeLock", () => {
 
   it("requests it again when the page becomes visible, if it was held", () => {
     const { request } = wakeLockApi();
-    renderHook(() => useWakeLock(), { reactStrictMode: true });
+    renderWakeLock();
     fireEvent.pointerDown(document.body);
 
     pageBecomes("hidden");
@@ -129,7 +133,7 @@ describe("useWakeLock", () => {
 
   it("asks for nothing when the page becomes visible, unless it was held", async () => {
     const { request } = wakeLockApi();
-    renderHook(() => useWakeLock(1000), { reactStrictMode: true });
+    renderWakeLock(1000);
     pageBecomes("hidden");
     pageBecomes("visible");
     expect(request).not.toHaveBeenCalled();
@@ -145,7 +149,7 @@ describe("useWakeLock", () => {
   it("shrugs off refused requests, on input and on return", async () => {
     const { request } = wakeLockApi();
     request.mockRejectedValue(new DOMException("Battery saver is on", "NotAllowedError"));
-    renderHook(() => useWakeLock(1000), { reactStrictMode: true });
+    renderWakeLock(1000);
 
     fireEvent.pointerDown(document.body);
     pageBecomes("hidden");
@@ -155,7 +159,7 @@ describe("useWakeLock", () => {
 
   it("cleans up on unmount: releases the lock, stops listening, leaves no timer", async () => {
     const { request, sentinels } = wakeLockApi();
-    const { unmount } = renderHook(() => useWakeLock(), { reactStrictMode: true });
+    const { unmount } = renderWakeLock();
     fireEvent.pointerDown(document.body);
 
     unmount();
