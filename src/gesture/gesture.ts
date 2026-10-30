@@ -1,0 +1,23 @@
+// The gesture recogniser's maths (docs/plan.md §4): pure functions over pointer samples, in CSS px and ms.
+export const GESTURE = {
+  slop: 10,
+  axisRatio: 1.2,
+  tapMaxMs: 350,
+  commitFraction: 0.28,
+  flingVelocity: 0.45,
+  flingMinDx: 24,
+  velocityWindowMs: 80,
+  tiltPerPx: 0.03,
+  tiltMax: 7,
+  rubberLimit: 80,
+} as const;
+
+export interface Sample {
+  t: number;
+  x: number;
+  y: number;
+}
+
+export function classify(_start: Sample, _now: Sample): "pending" | "horizontal" | "vertical" {
+  return "pending";
+}
