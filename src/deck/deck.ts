@@ -19,12 +19,14 @@ export function deal(
   return { order, index: 0, side: "front" };
 }
 
+const atEnd = (p: Pass) => p.index === p.order.length;
+
 export function flip(p: Pass): Pass {
-  return p.index < p.order.length ? { ...p, side: p.side === "front" ? "back" : "front" } : p;
+  return atEnd(p) ? p : { ...p, side: p.side === "front" ? "back" : "front" };
 }
 
 export function next(p: Pass): Pass {
-  return p.index < p.order.length ? { ...p, index: p.index + 1, side: "front" } : p;
+  return atEnd(p) ? p : { ...p, index: p.index + 1, side: "front" };
 }
 
 export function prev(p: Pass): Pass {
