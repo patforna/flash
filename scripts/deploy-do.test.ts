@@ -1,8 +1,8 @@
 import { expect, test } from "bun:test";
 import { join } from "node:path";
 
-// Only what can run without a droplet: never call the script with a subcommand here, each one touches the droplet,
-// DNS or rsync.
+// Only what runs without DigitalOcean: never call the script with a subcommand here, as up, cards, logs and down reach
+// the droplet, its DNS record or rsync.
 // To do:
 // [x] with no argument it prints usage naming every subcommand and exits non-zero
 // [x] bash parses it
