@@ -11,17 +11,27 @@ export interface TopicPanelProps {
   lead?: ReactNode;
 }
 
-export function TopicPanel({ topics, total, selected }: TopicPanelProps) {
+export function TopicPanel({ topics, counts, total, selected }: TopicPanelProps) {
   return (
     <fieldset aria-label="Topics">
-      <button type="button" aria-pressed={selected.size === 0}>
+      <button type="button" aria-pressed={selected.size === 0} aria-label={`All, ${cards(total)}`}>
         All · {total}
       </button>
       {topics.map((topic) => (
-        <button key={topic} type="button" aria-pressed={selected.has(topic)}>
+        <button
+          key={topic}
+          type="button"
+          aria-pressed={selected.has(topic)}
+          aria-label={`${topic}, ${cards(counts.get(topic) ?? 0)}`}
+        >
           {topic}
         </button>
       ))}
     </fieldset>
   );
+}
+
+// Counts live only in the chips' accessible names: on screen they would widen every chip and cost rows.
+function cards(count: number): string {
+  return count === 1 ? "1 card" : `${count} cards`;
 }

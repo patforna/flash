@@ -3,7 +3,7 @@
 // [x] All reads "All · 65" and is pressed when nothing is selected
 // [x] All is not pressed while a topic is selected
 // [x] the topics follow All in the given order, each pressed while selected
-// [ ] each chip's accessible name carries its count, "1 card" for one
+// [x] each chip's accessible name carries its count, "1 card" for one
 // [ ] the lead comes first
 // [ ] tapping All calls onAll; tapping a topic calls onToggle with its label
 // [ ] each chip carries its colour, and a fixed tilt within ±1.5° that differs from its neighbours'
@@ -61,4 +61,12 @@ describe("TopicPanel", () => {
     expect(chips.map((chip) => chip.textContent)).toEqual(["All · 65", "Redis", "Postgres", "Queues", "Consistency"]);
     expect(chips.map((chip) => chip.getAttribute("aria-pressed"))).toEqual(["false", "false", "true", "false", "true"]);
   });
+
+  it.each(["All, 65 cards", "Redis, 17 cards", "Queues, 6 cards", "Consistency, 1 card"])(
+    'names a chip with its count of cards: "%s"',
+    (name) => {
+      renderPanel();
+      expect(screen.getByRole("button", { name })).toBeTruthy();
+    },
+  );
 });
