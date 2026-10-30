@@ -169,3 +169,16 @@ describe("taps", () => {
     expect(onTap).not.toHaveBeenCalled();
   });
 });
+
+describe("following the finger", () => {
+  test("a horizontal drag moves the current card 1:1 and tilts it, up to 7°", () => {
+    const { stage, layer } = setup();
+    const finger = press(stage, layer("current"), 700, 200);
+    finger.move(650, 205);
+    expect(layer("current").style.transform).toBe("translateX(-50px) rotate(-1.5deg)");
+    finger.move(500, 210);
+    expect(layer("current").style.transform).toBe("translateX(-200px) rotate(-6deg)");
+    finger.move(300, 210);
+    expect(layer("current").style.transform).toBe("translateX(-400px) rotate(-7deg)");
+  });
+});

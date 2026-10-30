@@ -1,5 +1,5 @@
 import { type RefObject, useEffect, useLayoutEffect, useRef } from "react";
-import { classify, isTap, type Sample } from "./gesture";
+import { classify, GESTURE, isTap, type Sample } from "./gesture";
 
 export interface SwipeOptions {
   layers(): { current: HTMLElement; next: HTMLElement | null; prev: HTMLElement | null } | null;
@@ -10,12 +10,16 @@ export interface SwipeOptions {
   animate?: (el: Element, k: Keyframe[], o: KeyframeAnimationOptions) => Animation; // injectable
 }
 
+type Layers = NonNullable<ReturnType<SwipeOptions["layers"]>>;
+
 interface Gesture {
   start: Sample;
   axis: "pending" | "horizontal" | "vertical";
+  layers: Layers;
 }
 
 const sample = (e: PointerEvent): Sample => ({ t: e.timeStamp, x: e.clientX, y: e.clientY });
+const tilt = (dx: number) => Math.min(GESTURE.tiltMax, Math.max(-GESTURE.tiltMax, dx * GESTURE.tiltPerPx));
 
 export function useSwipe(stage: RefObject<HTMLElement | null>, o: SwipeOptions): { commit(dir: "next" | "prev"): void } {
   const options = useRef(o);
@@ -29,10 +33,15 @@ export function useSwipe(stage: RefObject<HTMLElement | null>, o: SwipeOptions):
     let gesture: Gesture | null = null;
 
     const down = (e: PointerEvent) => {
-      gesture = { start: sample(e), axis: "pending" };
+      const layers = options.current.layers();
+      if (layers) gesture = { start: sample(e), axis: "pending", layers };
     };
     const move = (e: PointerEvent) => {
-      if (gesture?.axis === "pending") gesture.axis = classify(gesture.start, sample(e));
+      if (!gesture) return;
+      if (gesture.axis === "pending") gesture.axis = classify(gesture.start, sample(e));
+      if (gesture.axis !== "horizontal") return;
+      const dx = e.clientX - gesture.start.x;
+      gesture.layers.current.style.transform = `translateX(${dx}px) rotate(${tilt(dx)}deg)`;
     };
     const up = (e: PointerEvent) => {
       if (gesture?.axis === "pending" && isTap(gesture.start, sample(e))) options.current.onTap();
