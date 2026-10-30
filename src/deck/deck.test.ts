@@ -13,7 +13,7 @@
 // - [x] deal: avoidFirst keeps a lone card
 // - [x] next: one forward, front up; past the last card the end card; a no-op on the end card
 // - [x] prev: one back, front up; a no-op at 0; from the end card the last card
-// - [ ] flip toggles the side; a no-op on the end card (it has no back)
+// - [x] flip toggles the side; a no-op on the end card (it has no back)
 // - [ ] reshuffle: a new pass of the pool that never starts with the current card
 // - [ ] reshuffle: on the end card, never starts with the last card
 // - [ ] reselect: the current card, if still in the pool, first and on the same side
@@ -154,5 +154,10 @@ describe("flip", () => {
   it("turns the card over and back", () => {
     expect(flip(at(1))).toEqual(at(1, "back"));
     expect(flip(at(1, "back"))).toEqual(at(1));
+  });
+
+  it("does nothing on the end card, which has no back", () => {
+    const end = at(3);
+    expect(flip(end)).toBe(end);
   });
 });

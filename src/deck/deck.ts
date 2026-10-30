@@ -20,7 +20,7 @@ export function deal(
 }
 
 export function flip(p: Pass): Pass {
-  return { ...p, side: p.side === "front" ? "back" : "front" };
+  return p.index < p.order.length ? { ...p, side: p.side === "front" ? "back" : "front" } : p;
 }
 
 export function next(p: Pass): Pass {
