@@ -19,6 +19,9 @@
   --ink-pen: #1f2d6b;
   --ink-pen-soft: #4a5585;
   --ink-pencil: #5f6475;
+  /* A pink pen for the list markers in the answer's margin: a numbered list's numerals are text (4.9:1 on --paper,
+     where the sticker pink is 2.4:1). */
+  --pen-pink: #d02a68;
 
   /* Highlighter: bold in answers, the focus ring, the wordmark. The wash sits behind inline code and code blocks. */
   --hl: #fff04d;

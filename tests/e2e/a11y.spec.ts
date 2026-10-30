@@ -19,7 +19,9 @@ import {
 
 const project = () => test.info().project.name;
 
-// Every WCAG 2.2 A and AA rule axe has.
+// Every WCAG 2.2 A and AA rule axe has. Its colour-contrast rule sees nothing on this page: a gradient or a
+// pseudo-element lies behind every piece of text, so it reports each one incomplete, never failing. Contrast is
+// checked over the tokens instead, in src/styles/contrast.test.ts.
 async function axe(page: Page): Promise<string[]> {
   const { violations } = await new AxeBuilder({ page })
     .withTags(["wcag2a", "wcag2aa", "wcag21aa", "wcag22aa"])

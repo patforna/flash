@@ -232,12 +232,12 @@
   list-style: none;
 }
 
-/* Hanging in the margin, in pink: an en dash for each point, a numeral for each step. */
+/* Hanging in the margin, in pink pen: an en dash for each point, a numeral for each step. */
 .answer li::before {
   position: absolute;
   right: 100%;
   padding-right: calc(7 * var(--u));
-  color: var(--s-pink);
+  color: var(--pen-pink);
   font-weight: 700;
 }
 

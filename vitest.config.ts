@@ -10,6 +10,8 @@ export default defineConfig({
     // Testing Library cleans up after each test only when `afterEach` is a global. Import test APIs from "vitest" anyway.
     globals: true,
     passWithNoTests: true,
+    // CSS is blanked in tests, ?raw too; the contrast test reads the tokens as written.
+    css: { include: [/tokens\.css/] },
     // The persistent module cache keeps a test's import.meta.glob expansion until the test file itself changes, so
     // tests/conventions.test.ts would never see a new source file. It saves nothing measurable at this size.
     fsModuleCache: false,
