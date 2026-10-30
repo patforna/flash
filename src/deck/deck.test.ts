@@ -7,7 +7,7 @@
 // - [x] poolFor: OR across the selected topics, in file order
 // - [x] poolFor: unknown topics are ignored
 // - [x] deal: a shuffled pass of the pool at index 0, front up
-// - [ ] deal: keep puts that id first; ignored when it isn't in the pool
+// - [x] deal: keep puts that id first; ignored when it isn't in the pool
 // - [ ] deal: avoidFirst never starts the pass with that id when there are at least 2 cards
 // - [ ] deal: avoidFirst moves it to any other position
 // - [ ] deal: avoidFirst keeps a lone card
@@ -90,5 +90,9 @@ describe("deal", () => {
     const rng = mulberry32(5);
     const orders = new Set(Array.from({ length: 60 }, () => deal(["a", "b", "c"], rng, { keep: "b" }).order.join("")));
     expect(orders).toEqual(new Set(["bac", "bca"]));
+  });
+
+  it("ignores a keep that isn't in the pool", () => {
+    expect(deal(["a", "b"], mulberry32(6), { keep: "z" }).order.toSorted()).toEqual(["a", "b"]);
   });
 });
