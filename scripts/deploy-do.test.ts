@@ -5,7 +5,7 @@ import { join } from "node:path";
 // DNS or rsync.
 // To do:
 // [x] with no argument it prints usage naming every subcommand and exits non-zero
-// [ ] bash parses it
+// [x] bash parses it
 // [ ] shellcheck finds nothing
 
 const script = join(import.meta.dir, "deploy-do.sh");
@@ -20,4 +20,8 @@ test("with no argument it prints usage naming every subcommand and exits non-zer
     expect(out).toContain(`scripts/deploy-do.sh ${subcommand} `);
   }
   expect(exitCode).not.toBe(0);
+});
+
+test("bash parses it", () => {
+  expect(run(["bash", "-n", script])).toEqual({ exitCode: 0, out: "", err: "" });
 });
