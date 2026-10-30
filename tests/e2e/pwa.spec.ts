@@ -13,7 +13,8 @@ test.beforeEach(() => {
 
 const desk = "#11131A";
 
-// Every question of the deck as the reader sees it: the server's HTML through the browser's own parser.
+// Every question of the deck as the reader sees it: the server's HTML through the browser's own parser, its no-break
+// spaces and word joiners kept, since a pattern is matched against the text as it is.
 async function deckQuestions(page: Page): Promise<RegExp> {
   const deck: Deck = await (await page.request.get("/api/cards")).json();
   const questions = await page.evaluate(
@@ -21,7 +22,7 @@ async function deckQuestions(page: Page): Promise<RegExp> {
       html.map((question) => {
         const template = document.createElement("template");
         template.innerHTML = question;
-        return (template.content.textContent ?? "").replace(/\s+/g, " ").trim();
+        return template.content.textContent ?? "";
       }),
     deck.cards.map((card) => card.questionHtml),
   );
