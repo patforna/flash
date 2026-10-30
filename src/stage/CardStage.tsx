@@ -12,7 +12,7 @@ export interface CardStageProps {
   renderCard(card: Card | "end", role: Role): ReactNode;
   onFullscreen(): void;
   // A move is decided, before its card has flown: a swipe let go past its threshold, a key, a button, or a tap on the
-  // end card (which deals the next pass).
+  // end card (which flies it off, dealing the next pass).
   onMove(): void;
   // Deal the first card onto the stack, as after the loading card, rather than show it at once.
   dealFirst?: boolean;
@@ -41,12 +41,8 @@ export function CardStage({ view, renderCard, onFullscreen, onMove, dealFirst = 
       return current && { current, next: view.next && next, prev: view.prev && prev };
     },
     can: () => ({ prev: view.prev !== null, next: view.next !== null || view.current === "end" }),
-    // The end card has no back: a tap deals the next pass.
-    onTap: () => {
-      if (view.current !== "end") return view.flip();
-      onMove();
-      view.goNext();
-    },
+    // The end card has no back: a tap (a key, its button) flies it off as a swipe does, the next pass dealt under it.
+    onTap: () => (view.current === "end" ? swipe.commit("next") : view.flip()),
     onDecide: onMove,
     onCommit: (dir) => {
       const to = view[dir];
@@ -66,7 +62,8 @@ export function CardStage({ view, renderCard, onFullscreen, onMove, dealFirst = 
     flip: swipe.tap,
     next: () => swipe.commit("next"),
     prev: () => swipe.commit("prev"),
-    reshuffle: () => view.reshuffle(),
+    // On the end card, a reshuffle is its move on.
+    reshuffle: () => (view.current === "end" ? swipe.commit("next") : view.reshuffle()),
     fullscreen: onFullscreen,
   });
 

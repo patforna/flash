@@ -2,7 +2,8 @@
 // [x] a layer per role through renderCard, each with data-role and a lift inside; the previous and next layers inert
 // [x] the blank cards behind show while at least 2, and at least 3, cards remain after the current one; both under
 //     the end card
-// [x] a tap flips the card; on the end card it goes next (which reshuffles)
+// [x] a tap flips the card; on the end card it goes next (which reshuffles), flying the end card off as a swipe does;
+//     so do the end card's button and s
 // [x] onMove as each move is decided: a release, a key, a button, a tap on the end card; never a flip
 // [x] a swipe commits through the view once its animation finishes; the new card is at rest before paint
 // [x] data-state: idle, dragging, animating
@@ -165,10 +166,11 @@ describe("taps", () => {
     expect(layer("current").querySelector("[data-side]")?.getAttribute("data-side")).toBe("back");
   });
 
-  test("a tap on the end card is a move: it goes next, which reshuffles", () => {
+  test("a tap on the end card is a move: it flies off as a swipe does, going next, which reshuffles", () => {
     const { stage, layer, calls } = setup({ start: 4 });
     press(stage, layer("current"), 700, 200).up(80);
     expect(calls).toEqual(["move", "goNext"]);
+    expect(endCardFlyingOff()).toBe(true);
   });
 });
 
@@ -178,6 +180,10 @@ function flick(stage: HTMLElement, layer: (role: string) => HTMLElement) {
   for (let i = 1; i <= 8; i++) finger.move(700 - 20 * i, 200);
   finger.up();
 }
+
+// A copy of the end card, off the stage's roles, flying off over the pass dealt under it.
+const endCardFlyingOff = () =>
+  animations.some((a) => a.el.textContent === "That's all" && !a.el.hasAttribute("data-role") && a.el.isConnected);
 
 const land = () =>
   act(async () => {
@@ -411,11 +417,12 @@ describe("buttons", () => {
     expect(screen.getByRole("button", { name: "Next" }).hasAttribute("aria-disabled")).toBe(false);
   });
 
-  test('the end card has no back: its third button reads "Shuffle again" and deals the next pass', () => {
+  test('the end card has no back: its third button reads "Shuffle again" and flies it off, dealing the next pass', () => {
     const { calls } = setup({ start: 4 });
     expect(screen.queryByRole("button", { name: "Show answer" })).toBeNull();
     fireEvent.click(screen.getByRole("button", { name: "Shuffle again" }));
     expect(calls).toEqual(["move", "goNext"]);
+    expect(endCardFlyingOff()).toBe(true);
   });
 });
 
@@ -428,6 +435,13 @@ describe("shortcuts", () => {
     fireEvent.keyDown(document.body, { key: "ArrowLeft" });
     await land();
     expect(calls).toEqual(["move", "goNext", "move", "goPrev"]);
+  });
+
+  test("on the end card, s flies it off as a swipe does, going next, which reshuffles", () => {
+    const { calls } = setup({ start: 4 });
+    fireEvent.keyDown(document.body, { key: "s" });
+    expect(calls).toEqual(["move", "goNext"]);
+    expect(endCardFlyingOff()).toBe(true);
   });
 
   test("Space flips, s reshuffles, f asks for fullscreen", () => {
