@@ -561,4 +561,16 @@ describe("a flip still turning", () => {
     finger.move(650, 200);
     expect(turning.finish).toHaveBeenCalledOnce();
   });
+
+  test.each(["next", "prev"] as const)("is finished by a key or a button going %s, before anything flies", (dir) => {
+    const { layer, animations, swipe } = setup();
+    const flipper = document.createElement("div");
+    flipper.dataset.side = "back";
+    layer("current").append(flipper);
+    const turning = { finish: vi.fn(() => expect(animations).toEqual([])) };
+    flipper.getAnimations = () => [turning as unknown as Animation];
+    act(() => swipe().commit(dir));
+    expect(turning.finish).toHaveBeenCalledOnce();
+    expect(animations).not.toEqual([]);
+  });
 });

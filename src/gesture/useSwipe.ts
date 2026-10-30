@@ -118,6 +118,11 @@ function swipe(stage: RefObject<HTMLElement | null>, options: RefObject<SwipeOpt
     touched.clear();
   }
 
+  // A card that moves on mid-flip would travel edge-on: the flip (the card's [data-side] transition) ends first.
+  function finishFlip(card: HTMLElement) {
+    for (const turning of card.querySelector("[data-side]")?.getAnimations({ subtree: true }) ?? []) turning.finish();
+  }
+
   function follow(g: Gesture, dx: number) {
     const { layers, rect } = g;
     if (dx > 0 && layers.prev) {
@@ -187,6 +192,7 @@ function swipe(stage: RefObject<HTMLElement | null>, options: RefObject<SwipeOpt
     finishRunning();
     const layers = options.current.layers();
     if (!layers || !options.current.can()[dir]) return;
+    finishFlip(layers.current);
     const rect = layers.current.getBoundingClientRect();
     (dir === "next" ? fling : slideIn)(layers, rect, 0, 0, MOTION.commitEase);
   }
@@ -249,12 +255,9 @@ function swipe(stage: RefObject<HTMLElement | null>, options: RefObject<SwipeOpt
     for (const c of coalesced.length ? coalesced : [e]) g.samples.push(sample(c));
     if (g.axis === "pending") {
       g.axis = classify(g.start, sample(e));
-      // A card dragged mid-flip would travel edge-on: the flip (the card's [data-side] transition) ends now.
       if (g.axis === "horizontal") {
         mark("dragging");
-        for (const turning of g.layers.current.querySelector("[data-side]")?.getAnimations({ subtree: true }) ?? []) {
-          turning.finish();
-        }
+        finishFlip(g.layers.current);
       }
     }
     if (g.axis === "horizontal") follow(g, e.clientX - g.start.x);
