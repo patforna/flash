@@ -1,0 +1,39 @@
+/* The fullscreen chip sits first among the topic chips (plan §3) and is shaped and lettered like an unselected one,
+   in chalk rather than a topic's colour. */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 44px;
+  padding: 0 10px;
+  border: 1.5px solid color-mix(in srgb, var(--chalk) 60%, transparent);
+  border-radius: 8px;
+  background: none;
+  color: var(--chalk);
+  font-family: var(--font-hand);
+  font-size: 14px;
+  font-weight: 600;
+  font-variation-settings: "INFM" 25;
+  white-space: nowrap;
+  transition: transform 90ms ease-out;
+}
+
+.chip:active {
+  transform: translate(2px, 2px);
+}
+
+.chip:focus-visible {
+  outline: 3px solid var(--hl);
+  outline-offset: 2px;
+}
+
+/* Corner brackets, drawn with the outline's 1.5 px pen. */
+.icon {
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
