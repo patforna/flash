@@ -46,9 +46,11 @@ export function velocityX(samples: readonly Sample[]): number {
 
 export function release(
   dx: number,
-  _vx: number,
+  vx: number,
   width: number,
   _can: { prev: boolean; next: boolean },
 ): "next" | "prev" | "cancel" {
-  return -dx / width >= GESTURE.commitFraction ? "next" : "cancel";
+  const far = -dx / width >= GESTURE.commitFraction;
+  const flung = -vx >= GESTURE.flingVelocity && -dx >= GESTURE.flingMinDx;
+  return far || flung ? "next" : "cancel";
 }

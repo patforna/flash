@@ -72,4 +72,12 @@ describe("release", () => {
   test("dragging left 28 % of the width commits next", () => {
     expect(release(-168, 0, width, both)).toBe("next");
   });
+
+  test("a flick left at 0.45 px/ms over 24 px commits next", () => {
+    expect(release(-24, -0.45, width, both)).toBe("next");
+  });
+
+  test("a flick shorter than 24 px cancels, however fast", () => {
+    expect(release(-23, -2, width, both)).toBe("cancel");
+  });
 });
