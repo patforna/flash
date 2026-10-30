@@ -84,3 +84,11 @@
   outline: 3px solid var(--hl);
   outline-offset: 2px;
 }
+
+/* Reduced motion: the stickers change state at once. */
+@media (prefers-reduced-motion: reduce) {
+  .chip,
+  .chip::before {
+    transition: none;
+  }
+}

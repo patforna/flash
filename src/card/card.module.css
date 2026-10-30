@@ -156,6 +156,7 @@
   bottom: calc(8.4 * var(--u));
   margin: 0;
   font-family: var(--font-code);
+  word-spacing: -0.3em;
 }
 
 /* Back: the question again above the red rule, which overshoots the ruled column by 8u; the answer in pen, each line
