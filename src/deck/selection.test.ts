@@ -1,7 +1,7 @@
 // To do:
 // - [x] toggle adds a label that isn't selected
 // - [x] toggle removes a label that is selected, as a new set, leaving the old one alone
-// - [ ] loadSelection reads the JSON array under flash:v1:topics
+// - [x] loadSelection reads the JSON array under flash:v1:topics
 // - [ ] loadSelection drops unknown labels
 // - [ ] loadSelection gives the empty set for nothing stored, invalid JSON or a non-array
 // - [ ] loadSelection gives the empty set for a throwing storage or no storage
@@ -9,7 +9,13 @@
 // - [ ] saveSelection swallows a throwing storage and does nothing without one
 
 import { describe, expect, it } from "vitest";
-import { toggle } from "./selection";
+import { loadSelection, toggle } from "./selection";
+
+const known = ["Redis", "Postgres", "Queues"];
+// A storage holding value under the selection's key, and nothing else.
+const holding = (value: string | null): Pick<Storage, "getItem"> => ({
+  getItem: (key) => (key === "flash:v1:topics" ? value : null),
+});
 
 describe("toggle", () => {
   it("adds a label that isn't selected", () => {
@@ -20,5 +26,11 @@ describe("toggle", () => {
     const selected = new Set(["Redis", "Queues"]);
     expect(toggle(selected, "Redis")).toEqual(new Set(["Queues"]));
     expect(selected).toEqual(new Set(["Redis", "Queues"]));
+  });
+});
+
+describe("loadSelection", () => {
+  it("reads the JSON array under flash:v1:topics", () => {
+    expect(loadSelection(holding('["Redis","Queues"]'), known)).toEqual(new Set(["Redis", "Queues"]));
   });
 });
