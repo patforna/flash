@@ -166,7 +166,7 @@ function swipe(stage: RefObject<HTMLElement | null>, options: RefObject<SwipeOpt
     if (gesture) return;
     finishRunning();
     const layers = options.current.layers();
-    if (!layers) return;
+    if (!layers || !options.current.can()[dir]) return;
     const rect = layers.current.getBoundingClientRect();
     (dir === "next" ? fling : slideIn)(layers, rect, 0, 0, MOTION.commitEase);
   }

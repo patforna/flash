@@ -496,4 +496,13 @@ describe("commit(dir), for keys and buttons", () => {
     await act(async () => animations[0]?.finish());
     expect(onCommit).toHaveBeenCalledExactlyOnceWith("prev");
   });
+
+  test("does nothing where there is no card to go to, nor while a finger is down", () => {
+    const { stage, layer, animations, swipe } = setup({ can: () => ({ prev: false, next: true }) });
+    act(() => swipe().commit("prev"));
+    expect(animations).toEqual([]);
+    press(stage, layer("current"), 700, 200);
+    act(() => swipe().commit("next"));
+    expect(animations).toEqual([]);
+  });
 });
