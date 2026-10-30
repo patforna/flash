@@ -13,7 +13,7 @@ import { breaches, measure, table } from "./budget";
 // [x] breaches: none at the limits
 // [x] breaches: one line per budget exceeded, with the size and the limit
 // [x] table: one aligned row per budget, with the size, the limit and the share used
-// [ ] the command: within budget it prints the table and exits 0
+// [x] the command: within budget it prints the table and exits 0
 // [ ] the command: over budget it prints the breaches and exits 1
 // [ ] the command: reads dist by default
 
@@ -119,4 +119,14 @@ test("the table has one aligned row per budget, with the size, the limit and the
       "precache   452.82 kB of 700 kB 65%",
     ].join("\n"),
   );
+});
+
+const run = (args: string[], cwd?: string) => {
+  const { exitCode, stdout, stderr } = Bun.spawnSync([process.execPath, join(import.meta.dir, "budget.ts"), ...args], { cwd });
+  return { exitCode, out: stdout.toString(), err: stderr.toString() };
+};
+
+test("within every budget the command prints the table and exits 0", () => {
+  const dir = dist({ "index.html": html(""), "sw.js": sw([]) });
+  expect(run([dir])).toEqual({ exitCode: 0, out: `${table({ js: 0, css: 0, fonts: 0, precache: 0 })}\n`, err: "" });
 });
