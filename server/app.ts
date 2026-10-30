@@ -11,9 +11,10 @@ export function createApp({ deck, distDir }: { deck: Deck; distDir: string }): H
   return new Hono()
     .use(async (c, next) => {
       await next();
-      c.header("X-Robots-Tag", "noindex, nofollow");
-      c.header("X-Content-Type-Options", "nosniff");
-      c.header("Referrer-Policy", "no-referrer");
+      // On the finished response itself: c.header() would rebuild it around a stream, and a file would lose its length.
+      c.res.headers.set("X-Robots-Tag", "noindex, nofollow");
+      c.res.headers.set("X-Content-Type-Options", "nosniff");
+      c.res.headers.set("Referrer-Policy", "no-referrer");
     })
     .route("/", createApi(deck))
     .get(

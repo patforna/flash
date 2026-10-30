@@ -6,6 +6,7 @@
 // [x] answers 404 for anything else: missing files, other methods, traversal attempts raw and percent-encoded
 // [x] sets the robots, sniffing and referrer headers on every response: static, API, 304 and 404
 // [x] HEAD answers like GET for static files
+// [x] a file goes out with its length, not chunked (only a real server shows it)
 import { afterAll, describe, expect, test } from "bun:test";
 import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
@@ -16,7 +17,7 @@ import { loadDeck } from "./deck";
 // A built dist/ as Vite and vite-plugin-pwa leave it, with a secret beside it that traversal must not reach.
 const files = {
   "index.html": "<!doctype html><title>flash</title>",
-  "assets/index-B2x9.js": "console.log('flash')",
+  "assets/index-B2x9.js": "console.log('flash');\n".repeat(200), // big enough that Bun won't buffer it
   "assets/index-Cq1z.css": "body{}",
   "assets/shantell-sans-latin-full-normal-D4f1.woff2": "font",
   "sw.js": "self.skipWaiting()",
@@ -129,5 +130,16 @@ describe("createApp", () => {
     expect(head.headers.get("Content-Type")).toBe(get.headers.get("Content-Type"));
     expect(head.headers.get("Cache-Control")).toBe(get.headers.get("Cache-Control"));
     expect(await head.text()).toBe("");
+  });
+
+  test("sends a file with its length, not chunked", async () => {
+    const server = Bun.serve({ hostname: "127.0.0.1", port: 0, fetch: app.fetch });
+    try {
+      const res = await fetch(new URL("/assets/index-B2x9.js", server.url));
+
+      expect(res.headers.get("Content-Length")).toBe(String(files["assets/index-B2x9.js"].length));
+    } finally {
+      await server.stop(true);
+    }
   });
 });
