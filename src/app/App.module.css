@@ -12,10 +12,12 @@
   overflow: hidden;
 }
 
-/* The panel's column: the topics, which own their scroll when they outgrow it, then the wordmark at its foot. */
+/* The panel's column: the topics, which own their scroll when they outgrow it, then the wordmark at its foot (also
+   while there are no topics yet). */
 .panel {
   display: flex;
   flex-direction: column;
+  justify-content: flex-end;
   min-height: 0;
 }
 
