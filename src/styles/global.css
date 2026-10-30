@@ -1,8 +1,8 @@
 /* The desk and the page-wide rules (docs/plan.md §6 and §7). The colours are tokens (tokens.css). */
 
 :root {
-  /* Paper grain: fractal noise at 4 %, on the desk and on every card. */
-  --grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)' opacity='.04'/%3E%3C/svg%3E");
+  /* Paper grain: fractal noise, opaque and stretched to full contrast, laid on at 4 %, on the desk and every card. */
+  --grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='g' x='0' y='0' width='100%25' height='100%25'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='.33 .33 .33 0 0 .33 .33 .33 0 0 .33 .33 .33 0 0 0 0 0 0 1'/%3E%3CfeComponentTransfer%3E%3CfeFuncR type='linear' slope='2.6' intercept='-.8'/%3E%3CfeFuncG type='linear' slope='2.6' intercept='-.8'/%3E%3CfeFuncB type='linear' slope='2.6' intercept='-.8'/%3E%3C/feComponentTransfer%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)' opacity='.04'/%3E%3C/svg%3E");
 }
 
 *,
@@ -36,14 +36,13 @@ body {
   user-select: none;
   -webkit-touch-callout: none;
   /* The desk, painted once: a soft glow behind the card, the grain over all of it. */
-  background:
-    var(--grain), radial-gradient(ellipse 52% 78% at 62% 50%, var(--desk-glow), transparent 100%), var(--desk);
+  background: var(--grain), radial-gradient(ellipse 50% 76% at 62% 50%, var(--desk-glow) 40%, transparent), var(--desk);
 }
 
 /* Portrait (a browser tab only): the card sits on top. */
 @media (orientation: portrait) {
   body {
     background:
-      var(--grain), radial-gradient(ellipse 90% 34% at 50% 22%, var(--desk-glow), transparent 100%), var(--desk);
+      var(--grain), radial-gradient(ellipse 80% 30% at 50% 22%, var(--desk-glow) 40%, transparent), var(--desk);
   }
 }
