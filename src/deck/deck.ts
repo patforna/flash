@@ -23,6 +23,10 @@ export function next(p: Pass): Pass {
   return p.index < p.order.length ? { ...p, index: p.index + 1, side: "front" } : p;
 }
 
+export function prev(p: Pass): Pass {
+  return { ...p, index: p.index - 1, side: "front" };
+}
+
 // Fisher–Yates, on a copy.
 export function shuffle<T>(xs: readonly T[], rng: Rng): T[] {
   const out = [...xs];

@@ -21,7 +21,7 @@
 
 import { describe, expect, it } from "vitest";
 import type { Card } from "../../shared/types";
-import { deal, next, poolFor, shuffle } from "./deck";
+import { deal, next, poolFor, prev, shuffle } from "./deck";
 import type { Pass, Rng, Side } from "./types";
 
 const card = (id: string, ...topics: string[]): Card => ({ id, topics, questionHtml: id, answerHtml: id });
@@ -132,5 +132,11 @@ describe("next", () => {
   it("does nothing on the end card", () => {
     const end = at(3);
     expect(next(end)).toBe(end);
+  });
+});
+
+describe("prev", () => {
+  it("moves one card back, front up", () => {
+    expect(prev(at(2, "back"))).toEqual(at(1));
   });
 });
