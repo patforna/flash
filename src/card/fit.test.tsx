@@ -5,7 +5,7 @@
 // [x] useFit: with the fonts in, measures before paint (a later layout effect sees data-fit)
 // [x] useFit: content hidden (no data-fit) until the fonts load; then measured
 // [x] useFit: waits for the code font too (code blocks and the counter are set in it)
-// [ ] useFit: walks the steps while a part overflows down
+// [x] useFit: walks the steps while a part overflows down
 // [ ] useFit: a part overflowing across (a code line wider than its column) also steps down
 // [ ] useFit: "scroll" when no step fits
 // [ ] useFit: measures again when its key changes
@@ -40,15 +40,30 @@ function stubFonts(loaded: string[]) {
   return fonts;
 }
 
-function Face({ fitKey, onLayout }: { fitKey: string; onLayout?: (fit: string | undefined) => void }) {
+type Overflow = { until: number; axis: "down" | "across" };
+
+// happy-dom has no layout: the part overflows its box, down or across, while its face is at a step below `until`.
+function overflowing({ until, axis }: Overflow) {
+  return (part: HTMLElement | null) => {
+    const face = part?.parentElement;
+    if (!part || !face) return;
+    const [scroll, client] = axis === "down" ? ["scrollHeight", "clientHeight"] : ["scrollWidth", "clientWidth"];
+    Object.defineProperty(part, client, { configurable: true, value: 100 });
+    Object.defineProperty(part, scroll, { configurable: true, get: () => (Number(face.dataset.fit) < until ? 101 : 100) });
+  };
+}
+
+type FaceProps = { fitKey: string; overflow?: Overflow; onLayout?: (fit: string | undefined) => void };
+
+function Face({ fitKey, overflow, onLayout }: FaceProps) {
   const ref = useRef<HTMLDivElement>(null);
-  useFit(ref, 3, fitKey);
+  const step = useFit(ref, 3, fitKey);
   useLayoutEffect(() => {
     onLayout?.(ref.current?.dataset.fit);
   });
   return (
-    <div ref={ref} data-testid="face">
-      <p>Why does Postgres need VACUUM?</p>
+    <div ref={ref} data-testid="face" data-step={step}>
+      <p ref={overflow && overflowing(overflow)}>How do you choose a shard key?</p>
     </div>
   );
 }
@@ -84,5 +99,12 @@ describe("useFit", () => {
     expect(face.dataset.fit).toBeUndefined();
     expect(fonts.load).toHaveBeenCalledWith(expect.stringContaining("Monaspace Radon"));
     await waitFor(() => expect(face.dataset.fit).toBe("0"));
+  });
+
+  it("steps the type down while a part overflows its box", () => {
+    render(<Face fitKey="shard" overflow={{ until: 2, axis: "down" }} />);
+    const face = screen.getByTestId("face");
+    expect(face.dataset.fit).toBe("2");
+    expect(face.dataset.step).toBe("2");
   });
 });
