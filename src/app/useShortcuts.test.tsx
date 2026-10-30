@@ -1,9 +1,9 @@
 // To do:
-// [ ] Space, Enter, ↑, ↓, j and k flip; →, l and PageDown next; ←, h and PageUp previous; s reshuffles; f fullscreen
-// [ ] a handled key doesn't scroll
-// [ ] nothing fires with Alt, Ctrl or Meta, while typing (input, textarea, contenteditable), or on auto-repeat
-// [ ] Space and Enter are left to a focused button; other keys still work there
-// [ ] the latest handlers are called; the listener goes on unmount
+// [x] Space, Enter, ↑, ↓, j and k flip; →, l and PageDown next; ←, h and PageUp previous; s reshuffles; f fullscreen
+// [x] a handled key doesn't scroll
+// [x] nothing fires with Alt, Ctrl or Meta, while typing (input, textarea, contenteditable), or on auto-repeat
+// [x] Space and Enter are left to a focused button; other keys still work there
+// [x] the latest handlers are called; the listener goes on unmount
 import { fireEvent, renderHook } from "@testing-library/react";
 import { describe, expect, test, vi } from "vitest";
 import { useShortcuts } from "./useShortcuts";
@@ -52,11 +52,14 @@ describe("useShortcuts", () => {
     expect(fireEvent.keyDown(document.body, { key: "x" })).toBe(true);
   });
 
-  test.each(["altKey", "ctrlKey", "metaKey"])("nothing fires with %s held, and the browser keeps the key", (modifier) => {
-    const { h } = setup();
-    expect(fireEvent.keyDown(document.body, { key: "l", [modifier]: true })).toBe(true);
-    expect(h.next).not.toHaveBeenCalled();
-  });
+  test.each(["altKey", "ctrlKey", "metaKey"])(
+    "nothing fires with %s held, and the browser keeps the key",
+    (modifier) => {
+      const { h } = setup();
+      expect(fireEvent.keyDown(document.body, { key: "l", [modifier]: true })).toBe(true);
+      expect(h.next).not.toHaveBeenCalled();
+    },
+  );
 
   test("nothing fires on auto-repeat", () => {
     const { h } = setup();
@@ -88,5 +91,19 @@ describe("useShortcuts", () => {
     fireEvent.keyDown(button, { key: "ArrowRight" });
     expect(h.next).toHaveBeenCalledOnce();
     button.remove();
+  });
+
+  test("calls the latest render's handlers and stops listening on unmount", () => {
+    const handlers = () => ({ flip: vi.fn(), next: vi.fn(), prev: vi.fn(), reshuffle: vi.fn(), fullscreen: vi.fn() });
+    const first = handlers();
+    const second = handlers();
+    const { rerender, unmount } = renderHook((h) => useShortcuts(h), { initialProps: first });
+    rerender(second);
+    fireEvent.keyDown(document.body, { key: "s" });
+    expect(first.reshuffle).not.toHaveBeenCalled();
+    expect(second.reshuffle).toHaveBeenCalledOnce();
+    unmount();
+    fireEvent.keyDown(document.body, { key: "s" });
+    expect(second.reshuffle).toHaveBeenCalledOnce();
   });
 });
