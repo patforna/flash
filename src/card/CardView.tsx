@@ -10,11 +10,15 @@ export interface CardViewProps {
   colourOf(topic: string): string;
 }
 
-export function CardView({ side }: CardViewProps) {
+export function CardView({ card, side, colourOf }: CardViewProps) {
+  const colours = card.topics.map(colourOf);
   return (
     <div className={styles.frame}>
       <div className={styles.flipper} data-side={side}>
-        <div className={styles.face} {...hiddenUnless(side === "front")} />
+        <div className={styles.face} {...hiddenUnless(side === "front")}>
+          <div className={styles.band} style={{ backgroundColor: colours[0] }} />
+          <h2 className={styles.question} dangerouslySetInnerHTML={{ __html: card.questionHtml }} />
+        </div>
         <div className={`${styles.face} ${styles.back}`} {...hiddenUnless(side === "back")} />
       </div>
     </div>

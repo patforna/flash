@@ -24,3 +24,14 @@
 .back {
   transform: rotateX(180deg);
 }
+
+/* Front: a band along the top edge in the first topic's colour, the question in marker. */
+.band {
+  position: absolute;
+  inset: 0 0 auto;
+  height: calc(6 * var(--u));
+}
+
+.question {
+  margin: 0;
+}
