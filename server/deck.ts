@@ -55,32 +55,17 @@ export function loadDeck(toml: string): Deck {
   if (Array.isArray(file.card) && cards.length === 0) report(undefined, "no cards");
   if (cards.length > LIMITS.cards) report(undefined, `${cards.length} cards (max ${LIMITS.cards})`);
 
-  const seen = new Map<string, number>();
+  const seen = new Map<string, number>(); // question, ignoring case → card
   const rendered: Card[] = [];
-  cards.forEach((card, i) => {
+  cards.forEach((raw, i) => {
     if (!intact("card", i)) return;
-    const question = card.question.trim();
-    if (question.length > LIMITS.questionMax) {
-      report(i, `question is ${question.length} characters (max ${LIMITS.questionMax})`);
-    }
-    const first = seen.get(question.toLowerCase());
-    if (first === undefined) seen.set(question.toLowerCase(), i);
+    const { card, problems } = readCard(raw, intact("topics") ? file.topics : undefined);
+    for (const text of problems) report(i, text);
+    const question = raw.question.trim().toLowerCase();
+    const first = seen.get(question);
+    if (first === undefined) seen.set(question, i);
     else report(i, `question duplicates card ${first + 1}`);
-    if (card.topics.length === 0) report(i, "has no topics");
-    if (card.topics.length > LIMITS.cardTopics)
-      report(i, `has ${card.topics.length} topics (max ${LIMITS.cardTopics})`);
-    if (intact("topics")) {
-      for (const topic of card.topics) if (!file.topics.includes(topic)) report(i, `topic "${topic}" is not declared`);
-    }
-    for (const topic of repeated(card.topics)) report(i, `topic "${topic}" is listed more than once`);
-    const questionHtml = renderQuestion(question);
-    const answerHtml = renderAnswer(card.answer.trim());
-    rendered.push({
-      id: slug(question),
-      topics: card.topics,
-      questionHtml: "html" in questionHtml ? questionHtml.html : "",
-      answerHtml: "html" in answerHtml ? answerHtml.html : "",
-    });
+    rendered.push(card);
   });
 
   // Whether a topic is used can only be judged when every card is intact.
@@ -94,6 +79,30 @@ export function loadDeck(toml: string): Deck {
   if (problems.length > 0) throw new DeckError(problems.sort(([a], [b]) => a - b).map(([, text]) => text));
   const content = { topics: file.topics, cards: rendered };
   return { version: version(content), ...content };
+}
+
+// One card's own rules, and the card as rendered. `declared` is undefined when the declared topics are broken.
+function readCard(raw: CardsFile["card"][number], declared: readonly string[] | undefined) {
+  const problems: string[] = [];
+  const question = raw.question.trim();
+  if (question.length > LIMITS.questionMax) {
+    problems.push(`question is ${question.length} characters (max ${LIMITS.questionMax})`);
+  }
+  const { topics } = raw;
+  if (topics.length === 0) problems.push("has no topics");
+  if (topics.length > LIMITS.cardTopics) problems.push(`has ${topics.length} topics (max ${LIMITS.cardTopics})`);
+  for (const topic of topics)
+    if (declared && !declared.includes(topic)) problems.push(`topic "${topic}" is not declared`);
+  for (const topic of repeated(topics)) problems.push(`topic "${topic}" is listed more than once`);
+  const questionHtml = renderQuestion(question);
+  const answerHtml = renderAnswer(raw.answer.trim());
+  const card: Card = {
+    id: slug(question),
+    topics,
+    questionHtml: "html" in questionHtml ? questionHtml.html : "",
+    answerHtml: "html" in answerHtml ? answerHtml.html : "",
+  };
+  return { card, problems };
 }
 
 const LABEL = /^[A-Za-z0-9][A-Za-z0-9 &+./-]*$/;
