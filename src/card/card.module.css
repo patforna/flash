@@ -62,7 +62,8 @@
 }
 
 /* The end card and the message cards (loading, error, empty): one face, centred. */
-.end {
+.end,
+.message {
   display: flex;
 }
 

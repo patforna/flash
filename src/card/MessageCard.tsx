@@ -11,14 +11,21 @@ export interface MessageCardProps {
 export function MessageCard({ title, hint, tone = "pencil", onTap }: MessageCardProps) {
   const Face = onTap ? "button" : "div";
   return (
-    <Face type={onTap ? "button" : undefined} data-tone={tone} onClick={onTap}>
-      <span className={styles.title}>{title}</span>
-      {hint && (
-        <>
-          {" "}
-          <span className={styles.hint}>{hint}</span>
-        </>
-      )}
-    </Face>
+    <div className={styles.frame}>
+      <Face
+        type={onTap ? "button" : undefined}
+        className={`${styles.face} ${styles.message}`}
+        data-tone={tone}
+        onClick={onTap}
+      >
+        <span className={styles.title}>{title}</span>
+        {hint && (
+          <>
+            {" "}
+            <span className={styles.hint}>{hint}</span>
+          </>
+        )}
+      </Face>
+    </div>
   );
 }

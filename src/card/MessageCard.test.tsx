@@ -3,10 +3,11 @@
 // [x] shows the hint under the title
 // [x] writes in pencil by default, in red ink for an error
 // [x] the whole card is one button when it can be tapped, named by its words
-// [ ] sits on the same frame and face as a card
+// [x] sits on the same frame and face as a card
 import { configure, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
+import styles from "./card.module.css";
 import { MessageCard } from "./MessageCard";
 
 configure({ reactStrictMode: true });
@@ -42,5 +43,15 @@ describe("MessageCard", () => {
   it("is no button when it can't be tapped", () => {
     render(<MessageCard title="shuffling…" />);
     expect(screen.queryByRole("button")).toBeNull();
+  });
+
+  it.each([
+    ["a line of writing", {}],
+    ["a button", { onTap: () => {} }],
+  ])("as %s sits on the same frame and face as a card", (_, props) => {
+    const { container } = render(<MessageCard title="Can't reach the deck." {...props} />);
+    const frame = container.firstElementChild as HTMLElement;
+    expect(frame.matches(`.${styles.frame}`)).toBe(true);
+    expect(frame.firstElementChild?.matches(`.${styles.face}`)).toBe(true);
   });
 });
