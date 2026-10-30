@@ -6,7 +6,7 @@ import { join } from "node:path";
 // To do:
 // [x] with no argument it prints usage naming every subcommand and exits non-zero
 // [x] bash parses it
-// [ ] shellcheck finds nothing
+// [x] shellcheck finds nothing
 
 const script = join(import.meta.dir, "deploy-do.sh");
 const run = (cmd: string[]) => {
@@ -24,4 +24,8 @@ test("with no argument it prints usage naming every subcommand and exits non-zer
 
 test("bash parses it", () => {
   expect(run(["bash", "-n", script])).toEqual({ exitCode: 0, out: "", err: "" });
+});
+
+test("shellcheck finds nothing", () => {
+  expect(run(["shellcheck", script])).toEqual({ exitCode: 0, out: "", err: "" });
 });
