@@ -10,4 +10,5 @@ export function canFullscreen(): boolean {
 
 export async function toggleFullscreen(): Promise<void> {
   await document.documentElement.requestFullscreen({ navigationUI: "hide" });
+  await screen.orientation.lock("landscape");
 }

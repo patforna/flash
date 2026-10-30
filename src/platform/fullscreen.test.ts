@@ -7,7 +7,7 @@ import { canFullscreen, toggleFullscreen } from "./fullscreen";
 // [x] canFullscreen: false outside a browser tab (the installed app)
 // [x] canFullscreen: false while something is fullscreen
 // [x] toggleFullscreen: requests fullscreen on the document element, without navigation UI
-// [ ] toggleFullscreen: then locks the orientation to landscape, once fullscreen has been entered
+// [x] toggleFullscreen: then locks the orientation to landscape, once fullscreen has been entered
 // [ ] toggleFullscreen: exits when fullscreen
 // [ ] toggleFullscreen: swallows a SecurityError, a NotSupportedError and a missing API
 
@@ -78,5 +78,19 @@ describe("toggleFullscreen", () => {
     await toggleFullscreen();
 
     expect(request).toHaveBeenCalledWith({ navigationUI: "hide" });
+  });
+
+  it("then locks the orientation to landscape, once fullscreen has been entered", async () => {
+    const { request, lock } = fullscreenApi();
+    const entered = Promise.withResolvers<void>();
+    request.mockReturnValue(entered.promise);
+
+    const toggled = toggleFullscreen();
+    await Promise.resolve();
+    expect(lock).not.toHaveBeenCalled();
+
+    entered.resolve();
+    await toggled;
+    expect(lock).toHaveBeenCalledWith("landscape");
   });
 });
