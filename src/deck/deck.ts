@@ -13,8 +13,7 @@ export function deal(
   { keep, avoidFirst }: { keep?: string; avoidFirst?: string } = {},
 ): Pass {
   const order = shuffle(pool, rng);
-  const k = order.findIndex((id) => id === keep);
-  if (k > 0) swap(order, 0, k);
+  if (keep !== undefined && order.includes(keep)) swap(order, 0, order.indexOf(keep));
   if (order.length > 1 && order[0] === avoidFirst) swap(order, 0, 1 + Math.floor(rng() * (order.length - 1)));
   return { order, index: 0, side: "front" };
 }

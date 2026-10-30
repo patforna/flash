@@ -106,8 +106,8 @@ describe("deal", () => {
 
   it("moves avoidFirst to a random other position", () => {
     const rng = mulberry32(8);
-    const places = Array.from({ length: 600 }, () => deal(["a", "b", "c", "d"], rng, { avoidFirst: "a" }).order.indexOf("a"));
-    const count = (k: number) => places.filter((p) => p === k).length;
+    const deals = Array.from({ length: 600 }, () => deal(["a", "b", "c", "d"], rng, { avoidFirst: "a" }));
+    const count = (k: number) => deals.filter((d) => d.order[k] === "a").length;
     // About 200 each; always swapping with the second card would put about 300 there.
     for (const k of [1, 2, 3]) {
       expect(count(k)).toBeGreaterThan(150);
@@ -164,8 +164,9 @@ describe("flip", () => {
 
 describe("reshuffle", () => {
   it("deals a new pass of the pool, front up", () => {
-    expect(reshuffle(at(1, "back"), ["a", "b", "c", "d"], mulberry32(10))).toMatchObject({ index: 0, side: "front" });
-    expect(reshuffle(at(1, "back"), ["a", "b", "c", "d"], mulberry32(10)).order.toSorted()).toEqual(["a", "b", "c", "d"]);
+    const pass = reshuffle(at(1, "back"), ["a", "b", "c", "d"], mulberry32(10));
+    expect(pass).toMatchObject({ index: 0, side: "front" });
+    expect(pass.order.toSorted()).toEqual(["a", "b", "c", "d"]);
   });
 
   it("never starts the new pass with the current card", () => {
