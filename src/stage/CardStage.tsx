@@ -15,8 +15,12 @@ export interface CardStageProps {
 const ROLES = ["next", "current", "prev"] as const;
 
 export function CardStage({ view, renderCard }: CardStageProps) {
+  // The stack thins as the pass runs out: the cards after the current one, beyond the one underneath it.
+  const remaining = view.total - view.position;
   return (
     <div className={styles.stage}>
+      <div className={styles.blank} data-shown={remaining >= 3 || undefined} />
+      <div className={styles.blank} data-shown={remaining >= 2 || undefined} />
       {ROLES.map((role) => {
         const card = view[role];
         return (

@@ -44,8 +44,8 @@ interface Pass {
 }
 
 // A pass as useDeck gives it: every move lands front up; past the last card, the end card, whose next reshuffles.
-function Reader({ calls, onFullscreen }: { calls: string[]; onFullscreen(): void }) {
-  const [pass, setPass] = useState<Pass>({ order: ["a", "b", "c", "d"].map(card), index: 0, side: "front" });
+function Reader({ calls, onFullscreen, start }: { calls: string[]; onFullscreen(): void; start: number }) {
+  const [pass, setPass] = useState<Pass>({ order: ["a", "b", "c", "d"].map(card), index: start, side: "front" });
   const { order, index, side } = pass;
   const n = order.length;
   const move = (name: string, to: (p: Pass) => Pass) => () => {
@@ -85,12 +85,13 @@ function Reader({ calls, onFullscreen }: { calls: string[]; onFullscreen(): void
   );
 }
 
-function setup() {
+// The pass starts at card `start` (0 to 3, or 4 for the end card).
+function setup({ start = 0 } = {}) {
   const calls: string[] = [];
   const onFullscreen = vi.fn();
   const view = render(
     <StrictMode>
-      <Reader calls={calls} onFullscreen={onFullscreen} />
+      <Reader calls={calls} onFullscreen={onFullscreen} start={start} />
     </StrictMode>,
   );
   const stage = view.container.firstElementChild as HTMLElement;
@@ -115,5 +116,10 @@ describe("layers", () => {
       ["current", "a?", false],
       ["prev", "", true],
     ]);
+  });
+
+  test("the blank cards behind thin out: two while 3 cards remain after this one, one while 2 do, then none", () => {
+    const blanks = (start: number) => setup({ start }).stage.querySelectorAll("[data-shown]").length;
+    expect([0, 1, 2, 3, 4].map(blanks)).toEqual([2, 1, 0, 0, 0]);
   });
 });
