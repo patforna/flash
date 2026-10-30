@@ -4,7 +4,7 @@
 // - [x] next is the card after this one, "end" after the last card and null on the end card; prev the card before
 // - [x] goPrev goes back a card; from the end card to the last card
 // - [x] flip turns the card over; landing on any card shows its front
-// - [ ] goNext on the end card reshuffles, never starting with the last card seen
+// - [x] goNext on the end card reshuffles, never starting with the last card seen
 // - [ ] reshuffle deals a new pass, never starting with the card on screen
 // - [ ] the first render deals a pass of the stored selection
 // - [ ] toggleTopic keeps the card on screen, on the same side, when it still matches; the pass is the new pool
@@ -107,5 +107,15 @@ describe("useDeck", () => {
     act(() => result.current.flip());
     act(() => result.current.goPrev());
     expect(result.current.side).toBe("front");
+  });
+
+  it("reshuffles with goNext on the end card, never starting with the last card seen", () => {
+    const { result } = setup();
+    for (let pass = 0; pass < 10; pass++) {
+      const last = walk(result).at(-1);
+      act(() => result.current.goNext());
+      expect(result.current).toMatchObject({ position: 1, total: 5, side: "front" });
+      expect(result.current.current).not.toMatchObject({ id: last });
+    }
   });
 });
