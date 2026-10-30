@@ -10,7 +10,7 @@ Flash cards for studying on a Pixel 11 held sideways: a hand-written index card 
 2. ⋮ → **Install**. Not "Create shortcut": that only opens it in a tab.
 3. Start it from the home screen: fullscreen, in landscape.
 
-From the second time it opens, it works offline: the app and the last deck stay on the phone. In a browser tab, the corner-brackets sticker at the top of the panel goes fullscreen.
+Once it has opened twice with a connection, it works offline: the first launch installs the app, the second keeps the deck on the phone. In a browser tab, the corner-brackets sticker at the top of the panel goes fullscreen.
 
 ## Reading
 
