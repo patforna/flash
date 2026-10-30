@@ -9,4 +9,13 @@ describe("flingDuration", () => {
   test("a release without speed takes the longest, 320 ms", () => {
     expect(flingDuration(800, 0)).toBe(320);
   });
+
+  test("in between, the card covers the rest at its release speed, whichever way it goes", () => {
+    expect(flingDuration(700, 10)).toBe(245);
+    expect(flingDuration(700, -10)).toBe(245);
+  });
+
+  test("a very fast flick still takes 180 ms", () => {
+    expect(flingDuration(300, 10)).toBe(180);
+  });
 });
