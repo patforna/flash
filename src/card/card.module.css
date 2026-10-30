@@ -1,80 +1,393 @@
-/* The card (docs/plan.md §7, the DOM contract in §11). Everything inside the frame is sized in card units: the
-   card is designed at 600 × 360 and --u is one unit, so it lays out identically at any size. */
+/* The card (docs/plan.md §7; the DOM contract in §11). Everything inside the frame is sized in card units: the card
+   is designed at 600 × 360 and --u is one unit, so it lays out identically at any size. Type sizes and line pitches
+   are unitless numbers of units, multiplied by --u where they are used. */
 
 .frame {
   position: absolute;
   inset: 0;
   container-type: size;
+  touch-action: pan-y;
   /* Unregistered, so it resolves where it is used: against the frame, never against the stage. */
   --u: calc(100cqh / 360);
 }
 
+/* The flip turns the card top over bottom. The perspective is the flipper's own (a perspective on the stage would
+   reach only its children); nothing here may flatten the 3D context: no overflow, opacity, filter, clip or mask. */
 .flipper {
   position: absolute;
   inset: 0;
   transform-style: preserve-3d;
+  transform: perspective(1400px) rotateX(0);
+  transition: transform var(--flip-duration) var(--flip-easing);
 }
 
+.flipper[data-side="back"] {
+  transform: perspective(1400px) rotateX(-180deg);
+}
+
+/* A face is a sheet of paper: radius, grain and its own shadow, so the shadow turns with the card. The type steps
+   are set here; useFit picks one per face (data-fit). */
 .face {
+  --q-size: 34;
+  --q-line: 40;
+  --size: 21;
+  --pitch: 30;
   position: absolute;
   inset: 0;
+  isolation: isolate;
+  border-radius: calc(6 * var(--u));
+  background: var(--paper);
+  box-shadow: inset 0 0 0 1px var(--paper-edge);
   backface-visibility: hidden;
+  color: var(--ink-marker);
+  font-family: var(--font-hand);
 }
 
-.back {
-  transform: rotateX(180deg);
+.face[data-fit="1"] {
+  --q-size: 30;
+  --q-line: 36;
+  --size: 19;
+  --pitch: 27;
 }
 
-/* Front: a band along the top edge in the first topic's colour, the question in marker. */
+.face[data-fit="2"],
+.face[data-fit="scroll"] {
+  --q-size: 26;
+  --q-line: 31;
+  --size: 17;
+  --pitch: 24;
+}
+
+/* A long soft shadow under the card; pressing it (the stage's lift carries data-pressed) darkens it. */
+.face::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  box-shadow:
+    0 calc(1 * var(--u)) calc(2 * var(--u)) rgb(0 0 0 / 30%),
+    0 calc(10 * var(--u)) calc(22 * var(--u)) calc(-6 * var(--u)) rgb(0 0 0 / 45%),
+    0 calc(30 * var(--u)) calc(60 * var(--u)) calc(-14 * var(--u)) rgb(0 0 0 / 55%);
+  opacity: 0.6;
+  transition: opacity 120ms ease-out;
+}
+
+[data-pressed] .face::before {
+  opacity: 1;
+}
+
+/* The grain lies over the writing too, so ink and paper share one texture. */
+.face::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: var(--grain);
+  pointer-events: none;
+}
+
+/* Front: a band along the top edge in the first topic's colour; the question in marker, centred a little above the
+   middle, at most four lines; the card's topics and the counter along the foot. */
 .band {
   position: absolute;
   inset: 0 0 auto;
   height: calc(6 * var(--u));
+  border-radius: calc(6 * var(--u)) calc(6 * var(--u)) 0 0;
 }
 
 .question {
+  position: absolute;
+  left: calc(52 * var(--u));
+  right: calc(52 * var(--u));
+  top: calc((170 - 2 * var(--q-line)) * var(--u));
+  height: calc(4 * var(--q-line) * var(--u));
   margin: 0;
+  align-content: center;
+  font-size: calc(var(--q-size) * var(--u));
+  line-height: calc(var(--q-line) * var(--u));
+  font-weight: 560;
+  font-variation-settings:
+    "INFM" 100,
+    "BNCE" 35;
+  text-align: center;
+  text-wrap: balance;
 }
 
-/* The card's topics, bottom left: a dot in each topic's colour and its label, in pencil. */
 .topics {
+  position: absolute;
+  left: calc(24 * var(--u));
+  bottom: calc(11 * var(--u));
+  display: flex;
+  gap: calc(14 * var(--u));
   margin: 0;
   padding: 0;
   list-style: none;
 }
 
+.topics,
+.counter {
+  font-size: calc(12 * var(--u));
+  line-height: calc(14 * var(--u));
+  color: var(--ink-pencil);
+}
+
+.topics li {
+  display: flex;
+  align-items: center;
+  gap: calc(5 * var(--u));
+  font-weight: 500;
+  font-variation-settings: "INFM" 30;
+}
+
 .dot {
-  display: inline-block;
+  width: calc(7 * var(--u));
+  height: calc(7 * var(--u));
+  border-radius: 50%;
 }
 
 /* "07 / 16", bottom right on both faces, in Radon so the digits keep still. */
 .counter {
+  position: absolute;
+  right: calc(24 * var(--u));
+  bottom: calc(10.4 * var(--u));
   margin: 0;
+  font-family: var(--font-code);
 }
 
-/* Back: the question again in the header, above the red rule; the answer in pen on the blue ruling. */
+/* Back: the question again above the red rule, which overshoots the ruled column by 8u; the answer in pen, each line
+   on a blue rule. The rule pitch follows the fit step, so the writing stays on the lines. */
+.back {
+  transform: rotateX(180deg);
+  background:
+    linear-gradient(var(--rule-red), var(--rule-red)) calc(20 * var(--u)) calc(48 * var(--u)) / calc(560 * var(--u))
+    calc(2 * var(--u)) no-repeat,
+    var(--paper);
+}
+
 .header {
+  position: absolute;
+  left: calc(48 * var(--u));
+  right: calc(28 * var(--u));
+  top: calc(8 * var(--u));
+  height: calc(37 * var(--u));
   margin: 0;
+  align-content: end;
+  font-size: calc(15 * var(--u));
+  line-height: calc(18 * var(--u));
+  font-weight: 500;
+  font-variation-settings: "INFM" 40;
+  color: var(--ink-pen-soft);
 }
 
+/* --rule-baseline: where the baseline falls in a line box, so where each rule is drawn. Shantell's ascent and descent
+   (1.02 and 0.32 em) put it at half the pitch plus 0.35 of the type size. */
 .answer {
+  --rule-baseline: calc(var(--pitch) / 2 + 0.35 * var(--size));
+  position: absolute;
+  left: calc(28 * var(--u));
+  right: calc(28 * var(--u));
+  top: calc((48 + var(--pitch) - var(--rule-baseline)) * var(--u));
+  bottom: calc(30 * var(--u));
+  padding-left: calc(20 * var(--u));
+  font-size: calc(var(--size) * var(--u));
+  line-height: calc(var(--pitch) * var(--u));
+  font-weight: 430;
+  font-variation-settings:
+    "INFM" 60,
+    "BNCE" 10;
+  color: var(--ink-pen);
+  background:
+    linear-gradient(
+      transparent calc(var(--rule-baseline) * var(--u)),
+      var(--rule-blue) 0 calc((var(--rule-baseline) + 1) * var(--u)),
+      transparent 0
+    )
+    0 0 / 100% calc(var(--pitch) * var(--u)) local;
+}
+
+.answer > * {
   margin: 0;
+  padding: 0;
+}
+
+/* Gaps between blocks are whole ruled lines: one between any two, none between a lead-in line and its list. */
+.answer > * + * {
+  margin-top: calc(var(--pitch) * var(--u));
+}
+
+.answer > p + :is(ul, ol) {
+  margin-top: 0;
+}
+
+.answer li {
+  position: relative;
+  list-style: none;
+}
+
+/* Hanging in the margin, in pink: an en dash for each point, a numeral for each step. */
+.answer li::before {
+  position: absolute;
+  right: 100%;
+  padding-right: calc(7 * var(--u));
+  color: var(--s-pink);
+  font-weight: 700;
+}
+
+.answer ul > li::before {
+  content: "–" / "";
+}
+
+.answer ol > li::before {
+  content: counter(list-item) "." / "";
+}
+
+/* Inline code adds nothing to its line's height, or the writing would drift off the rules. */
+.question code,
+.header code,
+.answer :not(pre) > code {
+  padding: 0 calc(3 * var(--u));
+  border-radius: calc(3 * var(--u));
+  font-family: var(--font-code);
+  font-size: 0.86em;
+  line-height: 0;
+  background: var(--code-wash);
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+}
+
+/* Code blocks: the rule pitch, never wrapped; a wash with a pen bar. Radon sits higher in its line box than
+   Shantell, so the block is nudged down to put its baselines on the rules. */
+.answer pre {
+  position: relative;
+  top: calc(0.118 * var(--size) * var(--u));
+  padding-left: calc(10 * var(--u));
+  font-family: var(--font-code);
+  font-size: 0.82em;
+  line-height: calc(var(--pitch) * var(--u));
+  white-space: pre;
+  background: var(--code-wash);
+  box-shadow: inset calc(2 * var(--u)) 0 color-mix(in srgb, var(--ink-pen) 25%, transparent);
+}
+
+.answer pre code {
+  font: inherit;
+}
+
+/* Bold is a highlighter stroke. */
+.question strong,
+.header strong,
+.answer strong {
+  margin: 0 calc(-2 * var(--u));
+  padding: 0 calc(2 * var(--u));
+  font-weight: 620;
+  background: linear-gradient(transparent 18%, var(--hl) 18% 86%, transparent 86%);
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+}
+
+/* The last resort (a real card never gets here: the fit test fails the build): the answer scrolls, fading out. */
+.face[data-fit="scroll"] .answer {
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  mask-image: linear-gradient(to top, transparent, black calc(24 * var(--u)));
 }
 
 /* The end card and the message cards (loading, error, empty): one face, centred. */
 .end,
 .message {
   display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+.message {
+  border: 0;
+  padding: 0;
+  font: inherit;
+  font-family: var(--font-hand);
+}
+
+button.message {
+  cursor: pointer;
+}
+
+button.message:focus-visible {
+  outline: 3px solid var(--hl);
+  outline-offset: 2px;
 }
 
 .tick {
-  display: block;
+  width: calc(104 * var(--u));
+  height: calc(86 * var(--u));
+  margin-bottom: calc(10 * var(--u));
+  overflow: visible;
+  fill: none;
+  stroke: var(--hl);
+  stroke-width: 18;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  mix-blend-mode: multiply;
 }
 
 .title {
+  display: block;
   margin: 0;
+  font-size: calc(34 * var(--u));
+  line-height: calc(40 * var(--u));
+  font-weight: 560;
+  font-variation-settings:
+    "INFM" 100,
+    "BNCE" 35;
 }
 
 .hint {
-  margin: 0;
+  display: block;
+  margin: calc(8 * var(--u)) 0 0;
+  font-size: calc(15 * var(--u));
+  line-height: calc(18 * var(--u));
+  font-weight: 500;
+  font-variation-settings: "INFM" 40;
+  color: var(--ink-pencil);
+}
+
+.message[data-tone="pencil"] .title {
+  font-weight: 400;
+  color: var(--ink-pencil);
+}
+
+.message[data-tone="error"] .title {
+  font-weight: 650;
+  color: var(--rule-red);
+}
+
+/* Blank paper until the face is fitted, and while the card on top turns over: near 90° it is almost edge-on, and the
+   next card's question must not show through. */
+.flipper > :not([data-fit]) > *,
+[data-flipping] [data-role="next"] .face > * {
+  visibility: hidden;
+}
+
+/* Reduced motion: the faces cross-fade in place of the turn. */
+@media (prefers-reduced-motion: reduce) {
+  .flipper,
+  .flipper[data-side="back"] {
+    transform: none;
+    transition: none;
+  }
+
+  .back {
+    transform: none;
+  }
+
+  .face {
+    transition: opacity var(--flip-fade-duration) ease-out;
+  }
+
+  .flipper[data-side="front"] > .back,
+  .flipper[data-side="back"] > .face:not(.back) {
+    opacity: 0;
+  }
 }

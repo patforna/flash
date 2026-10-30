@@ -1,0 +1,49 @@
+/* The desk and the page-wide rules (docs/plan.md §6 and §7). The colours are tokens (tokens.css). */
+
+:root {
+  /* Paper grain: fractal noise at 4 %, on the desk and on every card. */
+  --grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)' opacity='.04'/%3E%3C/svg%3E");
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+/* Taps answer at once (no double-tap zoom), nothing flashes under a finger, nothing scrolls past its edge or pulls
+   to refresh, and a long press neither selects text nor opens a callout: the card and the panel are all there is. */
+* {
+  touch-action: manipulation;
+}
+
+html {
+  height: 100%;
+  overscroll-behavior: none;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-text-size-adjust: none;
+  text-size-adjust: none;
+  color: var(--chalk);
+  font-family: var(--font-hand);
+  background: var(--desk);
+}
+
+body {
+  min-height: 100%;
+  margin: 0;
+  overscroll-behavior: none;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+  /* The desk, painted once: a soft glow behind the card, the grain over all of it. */
+  background:
+    var(--grain), radial-gradient(ellipse 52% 78% at 62% 50%, var(--desk-glow), transparent 100%), var(--desk);
+}
+
+/* Portrait (a browser tab only): the card sits on top. */
+@media (orientation: portrait) {
+  body {
+    background:
+      var(--grain), radial-gradient(ellipse 90% 34% at 50% 22%, var(--desk-glow), transparent 100%), var(--desk);
+  }
+}

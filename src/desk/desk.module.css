@@ -1,4 +1,12 @@
-/* The wordmark (docs/plan.md §3): Shantell at its most informal and bouncy, in highlighter. */
+/* The wordmark (docs/plan.md §3): Shantell at its most informal and bouncy, in highlighter on the desk. */
 .wordmark {
   display: block;
+  font-family: var(--font-hand);
+  font-size: 22px;
+  font-weight: 700;
+  font-variation-settings:
+    "INFM" 100,
+    "BNCE" 50;
+  line-height: 1;
+  color: color-mix(in srgb, var(--hl) 85%, transparent);
 }
