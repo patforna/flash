@@ -11,6 +11,7 @@ import { TopicPanel } from "../panel/TopicPanel";
 import { FullscreenChip } from "../platform/FullscreenChip";
 import { toggleFullscreen } from "../platform/fullscreen";
 import { tick } from "../platform/haptics";
+import { useWakeLock } from "../platform/wakeLock";
 import { CardStage } from "../stage/CardStage";
 import styles from "./App.module.css";
 
@@ -18,6 +19,7 @@ import styles from "./App.module.css";
 const LOADING_AFTER_MS = 200;
 
 export function App() {
+  useWakeLock();
   const deck = useDeckQuery();
   const late = useElapsed(LOADING_AFTER_MS);
   if (deck.data) return <Reader deck={deck.data} />;

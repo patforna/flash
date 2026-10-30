@@ -9,7 +9,7 @@
 // [x] the end card closes the pass
 // [x] a live region says where you are: "Card 1 of 3", the end card's text
 // [x] haptics on next, previous, reshuffle, the end card's reshuffle and a chip toggle; never on a flip
-// [ ] the fullscreen chip leads the panel; f toggles fullscreen
+// [x] the fullscreen chip leads the panel; f toggles fullscreen
 // [ ] the wake lock is asked for on the first input
 // [ ] performance mark flash:first-card once the fonts are in and the first card is on screen, once per page load
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -343,5 +343,21 @@ describe("fullscreen", () => {
     fireEvent.keyDown(document.body, { key: "f" });
 
     expect(request).toHaveBeenCalledWith({ navigationUI: "hide" });
+  });
+});
+
+describe("the wake lock", () => {
+  afterEach(() => {
+    Reflect.deleteProperty(navigator, "wakeLock");
+  });
+
+  test("keeps the screen on from the first touch", async () => {
+    const request = vi.fn(async () => ({ release: async () => {} }));
+    Object.defineProperty(navigator, "wakeLock", { configurable: true, value: { request } });
+    await reading();
+
+    fireEvent.pointerDown(layer("current"));
+
+    expect(request).toHaveBeenCalledWith("screen");
   });
 });
