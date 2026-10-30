@@ -5,7 +5,7 @@
 // [x] serves the service worker, its helpers, the manifest and the icons, revalidated on every use
 // [x] answers 404 for anything else: missing files, other methods, traversal attempts raw and percent-encoded
 // [x] sets the robots, sniffing and referrer headers on every response: static, API, 304 and 404
-// [ ] HEAD answers like GET for static files
+// [x] HEAD answers like GET for static files
 import { afterAll, describe, expect, test } from "bun:test";
 import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
@@ -119,5 +119,15 @@ describe("createApp", () => {
     expect(res.headers.get("X-Robots-Tag")).toBe("noindex, nofollow");
     expect(res.headers.get("X-Content-Type-Options")).toBe("nosniff");
     expect(res.headers.get("Referrer-Policy")).toBe("no-referrer");
+  });
+
+  test.each(["/", "/assets/index-B2x9.js"])("answers HEAD %s like GET, without the body", async (path) => {
+    const get = await app.request(path);
+    const head = await app.request(path, { method: "HEAD" });
+
+    expect(head.status).toBe(200);
+    expect(head.headers.get("Content-Type")).toBe(get.headers.get("Content-Type"));
+    expect(head.headers.get("Cache-Control")).toBe(get.headers.get("Cache-Control"));
+    expect(await head.text()).toBe("");
   });
 });
