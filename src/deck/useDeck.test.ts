@@ -7,7 +7,7 @@
 // - [x] goNext on the end card reshuffles, never starting with the last card seen
 // - [x] reshuffle deals a new pass, never starting with the card on screen
 // - [x] the first render deals a pass of the stored selection
-// - [ ] toggleTopic keeps the card on screen, on the same side, when it still matches; the pass is the new pool
+// - [x] toggleTopic keeps the card on screen, on the same side, when it still matches; the pass is the new pool
 // - [ ] toggleTopic deals afresh, front up, when the card on screen no longer matches
 // - [ ] toggleTopic and clearTopics persist the selection
 // - [ ] clearTopics returns to every card; with nothing selected it changes nothing
@@ -134,5 +134,17 @@ describe("useDeck", () => {
     const { result } = setup({ stored: '["Queues"]' });
     expect(result.current.selected).toEqual(new Set(["Queues"]));
     expect(walk(result).toSorted()).toEqual(["c", "d"]);
+  });
+
+  it("keeps the card on screen, on the same side, when a topic it carries is toggled on", () => {
+    const { result } = setup();
+    act(() => result.current.goNext());
+    act(() => result.current.flip());
+    const shown = result.current.current as Card;
+    const topic = shown.topics[0] as string;
+    act(() => result.current.toggleTopic(topic));
+    expect(result.current).toMatchObject({ prev: null, current: shown, side: "back", position: 1 });
+    expect(result.current.selected).toEqual(new Set([topic]));
+    expect(walk(result).toSorted()).toEqual(deck.cards.filter((c) => c.topics.includes(topic)).map((c) => c.id));
   });
 });

@@ -1,8 +1,13 @@
 import { useState } from "react";
 import type { Deck } from "../../shared/types";
-import { deal, flip, next, poolFor, prev, reshuffle } from "./deck";
-import { loadSelection } from "./selection";
+import { deal, flip, next, poolFor, prev, reselect, reshuffle } from "./deck";
+import { loadSelection, toggle } from "./selection";
 import type { DeckView, Pass, Rng } from "./types";
+
+interface State {
+  selected: ReadonlySet<string>;
+  pass: Pass;
+}
 
 const none = () => {};
 
@@ -10,10 +15,13 @@ export function useDeck(
   deck: Deck,
   { rng = Math.random, storage = null }: { rng?: Rng; storage?: Storage | null } = {},
 ): DeckView {
-  const [selected] = useState(() => loadSelection(storage, deck.topics));
-  const [pass, setPass] = useState(() => deal(poolFor(deck.cards, selected), rng));
+  const [{ selected, pass }, setState] = useState((): State => {
+    const selected = loadSelection(storage, deck.topics);
+    return { selected, pass: deal(poolFor(deck.cards, selected), rng) };
+  });
+  const move = (f: (s: State) => Pass) => setState((s) => ({ ...s, pass: f(s) }));
+  const again = (s: State) => reshuffle(s.pass, poolFor(deck.cards, s.selected), rng);
   const at = (i: number) => deck.cards.find((c) => c.id === pass.order[i]) ?? null;
-  const again = (p: Pass) => reshuffle(p, poolFor(deck.cards, selected), rng);
   return {
     prev: at(pass.index - 1),
     current: at(pass.index) ?? "end",
@@ -23,11 +31,15 @@ export function useDeck(
     total: pass.order.length,
     selected,
     topics: deck.topics,
-    flip: () => setPass(flip),
-    goNext: () => setPass((p) => (p.index < p.order.length ? next(p) : again(p))),
-    goPrev: () => setPass(prev),
-    reshuffle: () => setPass(again),
-    toggleTopic: none,
+    flip: () => move((s) => flip(s.pass)),
+    goNext: () => move((s) => (s.pass.index < s.pass.order.length ? next(s.pass) : again(s))),
+    goPrev: () => move((s) => prev(s.pass)),
+    reshuffle: () => move(again),
+    toggleTopic: (label) =>
+      setState((s) => {
+        const chosen = toggle(s.selected, label);
+        return { selected: chosen, pass: reselect(s.pass, poolFor(deck.cards, chosen), rng) };
+      }),
     clearTopics: none,
   };
 }
