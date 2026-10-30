@@ -306,10 +306,21 @@ describe("dealing", () => {
 });
 
 describe("buttons", () => {
-  test("\"Show answer\" flips the card, then reads \"Show question\"", () => {
+  test('"Show answer" flips the card, then reads "Show question"', () => {
     const { calls } = setup();
     fireEvent.click(screen.getByRole("button", { name: "Show answer" }));
     expect(calls).toEqual(["flip"]);
     expect(screen.getByRole("button", { name: "Show question" })).toBeTruthy();
+  });
+
+  test('"Next" and "Previous" go as a swipe does', async () => {
+    const { layer, calls } = setup({ start: 1 });
+    fireEvent.click(screen.getByRole("button", { name: "Next" }));
+    expect(animations[0]?.el).toBe(layer("current"));
+    await land();
+    fireEvent.click(screen.getByRole("button", { name: "Previous" }));
+    expect(animations.at(-1)?.el).toBe(layer("prev"));
+    await land();
+    expect(calls).toEqual(["goNext", "goPrev"]);
   });
 });

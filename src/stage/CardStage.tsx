@@ -100,8 +100,14 @@ export function CardStage({ view, renderCard }: CardStageProps) {
           </div>
         );
       })}
+      <button type="button" className={styles.prev} aria-label="Previous" onClick={() => swipe.commit("prev")}>
+        ‹
+      </button>
       <button type="button" className={styles.flip} onClick={swipe.tap}>
         {view.side === "front" ? "Show answer" : "Show question"}
+      </button>
+      <button type="button" className={styles.next} aria-label="Next" onClick={() => swipe.commit("next")}>
+        ›
       </button>
     </div>
   );
