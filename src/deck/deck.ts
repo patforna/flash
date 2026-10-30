@@ -7,10 +7,15 @@ export function poolFor(cards: readonly Card[], selected: ReadonlySet<string>): 
   return (chosen.length > 0 ? chosen : cards).map((c) => c.id);
 }
 
-export function deal(pool: readonly string[], rng: Rng, { keep }: { keep?: string } = {}): Pass {
+export function deal(
+  pool: readonly string[],
+  rng: Rng,
+  { keep, avoidFirst }: { keep?: string; avoidFirst?: string } = {},
+): Pass {
   const order = shuffle(pool, rng);
   const k = order.findIndex((id) => id === keep);
   if (k > 0) swap(order, 0, k);
+  if (order.length > 1 && order[0] === avoidFirst) swap(order, 0, 1);
   return { order, index: 0, side: "front" };
 }
 
