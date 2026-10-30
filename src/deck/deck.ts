@@ -19,6 +19,10 @@ export function deal(
   return { order, index: 0, side: "front" };
 }
 
+export function flip(p: Pass): Pass {
+  return { ...p, side: p.side === "front" ? "back" : "front" };
+}
+
 export function next(p: Pass): Pass {
   return p.index < p.order.length ? { ...p, index: p.index + 1, side: "front" } : p;
 }
