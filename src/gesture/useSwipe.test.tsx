@@ -21,6 +21,7 @@
 import { act, render } from "@testing-library/react";
 import { Profiler, useRef, useState } from "react";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
+import { FakeAnimation, inline, press } from "./testing";
 import { type SwipeOptions, useSwipe } from "./useSwipe";
 
 // The card: 600 × 360 at (280, 24). 28 % of it is 168 px; off screen to the left is −(880 + 80) = −960 px.
@@ -33,37 +34,6 @@ beforeEach(() => {
 afterEach(() => {
   vi.restoreAllMocks();
 });
-
-// Records what was animated; finish() and cancel() settle `finished` as browsers do (cancel rejects it).
-class FakeAnimation {
-  playState: AnimationPlayState = "running";
-  readonly finished: Promise<FakeAnimation>;
-  #resolve: (a: FakeAnimation) => void = () => {};
-  #reject: (e: unknown) => void = () => {};
-
-  constructor(
-    readonly el: Element,
-    readonly keyframes: Keyframe[],
-    readonly options: KeyframeAnimationOptions,
-  ) {
-    this.finished = new Promise((resolve, reject) => {
-      this.#resolve = resolve;
-      this.#reject = reject;
-    });
-    this.finished.catch(() => {});
-  }
-
-  finish() {
-    if (this.playState !== "running") return;
-    this.playState = "finished";
-    this.#resolve(this);
-  }
-
-  cancel() {
-    if (this.playState === "running") this.#reject(new DOMException("The animation was cancelled", "AbortError"));
-    this.playState = "idle";
-  }
-}
 
 // A stage with real layer elements. Each commit brings new ones, as a new card would.
 type Swipe = ReturnType<typeof useSwipe>;
@@ -127,40 +97,6 @@ function setup(overrides: Partial<SwipeOptions> = {}, { prev = true } = {}) {
     return held.swipe;
   };
   return { stage, layer, animations, onTap, onCommit, renders: () => renders, swipe };
-}
-
-// A finger (or mouse) going down on `target` at (x, y) at time `t` ms; later events go to the stage, as captured.
-function press(stage: HTMLElement, target: Element, x: number, y: number, t = 0, init: PointerEventInit = {}) {
-  let now = { x, y, t };
-  const fire = (type: string, el: Element) =>
-    act(() => {
-      const event = new PointerEvent(type, {
-        bubbles: true,
-        cancelable: true,
-        clientX: now.x,
-        clientY: now.y,
-        pointerId: 1,
-        isPrimary: true,
-        pointerType: "touch",
-        ...init,
-      });
-      Object.defineProperty(event, "timeStamp", { value: now.t });
-      el.dispatchEvent(event);
-    });
-  fire("pointerdown", target);
-  return {
-    move(mx: number, my: number, dt = 8) {
-      now = { x: mx, y: my, t: now.t + dt };
-      fire("pointermove", stage);
-    },
-    up(dt = 0) {
-      now = { ...now, t: now.t + dt };
-      fire("pointerup", stage);
-    },
-    cancel() {
-      fire("pointercancel", stage);
-    },
-  };
 }
 
 describe("taps", () => {
@@ -248,8 +184,6 @@ describe("following the finger", () => {
     expect(layer("next").style.transform).toBe("");
   });
 });
-
-const inline = (el: HTMLElement) => ({ transform: el.style.transform, visibility: el.style.visibility });
 
 // A drag left at 2.5 px/ms to dx −160 (short of 168 px, but fast): the fling has 800 px to go.
 function flick(stage: HTMLElement, layer: (role: string) => HTMLElement) {
