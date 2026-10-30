@@ -62,6 +62,15 @@ function swipe(stage: RefObject<HTMLElement | null>, options: RefObject<SwipeOpt
     );
   }
 
+  // Input never waits for an animation: it ends now and its commit completes before anything reads the layers again.
+  // (finish() alone would settle `finished` a microtask later.)
+  function finishRunning() {
+    const run = running;
+    if (!run) return;
+    for (const animation of run.animations) animation.finish();
+    complete(run);
+  }
+
   function complete(run: Run) {
     if (running !== run) return;
     running = null;
@@ -162,6 +171,7 @@ function swipe(stage: RefObject<HTMLElement | null>, options: RefObject<SwipeOpt
 
   const down = (e: PointerEvent) => {
     if (gesture || e.button !== 0) return;
+    finishRunning();
     if (e.target instanceof Element && e.target.closest("button")) return;
     const layers = options.current.layers();
     if (!layers) return;

@@ -388,3 +388,18 @@ describe("ignoring", () => {
     ]);
   });
 });
+
+describe("input during an animation", () => {
+  test("a pointerdown mid-fling finishes it and commits at once, then drags the card now on top", async () => {
+    const { stage, layer, animations, onCommit } = setup();
+    flick(stage, layer);
+    const [fling] = animations;
+    const finger = press(stage, layer("next"), 700, 200, 100);
+    expect(onCommit).toHaveBeenCalledExactlyOnceWith("next");
+    expect(fling?.playState).toBe("idle");
+    finger.move(650, 200);
+    expect(layer("current").style.transform).toBe("translateX(-50px) rotate(-1.5deg)");
+    await act(async () => {});
+    expect(onCommit).toHaveBeenCalledOnce();
+  });
+});
