@@ -1,9 +1,9 @@
 // To do:
-// [x] nothing for 200 ms while the deck loads, then a card reading "shuffling…"
+// [x] the stack from the start, a blank card on top while the deck loads, reading "shuffling…" after 200 ms
 // [x] the error card once the deck can't be fetched; tapping it fetches again
 // [x] the empty card for a deck without cards
 // [x] the first card of a pass on the stage, front up; the next card underneath, front up too
-// [x] after the loading card, the first card is dealt; one that comes within 200 ms is simply there
+// [x] the first card is dealt onto the stack, after the loading card or within 200 ms
 // [x] only the card on top shows the side it was turned to
 // [x] each layer's card counts its own place in the pass
 // [x] the panel: All with the deck's total, the topics in order with their counts, the wordmark at its foot
@@ -125,16 +125,19 @@ afterEach(() => {
 });
 
 describe("loading", () => {
-  test('shows nothing for 200 ms while the deck loads, then a card reading "shuffling…"', () => {
+  test('the stack is on the desk from the start, a blank card on top, which reads "shuffling…" once 200 ms have passed', () => {
     vi.useFakeTimers();
     serve(() => new Promise(() => {}));
     renderApp();
+    const top = () => document.querySelector(`.${cardStyles.message}`)?.textContent;
+    expect(document.querySelectorAll("[data-shown]")).toHaveLength(2);
+    expect(top()).toBe("");
 
     act(() => vi.advanceTimersByTime(199));
-    expect(screen.queryByText("shuffling…", onCard)).toBeNull();
+    expect(top()).toBe("");
 
     act(() => vi.advanceTimersByTime(1));
-    expect(screen.getByText("shuffling…", onCard)).toBeTruthy();
+    expect(top()).toBe("shuffling…");
   });
 });
 
@@ -188,9 +191,9 @@ describe("launch", () => {
     expect(animations.map((a) => [a.el, a.keyframes])).toContainEqual([layer("current"), deal]);
   });
 
-  test("one that comes at once is simply there", async () => {
+  test("one that comes at once is dealt too, onto the stack that was there from the start", async () => {
     await reading();
-    expect(animations).toEqual([]);
+    expect(animations.map((a) => [a.el, a.keyframes])).toContainEqual([layer("current"), deal]);
   });
 });
 

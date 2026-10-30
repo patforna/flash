@@ -20,7 +20,7 @@ import { CardStage } from "../stage/CardStage";
 import { StillStage } from "../stage/StillStage";
 import styles from "./App.module.css";
 
-// A deck that arrives within this long never shows the loading card, so a quick start doesn't flash it.
+// A deck that arrives within this long never shows "shuffling…", so a quick start doesn't flash it.
 const LOADING_AFTER_MS = 200;
 
 export function App() {
@@ -33,23 +33,21 @@ export function App() {
   const reading = deck.data && deck.data.cards.length > 0;
   return (
     <main className={styles.shell}>
-      {/* After the loading card, the first card is dealt onto the stack: shuffling, then dealing. */}
-      {reading ? <Reader deck={deck.data} dealt={late} live={live} /> : <Waiting deck={deck} late={late} live={live} />}
+      {reading ? <Reader deck={deck.data} live={live} /> : <Waiting deck={deck} late={late} live={live} />}
       <p ref={setLive} className={styles.announcer} aria-live="polite" />
     </main>
   );
 }
 
-// The card on the stack while there is nothing to read, read out as it shows.
+// The stack is on the desk from the first frame, with a card on top that says why there is nothing to read yet, read
+// out as it shows.
 function Waiting({ deck, late, live }: { deck: UseQueryResult<Deck, Error>; late: boolean; live: HTMLElement | null }) {
   const message = say(deck, late);
   return (
-    <Desk live={live} announce={message ? [message.title, message.hint].filter(Boolean).join(" ") : ""}>
-      {message && (
-        <StillStage>
-          <MessageCard {...message} />
-        </StillStage>
-      )}
+    <Desk live={live} announce={[message.title, message.hint].filter(Boolean).join(" ")}>
+      <StillStage>
+        <MessageCard {...message} />
+      </StillStage>
     </Desk>
   );
 }
@@ -76,8 +74,8 @@ function Desk({ panel, live, announce, children }: DeskProps) {
   );
 }
 
-// What that card says, if anything yet.
-function say(deck: UseQueryResult<Deck, Error>, late: boolean): MessageCardProps | null {
+// What that card says: nothing while the deck is on time.
+function say(deck: UseQueryResult<Deck, Error>, late: boolean): MessageCardProps {
   // Validation makes an empty deck impossible; should one come, it says so rather than show an end card.
   if (deck.data) return { title: "No cards here." };
   // Tapping the error card asks again (nothing else does: no refetch on focus or reconnect); it shuffles meanwhile.
@@ -89,13 +87,14 @@ function say(deck: UseQueryResult<Deck, Error>, late: boolean): MessageCardProps
       onTap: () => void deck.refetch(),
     };
   }
-  return late ? { title: "shuffling…" } : null;
+  return { title: late ? "shuffling…" : "" };
 }
 
 // Where each layer's card sits in the pass, from the card on top.
 const OFFSET = { prev: -1, current: 0, next: 1 } as const;
 
-function Reader({ deck, dealt, live }: { deck: Deck; dealt: boolean; live: HTMLElement | null }) {
+// The first card is dealt onto the stack that was there while the deck was on its way: shuffling, then dealing.
+function Reader({ deck, live }: { deck: Deck; live: HTMLElement | null }) {
   const view = useDeck(deck);
   useFirstCardMark();
   const counts = useMemo(() => countTopics(deck), [deck]);
@@ -140,7 +139,7 @@ function Reader({ deck, dealt, live }: { deck: Deck; dealt: boolean; live: HTMLE
           )
         }
         onFullscreen={toggleFullscreen}
-        dealFirst={dealt}
+        dealFirst
       />
     </Desk>
   );

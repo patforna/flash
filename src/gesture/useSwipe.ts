@@ -374,7 +374,12 @@ function swipe(stage: RefObject<HTMLElement | null>, options: RefObject<SwipeOpt
           { transform: "translateY(0px)", opacity: 1 },
         ];
     const timing = fade ? { duration: MOTION.fadeMs } : { duration: MOTION.dealMs, easing: MOTION.dealEase };
-    play([animate(layers.current, keyframes, timing)], null);
+    const animations = [animate(layers.current, keyframes, timing)];
+    // The card underneath takes the place of the card on top as it goes, and settles into its own under the card
+    // dealt: it never shrinks back in a frame.
+    if (layers.next && !fade)
+      animations.push(animate(layers.next, [{ transform: underneath(1) }, { transform: underneath(0) }], timing));
+    play(animations, null);
     // The card comes in over the one underneath, whose writing would show through it: blank paper until it lands.
     stage.current?.setAttribute("data-dealing", "");
   }

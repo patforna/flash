@@ -319,7 +319,7 @@ describe("dealing", () => {
     const { layer, deck } = setup();
     act(() => deck().reshuffle());
     expect(layer("current").textContent).toBe("b?");
-    expect(animations.map((a) => [a.el, a.keyframes])).toEqual([[layer("current"), deal]]);
+    expect(animations.filter((a) => a.el === layer("current")).map((a) => a.keyframes)).toEqual([deal]);
   });
 
   test("so is the first card, when the stage is told to deal it (after the loading card)", () => {
@@ -347,7 +347,7 @@ describe("dealing", () => {
         dealFirst
       />,
     );
-    expect(animations.map((a) => a.keyframes)).toEqual([deal]);
+    expect(animations.map((a) => a.keyframes)).toContainEqual(deal);
   });
 
   test("a card that survives a topic change isn't", () => {
@@ -374,8 +374,7 @@ describe("dealing", () => {
     flick(stage, layer);
     expect(calls).toEqual(["move", "goNext"]);
     expect(layer("current").textContent).toBe("b?");
-    expect(animations.at(-1)?.el).toBe(layer("current"));
-    expect(animations.at(-1)?.keyframes).toEqual(deal);
+    expect(animations.map((a) => [a.el, a.keyframes])).toContainEqual([layer("current"), deal]);
     // A copy of the end card, off the stage's roles, flies on over it.
     const copy = animations.find((a) => a.el.textContent === "That's all" && !a.el.hasAttribute("data-role"));
     expect(copy?.el.isConnected).toBe(true);

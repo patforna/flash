@@ -22,7 +22,8 @@
 // [x] reduced motion: no rotation while following; opacity-only animations
 // [x] commit(dir): the same fling from rest on MOTION.commitEase; not where can() forbids, nor while a pointer is down
 // [x] tap(): completes a running commit, then onTap
-// [x] deal(): drops a running commit; translateY(14px) → 0 and opacity 0 → 1 over 220 ms
+// [x] deal(): drops a running commit; translateY(14px) → 0 and opacity 0 → 1 over 220 ms, the card underneath
+//     settling from the top card's place to its own
 // [x] a horizontal drag finishes a running flip
 // [x] no getCoalescedEvents (an insecure context): the move's own sample
 import { act, render } from "@testing-library/react";
@@ -519,7 +520,7 @@ describe("starting", () => {
   test("a deal waits for the next frame, so it starts from its first keyframe: after a render, the timeline's time can be frames old", () => {
     const { animations, swipe } = setup();
     act(() => swipe().deal());
-    expect(animations.map((a) => a.startTime)).toEqual([null]);
+    expect(animations.map((a) => a.startTime)).toEqual([null, null]);
   });
 });
 
@@ -639,18 +640,27 @@ describe("tap(), for keys and buttons", () => {
 });
 
 describe("deal(), when the view brings a new card", () => {
+  const timing = { duration: 220, easing: "cubic-bezier(0.2, 0.8, 0.2, 1)" };
+
   test("the card on top rises 14 px as it fades in", () => {
     const { layer, animations, swipe } = setup();
     act(() => swipe().deal());
-    expect(animations.map((a) => [a.el, a.keyframes, a.options])).toEqual([
+    expect(animations.filter((a) => a.el === layer("current")).map((a) => [a.keyframes, a.options])).toEqual([
       [
-        layer("current"),
         [
           { transform: "translateY(14px)", opacity: 0 },
           { transform: "translateY(0px)", opacity: 1 },
         ],
-        { duration: 220, easing: "cubic-bezier(0.2, 0.8, 0.2, 1)" },
+        timing,
       ],
+    ]);
+  });
+
+  test("the card underneath settles under it, from where the card on top was to its own place", () => {
+    const { layer, animations, swipe } = setup();
+    act(() => swipe().deal());
+    expect(animations.filter((a) => a.el === layer("next")).map((a) => [a.keyframes, a.options])).toEqual([
+      [[{ transform: "scale(1) translateY(0px)" }, { transform: "scale(0.965) translateY(8px)" }], timing],
     ]);
   });
 
@@ -685,7 +695,9 @@ describe("deal(), when the view brings a new card", () => {
     const { stage, animations, swipe } = setup();
     act(() => swipe().deal());
     expect(stage.hasAttribute("data-dealing")).toBe(true);
-    await act(async () => animations[0]?.finish());
+    await act(async () => {
+      for (const animation of animations) animation.finish();
+    });
     expect(stage.hasAttribute("data-dealing")).toBe(false);
   });
 

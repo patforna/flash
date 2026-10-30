@@ -15,6 +15,15 @@
   overflow-y: auto;
   overscroll-behavior: contain;
   mask-image: linear-gradient(to top, transparent, black 24px);
+  /* It arrives once, with the first card and in step with its deal (MOTION in motion/timing.ts), so the stickers don't
+     pop in at the edge of vision while the eye follows the card. */
+  animation: arrive 220ms cubic-bezier(0.2, 0.8, 0.2, 1) backwards;
+}
+
+@keyframes arrive {
+  from {
+    opacity: 0;
+  }
 }
 
 /* A chip takes everything from its sticker's colour. Not selected, it is a muted sticker: a faint fill, an outline
@@ -88,10 +97,14 @@
   outline-offset: 2px;
 }
 
-/* Reduced motion: the stickers change state at once. */
+/* Reduced motion: the stickers change state at once; the panel fades in as the first card does. */
 @media (prefers-reduced-motion: reduce) {
   .chip,
   .chip::before {
     transition: none;
+  }
+
+  .panel {
+    animation-duration: 140ms;
   }
 }
