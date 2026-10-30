@@ -231,4 +231,21 @@ describe("flipping", () => {
       vi.useRealTimers();
     }
   });
+
+  test("under reduced motion, for the cross-fade's duration", () => {
+    vi.useFakeTimers();
+    vi.spyOn(window, "matchMedia").mockImplementation(
+      (query) => ({ matches: query.includes("reduce") }) as MediaQueryList,
+    );
+    try {
+      const { stage, layer } = setup();
+      stage.style.setProperty("--flip-duration", "380ms");
+      stage.style.setProperty("--flip-fade-duration", "140ms");
+      press(stage, layer("current"), 700, 200).up(80);
+      act(() => vi.advanceTimersByTime(140));
+      expect(stage.hasAttribute("data-flipping")).toBe(false);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
 });

@@ -16,6 +16,7 @@ export interface CardStageProps {
 const ROLES = ["next", "current", "prev"] as const;
 
 const keyOf = (card: Card | "end") => (card === "end" ? "end" : card.id);
+const reducedMotion = () => matchMedia("(prefers-reduced-motion: reduce)").matches;
 
 export function CardStage({ view, renderCard }: CardStageProps) {
   const stage = useRef<HTMLDivElement>(null);
@@ -30,11 +31,12 @@ export function CardStage({ view, renderCard }: CardStageProps) {
     // The end card has no back: a tap deals the next pass.
     onTap: () => (view.current === "end" ? view.goNext() : view.flip()),
     onCommit: (dir) => (dir === "next" ? view.goNext() : view.goPrev()),
-    reducedMotion: () => matchMedia("(prefers-reduced-motion: reduce)").matches,
+    reducedMotion,
   });
 
   // While a flip runs (data-flipping), the card underneath shows blank paper: edge-on, the flipping card hides little.
-  // It runs from a change of side until the flipper's transform transition ends, or for the flip's duration (a token).
+  // It runs from a change of side until the flipper's transform transition ends, or for the flip's duration (a token;
+  // under reduced motion the faces cross-fade and no transform ends).
   const flipEnd = useRef<ReturnType<typeof setTimeout>>(undefined);
   const stopFlip = () => {
     clearTimeout(flipEnd.current);
@@ -47,7 +49,10 @@ export function CardStage({ view, renderCard }: CardStageProps) {
     if (el && key === shown.current.key && view.side !== shown.current.side) {
       el.setAttribute("data-flipping", "");
       clearTimeout(flipEnd.current);
-      flipEnd.current = setTimeout(stopFlip, parseFloat(getComputedStyle(el).getPropertyValue("--flip-duration")) || 0);
+      const duration = getComputedStyle(el).getPropertyValue(
+        reducedMotion() ? "--flip-fade-duration" : "--flip-duration",
+      );
+      flipEnd.current = setTimeout(stopFlip, parseFloat(duration) || 0);
     }
     shown.current = { key, side: view.side };
   });
