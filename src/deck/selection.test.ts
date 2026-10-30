@@ -2,7 +2,7 @@
 // - [x] toggle adds a label that isn't selected
 // - [x] toggle removes a label that is selected, as a new set, leaving the old one alone
 // - [x] loadSelection reads the JSON array under flash:v1:topics
-// - [ ] loadSelection drops unknown labels
+// - [x] loadSelection drops unknown labels
 // - [ ] loadSelection gives the empty set for nothing stored, invalid JSON or a non-array
 // - [ ] loadSelection gives the empty set for a throwing storage or no storage
 // - [ ] saveSelection writes the JSON array under flash:v1:topics
@@ -32,5 +32,9 @@ describe("toggle", () => {
 describe("loadSelection", () => {
   it("reads the JSON array under flash:v1:topics", () => {
     expect(loadSelection(holding('["Redis","Queues"]'), known)).toEqual(new Set(["Redis", "Queues"]));
+  });
+
+  it("drops unknown labels", () => {
+    expect(loadSelection(holding('["Redis","Gone",7,null]'), known)).toEqual(new Set(["Redis"]));
   });
 });
