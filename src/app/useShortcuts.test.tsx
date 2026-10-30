@@ -14,10 +14,35 @@ function setup() {
   return { h, ...view };
 }
 
+type Action = keyof ReturnType<typeof setup>["h"];
+
 describe("useShortcuts", () => {
-  test("Space flips", () => {
+  test.each<[string, Action]>([
+    [" ", "flip"],
+    ["Enter", "flip"],
+    ["ArrowUp", "flip"],
+    ["ArrowDown", "flip"],
+    ["j", "flip"],
+    ["k", "flip"],
+    ["ArrowRight", "next"],
+    ["l", "next"],
+    ["PageDown", "next"],
+    ["ArrowLeft", "prev"],
+    ["h", "prev"],
+    ["PageUp", "prev"],
+    ["s", "reshuffle"],
+    ["f", "fullscreen"],
+  ])("%j: %s", (key, action) => {
     const { h } = setup();
-    fireEvent.keyDown(document.body, { key: " " });
-    expect(h.flip).toHaveBeenCalledOnce();
+    fireEvent.keyDown(document.body, { key });
+    for (const [name, handler] of Object.entries(h)) {
+      expect(handler).toHaveBeenCalledTimes(name === action ? 1 : 0);
+    }
+  });
+
+  test("any other key does nothing", () => {
+    const { h } = setup();
+    fireEvent.keyDown(document.body, { key: "x" });
+    for (const handler of Object.values(h)) expect(handler).not.toHaveBeenCalled();
   });
 });
