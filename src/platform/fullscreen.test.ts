@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { canFullscreen } from "./fullscreen";
+import { canFullscreen, toggleFullscreen } from "./fullscreen";
 
 // To do:
 // [x] canFullscreen: false where fullscreen isn't enabled
@@ -55,5 +55,16 @@ describe("canFullscreen", () => {
     define(document, "fullscreenElement", document.documentElement);
 
     expect(canFullscreen()).toBe(false);
+  });
+});
+
+describe("toggleFullscreen", () => {
+  it("requests fullscreen on the document element, without navigation UI", async () => {
+    const request = vi.fn(async () => {});
+    define(document.documentElement, "requestFullscreen", request);
+
+    await toggleFullscreen();
+
+    expect(request).toHaveBeenCalledWith({ navigationUI: "hide" });
   });
 });

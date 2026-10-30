@@ -7,3 +7,7 @@ export function canFullscreen(): boolean {
     !document.fullscreenElement
   );
 }
+
+export async function toggleFullscreen(): Promise<void> {
+  await document.documentElement.requestFullscreen({ navigationUI: "hide" });
+}
