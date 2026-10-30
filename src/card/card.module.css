@@ -341,6 +341,47 @@ button.message:focus-visible {
   mix-blend-mode: multiply;
 }
 
+/* The tick draws itself as the end card lands on top, ticking off the pass: the short stroke from its top, then the
+   long one from the bottom, each grown along its own direction from the middle of its first end (in viewBox units).
+   Under the last card it waits unseen; the copy flying off keeps it drawn (it has no role). */
+[data-role="next"] .tick {
+  visibility: hidden;
+}
+
+[data-role="current"] .tick path {
+  transform-box: view-box;
+}
+
+[data-role="current"] .tick path:first-child {
+  transform-origin: 18px 52px;
+  animation: tick-short 110ms cubic-bezier(0.4, 0, 1, 1) backwards;
+}
+
+[data-role="current"] .tick path:last-child {
+  transform-origin: 40px 80px;
+  animation: tick-long 200ms cubic-bezier(0.2, 0.6, 0.3, 1) 100ms backwards;
+}
+
+@keyframes tick-short {
+  from {
+    transform: rotate(49deg) scaleX(0) rotate(-49deg);
+  }
+
+  to {
+    transform: rotate(49deg) scaleX(1) rotate(-49deg);
+  }
+}
+
+@keyframes tick-long {
+  from {
+    transform: rotate(-46deg) scaleX(0) rotate(46deg);
+  }
+
+  to {
+    transform: rotate(-46deg) scaleX(1) rotate(46deg);
+  }
+}
+
 .title {
   display: block;
   margin: 0;
@@ -382,6 +423,10 @@ button.message:focus-visible {
 /* Reduced motion: the back dissolves in over the front in place of the turn. The front stays opaque underneath, so
    nothing shows through halfway. */
 @media (prefers-reduced-motion: reduce) {
+  [data-role="current"] .tick path {
+    animation: none;
+  }
+
   .flipper,
   .flipper[data-side="back"] {
     transform: none;
