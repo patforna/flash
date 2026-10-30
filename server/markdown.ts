@@ -12,5 +12,7 @@ const OPTIONS = {
 type Rendered = { html: string } | { problems: string[] };
 
 export function renderAnswer(src: string): Rendered {
-  return { html: Bun.markdown.html(src, OPTIONS).trim().replaceAll("\n", "<br>") };
+  // A hard break comes out as `<br />` plus the line's own newline: one break, like a soft one.
+  const html = Bun.markdown.html(src, OPTIONS).replaceAll("<br />\n", "\n");
+  return { html: html.trim().replaceAll("\n", "<br>") };
 }

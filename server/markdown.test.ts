@@ -1,7 +1,7 @@
 // To do:
 // [x] renderAnswer: a line renders as a paragraph
 // [x] each source line of a paragraph is a line on the card: soft breaks become <br>
-// [ ] a hard break (two trailing spaces or a backslash) is one <br>, not two
+// [x] a hard break (two trailing spaces or a backslash) is one <br>, not two
 // [ ] `-` and `1.` lists render tight, `start` kept on `ol`; a lead-in line stays a paragraph; items keep their breaks
 // [ ] fenced code renders as pre > code without its class, its lines and escapes intact
 // [ ] inline code and bold render; -> and <- are typeset as → and ← outside code
@@ -22,5 +22,11 @@ describe("renderAnswer", () => {
 
   test("makes each source line of a paragraph a line on the card", () => {
     expect(renderAnswer("First line\nsecond line")).toEqual({ html: "<p>First line<br>second line</p>" });
+  });
+
+  test("makes a hard break one line break, not two", () => {
+    expect(renderAnswer("Two spaces  \nor a backslash\\\nend a line")).toEqual({
+      html: "<p>Two spaces<br>or a backslash<br>end a line</p>",
+    });
   });
 });
