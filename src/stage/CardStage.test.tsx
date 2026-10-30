@@ -216,4 +216,19 @@ describe("flipping", () => {
     transitionEnd(flipper, "transform");
     expect(stage.hasAttribute("data-flipping")).toBe(false);
   });
+
+  test("…or for the flip's duration, should no transition end come", () => {
+    vi.useFakeTimers();
+    try {
+      const { stage, layer } = setup();
+      stage.style.setProperty("--flip-duration", "380ms");
+      press(stage, layer("current"), 700, 200).up(80);
+      act(() => vi.advanceTimersByTime(379));
+      expect(stage.hasAttribute("data-flipping")).toBe(true);
+      act(() => vi.advanceTimersByTime(1));
+      expect(stage.hasAttribute("data-flipping")).toBe(false);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
 });

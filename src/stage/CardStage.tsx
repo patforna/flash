@@ -1,4 +1,4 @@
-import { type ReactNode, useLayoutEffect, useRef } from "react";
+import { type ReactNode, useEffect, useLayoutEffect, useRef } from "react";
 import type { Card } from "../../shared/types";
 import type { DeckView } from "../deck/types";
 import { useSwipe } from "../gesture/useSwipe";
@@ -33,13 +33,27 @@ export function CardStage({ view, renderCard }: CardStageProps) {
     reducedMotion: () => matchMedia("(prefers-reduced-motion: reduce)").matches,
   });
 
-  // While a flip runs, the card underneath shows blank paper (data-flipping): edge-on, the flipping card hides little.
+  // While a flip runs (data-flipping), the card underneath shows blank paper: edge-on, the flipping card hides little.
+  // It runs from a change of side until the flipper's transform transition ends, or for the flip's duration (a token).
+  const flipEnd = useRef<ReturnType<typeof setTimeout>>(undefined);
+  const stopFlip = () => {
+    clearTimeout(flipEnd.current);
+    stage.current?.removeAttribute("data-flipping");
+  };
   const shown = useRef({ key: keyOf(view.current), side: view.side });
   useLayoutEffect(() => {
     const key = keyOf(view.current);
-    if (key === shown.current.key && view.side !== shown.current.side) stage.current?.setAttribute("data-flipping", "");
+    const el = stage.current;
+    if (el && key === shown.current.key && view.side !== shown.current.side) {
+      el.setAttribute("data-flipping", "");
+      clearTimeout(flipEnd.current);
+      flipEnd.current = setTimeout(stopFlip, parseFloat(getComputedStyle(el).getPropertyValue("--flip-duration")) || 0);
+    }
     shown.current = { key, side: view.side };
   });
+  useEffect(() => {
+    return () => clearTimeout(flipEnd.current);
+  }, []);
 
   // The stack thins as the pass runs out: the cards after the current one, beyond the one underneath it.
   const remaining = view.total - view.position;
@@ -48,9 +62,8 @@ export function CardStage({ view, renderCard }: CardStageProps) {
       ref={stage}
       className={styles.stage}
       onTransitionEnd={(e) => {
-        if (e.propertyName === "transform" && e.target instanceof Element && e.target.matches("[data-side]")) {
-          stage.current?.removeAttribute("data-flipping");
-        }
+        if (e.propertyName === "transform" && e.target instanceof Element && e.target.matches("[data-side]"))
+          stopFlip();
       }}
     >
       <div className={styles.blank} data-shown={remaining >= 3 || undefined} />
