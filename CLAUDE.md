@@ -23,6 +23,7 @@ Reading:
 - Multi-select with OR, nothing selected meaning all: studying two topics together is normal, and "nothing = all" removes the empty state. AND was rejected.
 - Wrapped sticker chips, not one tab per row: all 13 seed topics fit in 6 rows without scrolling.
 - Counts only on All and in each chip's accessible name: a count widens every chip by about 20 px and costs rows.
+- One live region in the app reads out where you are ("Card 7 of 16", or the end card's text): the cards remount on every move, so a live region inside one never announces.
 - Topics in the file's order, coloured by declared index mod 8: the author groups related topics, the order never shifts, and neighbours never share a colour.
 - Tap flips; swipe left is next, right is previous within the pass; keys add vim's `h j k l` as in Patric's plant-selection, `s` to reshuffle and `f` for fullscreen.
 - A tap is under 10 px and at most 350 ms: a thumb resting on the card must not flip it when it lifts.
@@ -44,6 +45,7 @@ Look and motion:
 - While a flip runs, the card underneath shows blank paper: near 90° the flipping card is almost edge-on and the next question must not show through.
 - Reduced motion: animations become short fades, but the drag still follows the finger, without rotation; direct manipulation is not motion.
 - The fullscreen chip shows only in a browser tab: the installed app is already fullscreen (`display: fullscreen`), locked to landscape.
+- The fullscreen chip is an icon-only 44 px sticker named "Full screen": a visible label (121 px) breaks the six-row panel.
 
 Stack:
 
@@ -103,17 +105,17 @@ scripts/check-cards.ts     bun run cards:check [--version]
 scripts/budget.ts          the size budgets over dist/
 scripts/deploy-do.sh       the droplet: up, cards, link, logs, down
 src/main.tsx               the root: QueryClient, StrictMode
-src/app/                   App, which wires the packages together; useShortcuts
+src/app/                   App: the desk's layout and the wiring of everything else; useShortcuts
 src/api/                   the typed client (hc<Api>), useDeckQuery
 src/deck/                  the deck engine: pool, pass, shuffle, selection, useDeck
 src/gesture/               the gesture recogniser (GESTURE) and useSwipe
 src/motion/timing.ts       the Web Animations durations and easings
-src/stage/                 CardStage: the layers, drags, flings, the stack peeking behind
+src/stage/                 CardStage: the layers, drags, flings, the stack peeking behind; StillStage, the stack under the loading, error and empty cards
 src/card/                  CardView, EndCard, MessageCard (loading, error, empty), the fit steps
 src/panel/                 TopicPanel, the sticker colours
-src/desk/                  the wordmark and the desk
+src/desk/                  the wordmark
 src/platform/              fullscreen, wake lock, haptics, the fullscreen chip
-src/styles/                tokens.css, fonts.css, global.css
+src/styles/                tokens.css, fonts.css, global.css (the desk and the page-wide rules)
 src/fonts/                 the two woff2 files and their OFL licences
 public/                    icon.svg and the PNG icons made from it
 tests/fixtures/cards.toml  the fixture deck
@@ -135,7 +137,7 @@ docs/                      original-request.md, plan.md, cards.md, seed.md
 - `bun run test`: Vitest (happy-dom) for `src/**/*.test.{ts,tsx}` and `tests/conventions.test.ts`, then `bun test ./server ./scripts ./shared`.
 - `bun run e2e`: Playwright over `tests/e2e/`, headless, against `build/server.js`, so build first.
 - `bun run typecheck`: `tsc` on `tsconfig.json`, then `tsconfig.node.json`.
-- `bun run lint`: Biome; `bunx biome check --write .` fixes formatting and import order.
+- `bun run lint`: Biome; `bunx biome check --write .` fixes formatting and import order. It skips `var/`, the gitignored scratch directory for throwaway harnesses.
 - `bun run build`: Vite into `dist/`, the server into `build/server.js`.
 - `bun run cards:check` and `bun run budget`; `bun run verify` runs `cards:check`, `typecheck`, `lint`, `test`, `build`, `budget` and `e2e`, in that order.
 - `scripts/deploy-do.test.ts` needs `shellcheck` on the path. It only checks the script's syntax, lint and usage: never run the script with a subcommand from a test.
@@ -170,3 +172,9 @@ docs/                      original-request.md, plan.md, cards.md, seed.md
 - happy-dom 21 has no `document.fonts`, no `document.getAnimations` and no layout; `(pointer: coarse)` is false; `fullscreenEnabled`, `navigator.vibrate` and `navigator.wakeLock` are undefined; `PointerEvent` ignores `timeStamp` in its init (set it with `Object.defineProperty`). Stub or inject these; everything visual belongs to Playwright.
 - Outside CI, Playwright reuses a server already listening on 4173 or 4174: a stale one makes the tests, including the fit test `deploy-do.sh cards` runs, use an old build or deck.
 - `hono/bun`'s `serveStatic` is deprecated (gone in v5): use `@hono/bun`'s. Neither sends an ETag for static files.
+- Vitest's persistent module cache (`fsModuleCache`) is off: it kept a test's `import.meta.glob` expansion until the test file itself changed, so the conventions test never saw a new source file.
+
+## Current state
+
+- 30 Oct 2026, integration (M2a): the seven packages merged and wired in `App`; `cards:check`, `typecheck`, `lint`, `test`, `build` and `budget` pass, and so does `tests/e2e/pwa.spec.ts`. The real deck has 66 cards in 13 topics; every card fits, two backs at step 1.
+- Next: the Playwright suite and its screenshot baselines (the fit spec is `tests/e2e/fit.spec.ts`, which `deploy-do.sh cards` runs by name), then the review (M3) and the first deploy (M4). Not deployed yet.
