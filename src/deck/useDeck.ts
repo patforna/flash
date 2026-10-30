@@ -11,7 +11,7 @@ export function useDeck(deck: Deck, { rng = Math.random }: { rng?: Rng; storage?
   return {
     prev: at(pass.index - 1),
     current: at(pass.index) ?? "end",
-    next: null,
+    next: pass.index < pass.order.length ? (at(pass.index + 1) ?? "end") : null,
     side: pass.side,
     position: pass.index + 1,
     total: pass.order.length,

@@ -1,7 +1,7 @@
 // To do:
 // - [x] the first render deals a pass of the whole deck: card 1 of 5, front up, nothing before it
 // - [x] goNext walks the pass, every card once, then the end card
-// - [ ] next is the card after this one, "end" after the last card and null on the end card; prev the card before
+// - [x] next is the card after this one, "end" after the last card and null on the end card; prev the card before
 // - [ ] goPrev goes back a card; from the end card to the last card
 // - [ ] flip turns the card over; landing on any card shows its front
 // - [ ] goNext on the end card reshuffles, never starting with the last card seen
@@ -73,5 +73,17 @@ describe("useDeck", () => {
     const { result } = setup();
     expect(walk(result).toSorted()).toEqual(["a", "b", "c", "d", "e"]);
     expect(result.current).toMatchObject({ current: "end", position: 6, total: 5 });
+  });
+
+  it("shows the cards either side: next is the end card after the last card, and nothing after the end card", () => {
+    const { result } = setup();
+    const { current: first, next: second } = result.current;
+    act(() => result.current.goNext());
+    expect(result.current).toMatchObject({ prev: first, current: second });
+    for (let n = 0; n < 3; n++) act(() => result.current.goNext());
+    const last = result.current.current;
+    expect(result.current.next).toBe("end");
+    act(() => result.current.goNext());
+    expect(result.current).toMatchObject({ prev: last, current: "end", next: null });
   });
 });
