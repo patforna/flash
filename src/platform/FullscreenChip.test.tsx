@@ -75,6 +75,14 @@ describe("FullscreenChip", () => {
     expect(button.querySelector("svg")?.getAttribute("aria-hidden")).toBe("true");
   });
 
+  it("shows only its icon: the name is a label, so the chip stays one sticker wide", () => {
+    fullscreenTab();
+
+    renderChip();
+
+    expect(screen.getByRole("button", { name: "Full screen" }).textContent).toBe("");
+  });
+
   it("goes fullscreen when clicked", () => {
     const request = fullscreenTab();
     renderChip();

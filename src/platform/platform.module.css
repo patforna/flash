@@ -1,20 +1,17 @@
-/* The fullscreen chip sits first among the topic chips (plan §3) and is shaped and lettered like an unselected one,
-   in chalk rather than a topic's colour. */
+/* The fullscreen chip sits first among the topic chips (plan §3): a 44 px square shaped like an unselected one, its
+   outline and icon in chalk rather than a topic's colour. Pressing pushes it 2 px, as it does a sticker. */
 .chip {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  justify-content: center;
+  width: 44px;
   height: 44px;
-  padding: 0 10px;
+  padding: 0;
   border: 1.5px solid color-mix(in srgb, var(--chalk) 60%, transparent);
-  border-radius: 8px;
+  border-radius: 7px;
   background: none;
   color: var(--chalk);
-  font-family: var(--font-hand);
-  font-size: 14px;
-  font-weight: 600;
-  font-variation-settings: "INFM" 25;
-  white-space: nowrap;
+  cursor: pointer;
   transition: transform 90ms ease-out;
 }
 
@@ -36,4 +33,11 @@
   stroke-width: 1.5;
   stroke-linecap: round;
   stroke-linejoin: round;
+}
+
+/* Reduced motion: the chip moves at once, as the stickers do. */
+@media (prefers-reduced-motion: reduce) {
+  .chip {
+    transition: none;
+  }
 }
