@@ -313,6 +313,12 @@ describe("ignoring", () => {
     expect(onTap).not.toHaveBeenCalled();
   });
 
+  test("the stage captures the pointer it follows, so a drag that strays off it still ends", () => {
+    const { stage, layer } = setup();
+    press(stage, layer("current"), 700, 200);
+    expect(stage.hasPointerCapture(1)).toBe(true);
+  });
+
   test("a pointer that goes down off the card is ignored", () => {
     const { stage, onTap } = setup();
     press(stage, stage, 100, 200).up(50);

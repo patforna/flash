@@ -229,6 +229,7 @@ function swipe(stage: RefObject<HTMLElement | null>, options: RefObject<SwipeOpt
     const onCard = start.x >= rect.left && start.x <= rect.right && start.y >= rect.top && start.y <= rect.bottom;
     if (!onCard) return;
     gesture = { pointer: e.pointerId, start, samples: [start], axis: "pending", layers, rect };
+    stage.current?.setPointerCapture(e.pointerId);
     // The card is picked up: its lift rises (the stylesheets key off data-pressed), never the layer that drags.
     layers.current.setAttribute("data-pressed", "");
   };
