@@ -9,7 +9,7 @@ import { useWakeLock } from "./wakeLock";
 // [x] keeps the one lock while input continues
 // [x] releases it after five minutes without input
 // [x] releases it after idleMs without input; each input restarts the countdown
-// [ ] acquires it again on the next input
+// [x] acquires it again on the next input
 // [ ] requests it again when the page becomes visible, if it was held
 // [ ] a refused request is not an error
 // [ ] cleans up on unmount: releases the lock, stops listening, leaves no timer
@@ -96,5 +96,16 @@ describe("useWakeLock", () => {
 
     await vi.advanceTimersByTimeAsync(1);
     expect(sentinels[0]?.release).toHaveBeenCalled();
+  });
+
+  it("acquires it again on the next input", async () => {
+    const { request } = wakeLockApi();
+    renderHook(() => useWakeLock(1000), { reactStrictMode: true });
+    fireEvent.pointerDown(document.body);
+    await vi.advanceTimersByTimeAsync(1000);
+
+    fireEvent.pointerDown(document.body);
+
+    expect(request).toHaveBeenCalledTimes(2);
   });
 });

@@ -8,6 +8,7 @@ export function useWakeLock(idleMs = 300_000): void {
     let idle: ReturnType<typeof setTimeout> | undefined;
     const release = () => {
       lock?.then((sentinel) => sentinel.release());
+      lock = undefined;
     };
     const onInput = () => {
       lock ??= wakeLock.request("screen");
