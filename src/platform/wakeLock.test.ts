@@ -140,4 +140,14 @@ describe("useWakeLock", () => {
     pageBecomes("visible");
     expect(request).toHaveBeenCalledTimes(1);
   });
+
+  // Vitest fails the run on an unhandled rejection.
+  it("shrugs off a refused request", async () => {
+    const { request } = wakeLockApi();
+    request.mockRejectedValue(new DOMException("Battery saver is on", "NotAllowedError"));
+    renderHook(() => useWakeLock(1000), { reactStrictMode: true });
+
+    fireEvent.pointerDown(document.body);
+    await vi.advanceTimersByTimeAsync(1000);
+  });
 });

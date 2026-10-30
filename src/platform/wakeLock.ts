@@ -4,14 +4,14 @@ export function useWakeLock(idleMs = 300_000): void {
   useEffect(() => {
     const { wakeLock } = navigator;
     if (!wakeLock) return;
-    let lock: Promise<WakeLockSentinel> | undefined;
+    let lock: Promise<WakeLockSentinel | undefined> | undefined;
     let idle: ReturnType<typeof setTimeout> | undefined;
     const release = () => {
-      lock?.then((sentinel) => sentinel.release());
+      lock?.then((sentinel) => sentinel?.release());
       lock = undefined;
     };
     const onInput = () => {
-      lock ??= wakeLock.request("screen");
+      lock ??= wakeLock.request("screen").catch(() => undefined);
       clearTimeout(idle);
       idle = setTimeout(release, idleMs);
     };
