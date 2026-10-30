@@ -1,3 +1,6 @@
 export function toggle(selected: ReadonlySet<string>, label: string): Set<string> {
-  return new Set([...selected, label]);
+  const out = new Set(selected);
+  if (out.has(label)) out.delete(label);
+  else out.add(label);
+  return out;
 }

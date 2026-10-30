@@ -1,6 +1,6 @@
 // To do:
 // - [x] toggle adds a label that isn't selected
-// - [ ] toggle removes a label that is selected, as a new set, leaving the old one alone
+// - [x] toggle removes a label that is selected, as a new set, leaving the old one alone
 // - [ ] loadSelection reads the JSON array under flash:v1:topics
 // - [ ] loadSelection drops unknown labels
 // - [ ] loadSelection gives the empty set for nothing stored, invalid JSON or a non-array
@@ -14,5 +14,11 @@ import { toggle } from "./selection";
 describe("toggle", () => {
   it("adds a label that isn't selected", () => {
     expect(toggle(new Set(["Redis"]), "Queues")).toEqual(new Set(["Redis", "Queues"]));
+  });
+
+  it("removes a label that is selected, as a new set, leaving the old one alone", () => {
+    const selected = new Set(["Redis", "Queues"]);
+    expect(toggle(selected, "Redis")).toEqual(new Set(["Queues"]));
+    expect(selected).toEqual(new Set(["Redis", "Queues"]));
   });
 });
