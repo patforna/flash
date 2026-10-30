@@ -7,6 +7,7 @@
 // [x] useFit: waits for the code font too (code blocks and the counter are set in it)
 // [x] useFit: walks the steps while a part overflows down
 // [x] useFit: a part overflowing across (a code line wider than its column) also steps down
+// [x] useFit: a highlight's 2u of end padding hanging past the column is no overflow
 // [x] useFit: "scroll" when no step fits
 // [x] useFit: measures once per key, not on every render (a flip re-renders the card; measuring forces layout)
 // [x] useFit: measures again when its key changes
@@ -43,18 +44,20 @@ function stubFonts(loaded: string[]) {
   return fonts;
 }
 
-type Overflow = { until: number; axis: "down" | "across" };
+type Overflow = { until: number; axis: "down" | "across"; by?: number };
 
-// happy-dom has no layout: the part overflows its box, down or across, while its face is at a step below `until`.
-function overflowing({ until, axis }: Overflow) {
+// happy-dom has no layout: the part overflows its box by `by` px (1 unless given), down or across, while its face is
+// at a step below `until`. The face is 360 px tall, so a card unit is 1 px.
+function overflowing({ until, axis, by = 1 }: Overflow) {
   return (part: HTMLElement | null) => {
     const face = part?.parentElement;
     if (!part || !face) return;
+    Object.defineProperty(face, "clientHeight", { configurable: true, value: 360 });
     const [scroll, client] = axis === "down" ? ["scrollHeight", "clientHeight"] : ["scrollWidth", "clientWidth"];
     Object.defineProperty(part, client, { configurable: true, value: 100 });
     Object.defineProperty(part, scroll, {
       configurable: true,
-      get: () => (Number(face.dataset.fit) < until ? 101 : 100),
+      get: () => (Number(face.dataset.fit) < until ? 100 + by : 100),
     });
   };
 }
@@ -115,8 +118,13 @@ describe("useFit", () => {
   });
 
   it("also steps down while a part overflows across, as a code line wider than its column does", () => {
-    render(<Face fitKey="skip-locked" overflow={{ until: 1, axis: "across" }} />);
+    render(<Face fitKey="skip-locked" overflow={{ until: 1, axis: "across", by: 3 }} />);
     expect(screen.getByTestId("face").dataset.fit).toBe("1");
+  });
+
+  it("lets a highlight hang its 2 units of padding past the column's edge: that is no overflow", () => {
+    render(<Face fitKey="hash-ring" overflow={{ until: 1, axis: "across", by: 2 }} />);
+    expect(screen.getByTestId("face").dataset.fit).toBe("0");
   });
 
   it('falls back to "scroll" when even the smallest step overflows', () => {

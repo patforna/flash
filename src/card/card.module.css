@@ -259,8 +259,6 @@
   font-size: 0.86em;
   line-height: 0;
   background: var(--code-wash);
-  -webkit-box-decoration-break: clone;
-  box-decoration-break: clone;
 }
 
 /* Code blocks: a slip as wide as its longest line, at the rule pitch, never wrapped; a wash with a pen bar. Radon
@@ -282,7 +280,8 @@
   font: inherit;
 }
 
-/* Bold is a highlighter stroke. */
+/* Bold is a highlighter stroke. Broken over two lines it is sliced, not cloned: in Chromium a cloned inline turns
+   text-wrap: pretty off for its whole block, which then ends on a lone word. Inline code likewise. */
 .question strong,
 .header strong,
 .answer strong {
@@ -290,8 +289,6 @@
   padding: 0 calc(2 * var(--u));
   font-weight: 620;
   background: linear-gradient(transparent 18%, var(--hl) 18% 86%, transparent 86%);
-  -webkit-box-decoration-break: clone;
-  box-decoration-break: clone;
 }
 
 /* The last resort (a real card never gets here: the fit test fails the build): the answer scrolls, fading out over
