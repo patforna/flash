@@ -153,4 +153,19 @@ describe("taps", () => {
     press(stage, layer("current"), 700, 200).up(100);
     expect(onTap).toHaveBeenCalledOnce();
   });
+
+  test("a hold longer than 350 ms is not a tap", () => {
+    const { stage, layer, onTap } = setup();
+    press(stage, layer("current"), 700, 200).up(400);
+    expect(onTap).not.toHaveBeenCalled();
+  });
+
+  test("a drag that comes back to where it started is not a tap", () => {
+    const { stage, layer, onTap } = setup();
+    const finger = press(stage, layer("current"), 700, 200);
+    finger.move(680, 200);
+    finger.move(700, 200);
+    finger.up();
+    expect(onTap).not.toHaveBeenCalled();
+  });
 });
