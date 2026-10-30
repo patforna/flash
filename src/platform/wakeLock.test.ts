@@ -6,7 +6,7 @@ import { useWakeLock } from "./wakeLock";
 // [x] does nothing where unsupported
 // [x] requests a screen lock on the first pointerdown
 // [x] requests a screen lock on the first keydown
-// [ ] keeps the one lock while input continues
+// [x] keeps the one lock while input continues
 // [ ] releases it after five minutes without input
 // [ ] releases it after idleMs without input; each input restarts the countdown
 // [ ] acquires it again on the next input
@@ -54,5 +54,16 @@ describe("useWakeLock", () => {
     fireEvent.keyDown(document.body, { key: "ArrowRight" });
 
     expect(request).toHaveBeenCalledWith("screen");
+  });
+
+  it("keeps the one lock while input continues", () => {
+    const { request } = wakeLockApi();
+    renderHook(() => useWakeLock(), { reactStrictMode: true });
+
+    fireEvent.pointerDown(document.body);
+    fireEvent.keyDown(document.body, { key: "ArrowRight" });
+    fireEvent.pointerDown(document.body);
+
+    expect(request).toHaveBeenCalledTimes(1);
   });
 });

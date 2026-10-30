@@ -4,8 +4,9 @@ export function useWakeLock(_idleMs = 300_000): void {
   useEffect(() => {
     const { wakeLock } = navigator;
     if (!wakeLock) return;
+    let lock: Promise<WakeLockSentinel> | undefined;
     const onInput = () => {
-      wakeLock.request("screen");
+      lock ??= wakeLock.request("screen");
     };
     window.addEventListener("pointerdown", onInput, true);
     window.addEventListener("keydown", onInput, true);
