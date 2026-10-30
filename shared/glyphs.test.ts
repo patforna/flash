@@ -1,7 +1,7 @@
 // To do:
 // [x] printable ASCII is covered, from its first character to its last; control characters are not
-// [ ] what only Radon covers counts (the font stack falls back to it): → ← ≤ ≥ ≈
-// [ ] what neither font covers does not: emoji, CJK, Greek beyond Ω
+// [x] what only Radon covers counts (the font stack falls back to it): → ← ≤ ≥ ≈
+// [x] what neither font covers does not: emoji, CJK, Greek beyond Ω
 import { describe, expect, test } from "bun:test";
 import { isCovered } from "./glyphs";
 
@@ -13,5 +13,13 @@ describe("isCovered", () => {
     expect(isCovered(0x7e)).toBe(true);
     expect(covered("Az09 ?!`*_-")).toHaveLength(11);
     expect(covered("\t\n\r\u001f\u007f")).toEqual([]);
+  });
+
+  test("counts what only Radon covers, since the font stack falls back to it", () => {
+    expect(covered("→←≤≥≈")).toHaveLength(5);
+  });
+
+  test("does not cover what neither font has", () => {
+    expect(covered("😀漢αλ")).toEqual([]);
   });
 });
