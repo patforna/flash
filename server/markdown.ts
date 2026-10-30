@@ -45,7 +45,7 @@ const IN_ITEM: Record<string, string> = {
   pre: "a code block inside a list item",
 };
 
-type Rendered = { html: string } | { problems: string[] };
+export type Rendered = { html: string } | { problems: string[] };
 
 export function renderAnswer(src: string): Rendered {
   return result(render(src, ANSWER_TAGS));

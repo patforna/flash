@@ -12,7 +12,7 @@
 // [x] answer: 1–520 characters after trimming, at most 12 lines, code lines at most 46 characters, no tabs, markup
 // [x] characters the fonts don't cover fail, named with their code point
 // [x] ids unique: different questions with the same slug
-// [ ] the fixture deck loads cleanly
+// [x] the fixture deck loads cleanly
 import { describe, expect, test } from "bun:test";
 import { stringify } from "smol-toml";
 import { DeckError, loadDeck, slug } from "./deck";
@@ -269,5 +269,20 @@ answer = "Dead tuples."
     const toml = file([card({ question: "What is Redis for?" }), card({ question: "What is Redis for!" })]);
 
     expect(problemsOf(toml)).toEqual(['card 2 "what-is-redis-for": id duplicates card 1']);
+  });
+
+  test("loads the fixture deck cleanly", async () => {
+    const deck = loadDeck(await Bun.file(`${import.meta.dir}/../tests/fixtures/cards.toml`).text());
+
+    expect(deck.topics).toEqual([
+      "Redis",
+      "Postgres",
+      "Queues",
+      "Consistency",
+      "Sharding",
+      "Real-time",
+      "Case studies",
+    ]);
+    expect(deck.cards).toHaveLength(9);
   });
 });

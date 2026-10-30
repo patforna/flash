@@ -3,7 +3,7 @@ import type { z } from "zod";
 import { isCovered } from "../shared/glyphs";
 import { type CardsFile, CardsFileSchema, LIMITS } from "../shared/schema";
 import type { Card, Deck } from "../shared/types";
-import { FENCE, renderAnswer, renderQuestion } from "./markdown";
+import { FENCE, type Rendered, renderAnswer, renderQuestion } from "./markdown";
 
 export class DeckError extends Error {
   readonly problems: string[];
@@ -52,7 +52,7 @@ export function loadDeck(toml: string): Deck {
     else for (const text of explain(issue, issue.path)) report(undefined, text);
   }
 
-  if (intact("topics")) for (const text of checkTopics(file.topics)) report(undefined, text);
+  if (intact("topics")) for (const text of checkDeclaredTopics(file.topics)) report(undefined, text);
   if (Array.isArray(file.card) && cards.length === 0) report(undefined, "no cards");
   if (cards.length > LIMITS.cards) report(undefined, `${cards.length} cards (max ${LIMITS.cards})`);
 
@@ -87,25 +87,31 @@ export function loadDeck(toml: string): Deck {
 
 // One card's own rules, and the card as rendered. `declared` is undefined when the declared topics are broken.
 function readCard(raw: CardsFile["card"][number], declared: readonly string[] | undefined) {
+  const question = readQuestion(raw.question.trim());
+  const answer = readAnswer(raw.answer.trim());
+  const card: Card = {
+    id: slug(raw.question.trim()),
+    topics: raw.topics,
+    questionHtml: question.html,
+    answerHtml: answer.html,
+  };
+  return { card, problems: [...question.problems, ...checkCardTopics(raw.topics, declared), ...answer.problems] };
+}
+
+function readQuestion(question: string) {
   const problems: string[] = [];
-  const question = raw.question.trim();
   if (question.length < LIMITS.questionMin) {
     problems.push(`question is ${question.length} characters (min ${LIMITS.questionMin})`);
   }
   if (question.length > LIMITS.questionMax) {
     problems.push(`question is ${question.length} characters (max ${LIMITS.questionMax})`);
   }
-  const questionHtml = renderQuestion(question);
-  if ("problems" in questionHtml) problems.push(...questionHtml.problems.map((reason) => `question has ${reason}`));
   if (question.includes("\t")) problems.push("question has a tab");
-  for (const character of uncovered(question)) problems.push(`question has ${character}, which neither font covers`);
-  const { topics } = raw;
-  if (topics.length === 0) problems.push("has no topics");
-  if (topics.length > LIMITS.cardTopics) problems.push(`has ${topics.length} topics (max ${LIMITS.cardTopics})`);
-  for (const topic of topics)
-    if (declared && !declared.includes(topic)) problems.push(`topic "${topic}" is not declared`);
-  for (const topic of repeated(topics)) problems.push(`topic "${topic}" is listed more than once`);
-  const answer = raw.answer.trim();
+  return finish("question", question, renderQuestion(question), problems);
+}
+
+function readAnswer(answer: string) {
+  const problems: string[] = [];
   if (answer === "") problems.push("answer is empty");
   if (answer.length > LIMITS.answerMax)
     problems.push(`answer is ${answer.length} characters (max ${LIMITS.answerMax})`);
@@ -119,16 +125,25 @@ function readCard(raw: CardsFile["card"][number], declared: readonly string[] | 
       problems.push(`code on answer line ${n + 1} is ${line.length} characters (max ${LIMITS.codeLine})`);
     }
   });
-  const answerHtml = renderAnswer(answer);
-  if ("problems" in answerHtml) problems.push(...answerHtml.problems.map((reason) => `answer has ${reason}`));
-  for (const character of uncovered(answer)) problems.push(`answer has ${character}, which neither font covers`);
-  const card: Card = {
-    id: slug(question),
-    topics,
-    questionHtml: "html" in questionHtml ? questionHtml.html : "",
-    answerHtml: "html" in answerHtml ? answerHtml.html : "",
-  };
-  return { card, problems };
+  return finish("answer", answer, renderAnswer(answer), problems);
+}
+
+// Adds what the markup and the characters break to a field's problems, and keeps its HTML.
+function finish(field: string, text: string, result: Rendered, problems: string[]) {
+  if ("problems" in result) problems.push(...result.problems.map((reason) => `${field} has ${reason}`));
+  for (const character of uncovered(text)) problems.push(`${field} has ${character}, which neither font covers`);
+  return { html: "html" in result ? result.html : "", problems };
+}
+
+function checkCardTopics(topics: string[], declared: readonly string[] | undefined): string[] {
+  const problems: string[] = [];
+  if (topics.length === 0) problems.push("has no topics");
+  if (topics.length > LIMITS.cardTopics) problems.push(`has ${topics.length} topics (max ${LIMITS.cardTopics})`);
+  for (const topic of topics) {
+    if (declared && !declared.includes(topic)) problems.push(`topic "${topic}" is not declared`);
+  }
+  for (const topic of repeated(topics)) problems.push(`topic "${topic}" is listed more than once`);
+  return problems;
 }
 
 // Each character neither font covers, once, with its code point: `"😀" (U+1F600)`. Line breaks and tabs have rules of
@@ -140,7 +155,7 @@ function uncovered(text: string): string[] {
 
 const LABEL = /^[A-Za-z0-9][A-Za-z0-9 &+./-]*$/;
 
-function checkTopics(topics: string[]): string[] {
+function checkDeclaredTopics(topics: string[]): string[] {
   const problems: string[] = [];
   if (topics.length === 0) problems.push("no topics declared");
   if (topics.length > LIMITS.topics) problems.push(`${topics.length} topics declared (max ${LIMITS.topics})`);
