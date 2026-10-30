@@ -64,7 +64,11 @@ The synthesis of three independent plans (panel of 30 Oct 2026: Codex at `xhigh`
 
 ## Gaps: what no panelist caught
 
-- **Bun's built-in Markdown renderer.** Bun 1.3.14 ships `Bun.markdown.html` with `noHtmlBlocks`, `noHtmlSpans`, `tagFilter` and `hardSoftBreaks`; checked to escape raw HTML. It removes every Markdown dependency.
+- **Bun's built-in Markdown renderer.** Bun 1.3.14 ships `Bun.markdown.html` with `noHtmlBlocks`, `noHtmlSpans` and `noIndentedCodeBlocks`; checked to escape raw HTML. It removes every Markdown dependency. (Its `hardSoftBreaks` turned out to do nothing in 1.3.14; the renderer adds the line breaks itself, section 9.)
+
+## Review of this plan (an independent critic, 30 Oct)
+
+Twenty findings, all verified by experiment and folded into Part 2 in place: flings measured from the viewport, not the stage; chips resized so all 13 seed topics fit; Markdown line breaks, structure checks and escaped arrows; the flip's perspective and 3D context; animation lifecycle traps (`finish()` notifies late, filled animations linger); the next card hidden while a flip runs; a frozen DOM contract between the stage and the card; inline code kept on the ruling; glyph coverage; interface fixes (`clearTopics`, the stage owns the shortcuts); Playwright realities (the fullscreen chip, the safe-area override, the service worker's first load); TypeScript 7 specifics; `@hono/bun`; designed loading and error cards. Raw findings: `scratchpad/critic/` of the build session.
 - **A typed client without OpenAPI.** Moot until Patric's direction; Hono RPC with Zod checked under TypeScript 7.0.2 (`@ts-expect-error` on a wrong type is consumed, so the types are real).
 - **Only Opus caught** the Android back-gesture conflict and Bun's TOML non-compliance.
 - **Nobody can verify on the real Pixel** what emulation cannot show: 120 Hz feel, haptics, the back gesture, wake lock. The hand-off lists a two-minute on-phone check.
@@ -81,8 +85,9 @@ One screen. A paper index card on a dark desk, a panel of topic stickers on its 
 
 - Shell: `height: 100dvh; overflow: hidden`; a two-column grid, panel then stage.
 - Padding: top and bottom 24 px; left `max(12px, env(safe-area-inset-left) + 8px)`; right `max(48px, env(safe-area-inset-right) + 16px)`. The 48 px on the right is the no-drag strip for the Android back gesture; nothing draggable sits in it.
-- Panel: 232 px wide, top-aligned with the card.
-- Card: the largest 5:3 box that fits the stage, centred; about 607 × 364 on the Pixel. Its content is laid out in **card units**: designed at 600 × 360, `container-type: size`, `--u: calc(100cqh / 360)`, every size on the card a multiple of `--u` (1u ≈ 1.01 px on the Pixel).
+- Panel: 232 px wide, top-aligned with the card; the column gap to the stage is at most 24 px.
+- Card: the largest 5:3 box that fits the stage, centred; about 607 × 364 on the Pixel. Its content is laid out in **card units**: designed at 600 × 360, the `frame` element (section 11, DOM contract) has `container-type: size`, and inside it `--u: calc(100cqh / 360)`, every size on the card a multiple of `--u` (1u ≈ 1.01 px on the Pixel). `--u` is used only by the frame's descendants (on the frame itself it resolves against the stage) and is never registered with `@property`.
+- The stage does not clip and sits above the panel in z-order, so a flung card travels over the panel and off the screen; only the shell clips (`overflow: hidden`).
 - Portrait (a browser tab only; the installed app is locked to landscape): the card on top at full width with 16 px gutters, chips wrapping below it in a scrolling area. Functional, not polished.
 - Nothing scrolls sideways at any size: `document.documentElement.scrollWidth === innerWidth`.
 
@@ -92,10 +97,10 @@ One screen. A paper index card on a dark desk, a panel of topic stickers on its 
 - Multi-select toggles. A card is in the pool if it carries **any** selected topic. Nothing selected means all cards.
 - **All**: reads "All · 65" (the deck total). Pressed exactly when nothing is selected. Tapping it with a selection clears it; with none, does nothing. Deselecting the last topic returns to All. Selecting every topic is allowed and is not turned back into All.
 - No counts on topic chips; each chip's accessible name carries its count ("Redis, 17 cards").
-- Chips: 44 px tall, padding 0 14 px, natural width, wrapping with 8 px gaps; label Shantell Sans 15 px, weight 600, informality 25.
-  - Unselected: 1.5 px `--chalk` outline at 35 %, `--chalk` label, a 10 px dot in the topic's colour.
-  - Selected: filled with the topic's colour, `--sticker-ink` label, hard shadow `3px 3px 0 #000`, tilted by a deterministic ±1.5° from its index, like a stuck-on sticker.
-  - Pressed: `translate(2px, 2px)`, shadow 1 px, 90 ms.
+- Chips: 44 px tall, padding 0 10 px, natural width, wrapping with 6 px gaps; label `var(--font-hand)` 14 px, weight 600, informality 25. Measured with the real font: the fullscreen chip, All and the 13 seed topics fit in 6 rows (294 px), leaving room for the wordmark. A layout test asserts every seed chip is fully visible without scrolling at 923 × 412.
+  - Unselected: a 1.5 px outline in the topic's colour at 60 %, `--chalk` label, no dot.
+  - Selected: filled with the topic's colour, `--sticker-ink` label, a hard shadow drawn by a pseudo-element offset `3px 3px` in black, tilted by a deterministic ±1.5° from its index, like a stuck-on sticker.
+  - Pressed: the chip moves `translate(2px, 2px)` while its shadow pseudo-element moves `translate(−2px, −2px)`, so the shadow seems to shrink to 1 px; 90 ms; transforms only (never animate `box-shadow`).
   - Focus: 3 px `--hl` ring, offset 2 px.
 - Colour: declared index mod 8 → `--s-pink`, `--s-marigold`, `--s-mint`, `--s-sky`, `--s-lilac`, `--s-tangerine`, `--s-teal`, `--s-lime`.
 - Overflow (40 topics): the panel scrolls vertically, `overscroll-behavior: contain`, a 24 px fade at the bottom edge.
@@ -121,27 +126,30 @@ One screen. A paper index card on a dark desk, a panel of topic stickers on its 
 
 - Slop 10 px: below it, still a possible tap.
 - Axis lock when the slop is crossed: horizontal if |dx| ≥ 1.2·|dy|, otherwise vertical and ignored.
-- Commit in the drag direction if |dx| ≥ 28 % of the card width (about 170 px), **or** velocity ≥ 0.45 px/ms with |dx| ≥ 24 px. Otherwise cancel.
+- Commit in the drag direction if |dx| ≥ 28 % of the card width (about 170 px), **or** velocity ≥ 0.45 px/ms with |dx| ≥ 24 px. A fling against the drag direction (|v| ≥ 0.45 px/ms with the opposite sign to dx) cancels, whatever dx is. Otherwise cancel.
 - Velocity: least-squares slope over the last 80 ms of samples, including `getCoalescedEvents()`.
 - Only the first pointer counts, and only if it went down on the card; `setPointerCapture`. `pointercancel` is a cancel.
-- Input during an animation fast-forwards it with `animation.finish()`; nothing is queued or dropped, so rapid flicks stay snappy.
+- **Input during an animation**: a pointerdown finishes any commit, cancel or deal animation at once, nothing queued or dropped, so rapid flicks stay snappy. `animation.finish()` notifies late (its `finished` promise a microtask later, `onfinish` a frame later), so the stage calls `finish()` and then completes the commit synchronously (`flushSync(() => onCommit(dir))`) before it reads `layers()`. The flip transition is not finished by a pointerdown (a tap mid-flip reverses it from the current angle); it is finished only once a horizontal drag is recognised.
 
 ### What follows the finger (written to `style.transform` in `pointermove`; no React render)
 
+- Distances are measured from the viewport at pointerdown, not from the stage: `cardRect` is the current card's `getBoundingClientRect()`.
 - Current card: `translateX(dx)` 1:1, `rotate(clamp(dx × 0.03°, −7°, 7°))`, `transform-origin: 50% 140%` (it pivots under the thumb).
 - The card underneath, with progress p = min(|dx| / commit distance, 1): `scale(0.965 + 0.035p) translateY(8(1 − p)px)`.
-- Previous card on a right drag: slides in from the left at x = −(stage width + 40) + dx.
+- Previous card: rests at `translateX(−(cardRect.right + 80px))` with `visibility: hidden`; it becomes visible on the first right-drag move and follows at x = −(cardRect.right + 80) + dx.
 - Rubber band with no previous card: x = 80 · (1 − 1 / (0.55·dx/80 + 1)).
+- Layers not in play are `visibility: hidden; pointer-events: none`, so nothing off-card ever blocks a chip.
 
 ### Motion (transform and opacity only)
 
-- **Flip**: inner `rotateX(0 ↔ −180deg)`, stage `perspective: 1400px`, both faces `backface-visibility: hidden` (the back pre-rotated so it reads upright), 380 ms `cubic-bezier(0.3, 1.2, 0.45, 1)` as a CSS transition, so a tap mid-flip reverses from the current angle. Reduced motion: 140 ms cross-fade.
-- **Commit** (fling out): `translateX` to ±(stage width + 40 px), `rotate` ±10°, duration T = clamp(3.5 · remaining / max(|v|, 0.6), 180, 320) ms, `cubic-bezier(0.2, 0.7, 0.3, 1)` (the curve starts at slope 3.5, so the card leaves at the speed it was released). The card underneath rises over the same T. Reduced motion: 140 ms fade.
+- **Flip**: the `flipper` element's own transform is `perspective(1400px) rotateX(0 ↔ −180deg)` (a `perspective` property on the stage reaches only its direct children, so the flip would render flat); the flipper has `transform-style: preserve-3d` and no `overflow`, `opacity`, `filter`, `clip-path`, `mask` or `contain: paint` (any of these flattens it and breaks `backface-visibility`); radius, grain, clipping and the shadow go on each face, so the shadow turns with the card. Both faces `backface-visibility: hidden`, the back pre-rotated so it reads upright. 380 ms `cubic-bezier(0.3, 1.2, 0.45, 1)` as a CSS transition, so a tap mid-flip reverses from the current angle. Reduced motion: 140 ms cross-fade.
+- **While a flip runs** the stage sets `data-flipping`, and the card underneath shows blank paper (its content `visibility: hidden`): near 90° the flipping card is almost edge-on, and the next card's question must not show through.
+- **Commit** (fling out): next flies to `translateX(−(cardRect.right + 80px))`, previous slides in to 0 from its rest; `rotate` ±10°; duration T = clamp(3.5 · remaining / max(|v|, 0.6), 180, 320) ms; easing per release `cubic-bezier(0.2, y1, 0.3, 1)` with y1 = clamp(0.2 · |v| · T / remaining, 0.1, 0.7), so the card leaves at the speed it was released, even when T is clamped. The card underneath rises over the same T. Reduced motion: 140 ms fade.
 - **Cancel**: back to 0 in 260 ms, `cubic-bezier(0.3, 1.25, 0.5, 1)`. Reduced motion: 120 ms, no overshoot.
-- **Deal** (selection change, reshuffle): `translateY(14px) → 0`, opacity 0 → 1, 220 ms, `cubic-bezier(0.2, 0.8, 0.2, 1)`. Reduced motion: 140 ms fade.
-- **Press** on pointerdown: `scale(1.012)` and the shadow layer's opacity 0.6 → 1, 120 ms ease-out.
+- **Deal** (reshuffle, or a selection change that replaces the card on screen; never when the card on screen survives): `translateY(14px) → 0`, opacity 0 → 1, 220 ms, `cubic-bezier(0.2, 0.8, 0.2, 1)`. Reduced motion: 140 ms fade.
+- **Press** on pointerdown: the `lift` element scales to 1.012 and the faces' shadow pseudo-elements go from opacity 0.6 to 1, 120 ms ease-out. The press lives on `lift`, not on the dragged layer, so the card never trails the finger.
 - Reduced motion: the drag still follows the finger (direct manipulation is not motion) but without rotation.
-- After each commit a layout effect cancels animations and clears inline transforms before paint, so the swap never flickers.
+- **No animation is left filling**: each ends at the resting style, or writes its end state inline and is cancelled in the frame it ends. Only the commit fling uses `fill: "forwards"`, and the post-commit layout effect cancels it and clears inline transforms before paint, so the swap never flickers. (A finished filling animation stays in `document.getAnimations()` and overrides inline transforms, freezing the next drag.)
 - Haptics: `navigator.vibrate(8)` on commit (next, previous, reshuffle) and on a chip toggle; never on flip; only under `(pointer: coarse)`; wrapped in try.
 
 ## 5. Deck semantics
@@ -154,7 +162,8 @@ One screen. A paper index card on a dark desk, a panel of topic stickers on its 
 - `reshuffle` (end card, `s`): a new pass of the pool; if its first card is the card just seen, swap it with a random other position.
 - `reselect` (selection change): if the card on screen is still in the new pool, the new pass is `[current, ...shuffle(rest)]` at index 0 on the same side; otherwise a fresh pass is dealt, front up.
 - Reshuffles happen only at launch, at the end card, on `s` and on a selection change; never mid-pass. Nothing but the selection survives a reload.
-- **End card**: front style, a big hand-drawn highlighter tick, "That's all 16." and "Tap or swipe to shuffle again."
+- **End card**: front style, a big hand-drawn highlighter tick (an SVG path: no font has a ✓ that matches), "That's all 16." and "Tap or swipe to shuffle again."
+- **Loading** (the deck takes more than 200 ms): the card stack with a blank card reading "shuffling…" in pencil. **Error** (the query failed after its retries): a card in red ink, "Can't reach the deck." and "Tap to try again", the whole card one button that refetches. **Empty** (defensive; validation makes it impossible): "No cards here." All three are `MessageCard` (section 11), the same paper and fonts as a card.
 
 ## 6. Platform
 
@@ -162,7 +171,7 @@ One screen. A paper index card on a dark desk, a panel of topic stickers on its 
 - **Installing**: Chrome ⋮ → **Install** (not "Create shortcut", which opens in a tab). Since Chrome 108 a menu install needs no service worker; flash ships one anyway.
 - **Fullscreen chip** (corner-brackets icon), first in the panel, shown only under `(display-mode: browser)` when `document.fullscreenEnabled` and not already fullscreen. On click: `document.documentElement.requestFullscreen({ navigationUI: "hide" })`, then `screen.orientation.lock("landscape")`, both failures swallowed. `f` toggles the same.
 - **Wake lock**: `navigator.wakeLock.request("screen")` after the first interaction; requested again when `visibilitychange` makes the page visible; released after 5 minutes without input.
-- **Service worker** (vite-plugin-pwa `generateSW`): `registerType "autoUpdate"`, `injectRegister "script-defer"`, `skipWaiting`, `clientsClaim`, `cleanupOutdatedCaches`; precache `**/*.{js,css,html,woff2,svg,png,webmanifest}`; `/api/cards` `NetworkFirst` in cache `flash-deck`, `networkTimeoutSeconds: 2`, one entry; `navigateFallback "/index.html"` excluding `/api/` and `/healthz`. Kill switch: `selfDestroying: true` and redeploy.
+- **Service worker** (vite-plugin-pwa `generateSW`): `registerType "autoUpdate"`, `injectRegister "script-defer"`, `skipWaiting`, `clientsClaim`, `cleanupOutdatedCaches`; precache `**/*.{js,css,html,woff2,svg,png,webmanifest}`; `/api/cards` `NetworkFirst` in cache `flash-deck`, `networkTimeoutSeconds: 2`, one entry; `navigateFallback "/index.html"` excluding `/api/` and `/healthz`. Kill switch: `selfDestroying: true` and redeploy. The generated `registerSW.js` only registers (no reload on update), so a card change shows on the next launch and a code change on the one after; the deck is only cached once a controlled page has fetched it (the first load's preload runs before the worker controls the page).
 - **index.html**: viewport `width=device-width, initial-scale=1, viewport-fit=cover`; `theme-color #11131A`; `<meta name="robots" content="noindex, nofollow">`; an inline style painting `html, body` in `#11131A` (no white first paint); a preload of the Shantell font and `<link rel="preload" href="/api/cards" as="fetch" crossorigin>` so the deck downloads alongside the script.
 - **Global CSS**: `overscroll-behavior: none` on `html` and `body` (no pull-to-refresh, no swipe-back in tabs); `touch-action: manipulation` everywhere; `touch-action: pan-y` on the card; `-webkit-tap-highlight-color: transparent`; no text selection or callouts on the card and the panel.
 
@@ -185,7 +194,8 @@ Index cards written by hand: marker for the question, ballpoint for the answer, 
 
 - **Shantell Sans**, variable, the full file with the `wght` 300–800, `INFM` 0–100, `BNCE` −100–100 and `SPAC` axes (Fontsource 5.3.0 `shantell-sans-latin-full-normal.woff2`, about 174 kB; the weight-only file drops the axes that make it look handwritten). `font-display: block`, preloaded.
 - **Monaspace Radon** 400 for code and the counter's digits (Fontsource 5.3.0 `monaspace-radon-latin-400-normal.woff2`, about 57 kB). `font-display: swap`.
-- Gate measurement on `document.fonts.load()`, never `document.fonts.status`.
+- Gate measurement on `document.fonts.load()` / `document.fonts.check()`, never `document.fonts.status`.
+- Set type through the stacks `var(--font-hand)` (Shantell, then Radon, which carries the → ← ≤ ≥ ≈ that Shantell lacks) and `var(--font-code)`; never name a family directly.
 
 ### Type (card units unless px)
 
@@ -203,19 +213,21 @@ Index cards written by hand: marker for the question, ballpoint for the answer, 
 - **Front**: a 6u band along the top edge in the first topic's colour; the question centred; bottom-left the card's topics as dots with labels; bottom-right the counter.
 - **Back**: the question in the header; under it a 2u `--rule-red` line at y = 48u, overshooting the text column by 8u on both sides; `--rule-blue` lines every 30u (at step 0) with the answer written on them (a `--rule-baseline` offset tuned once against a screenshot); the counter bottom-right.
 - **Answer markup**:
-  - each source line is a line on the card (hard breaks); a blank line between paragraphs is one empty ruled line;
+  - each source line is a line on the card (the server turns line breaks into `<br>`, section 9);
+  - gaps between blocks are defined by element pairs, each a whole number of ruled lines: one empty line between two paragraphs, and between a paragraph or list and a code block; none between a lead-in line and the list that follows it (the HTML cannot tell whether the source had a blank line there);
   - `- ` items get a hanging `--s-pink` en dash in the margin, `1. ` items pink numerals; no nesting;
   - bold is a highlighter band: `linear-gradient(transparent 18%, var(--hl) 18% 86%, transparent 86%)`, `box-decoration-break: clone`;
-  - inline code: Radon on `--code-wash`, radius 3u;
-  - code blocks: Radon, one line per rule, a `--code-wash` band and a 2u pen bar on the left at 25 %, `white-space: pre`, never wrapped or scrolled (lines are limited to 52 characters);
-  - `->` and `<-` are typeset as → and ← outside code.
+  - inline code: Radon on `--code-wash`, radius 3u, **`line-height: 0`** (otherwise each line with code grows by about 2 px and the writing drifts off the rules);
+  - code blocks: Radon, line height = the rule pitch, a `--code-wash` band and a 2u pen bar on the left at 25 %, `white-space: pre`, never wrapped or scrolled (lines are limited to 46 characters);
+  - `->` and `<-` are typeset as → and ← outside code (by the server).
+  - An end-to-end check asserts every text line on the back sits on the rule grid.
 - The hidden face is `inert` and `aria-hidden`; the card carries `data-side`.
 - **Desk**: `--desk`, the `--desk-glow` radial ellipse behind the card and the same grain at 4 %, painted once.
 
 ## 8. Long answers
 
 1. Validation caps the source (section 9).
-2. On mount, once fonts have loaded, the back is measured at step 0; if it overflows, step 1, then step 2 (`data-fit="0|1|2"`). The front question goes through its own three steps.
+2. The card is measured in `useLayoutEffect`, before paint, once `document.fonts.check()` passes for Shantell (if it doesn't yet, after `document.fonts.load()` resolves); until then the card's content is `visibility: hidden`, so a card that needs step 1 never shows a frame at step 0. The back is measured at step 0; if it overflows (vertically, or a code line wider than its column: `scrollWidth > clientWidth`), step 1, then step 2 (`data-fit="0|1|2"`). The front question goes through its own three steps.
 3. Last resort: `data-fit="scroll"`, the body scrolls vertically with a bottom fade. The end-to-end fit test over the **real** deck fails the build if any card reaches it.
 
 ## 9. Data: `cards/cards.toml`
@@ -240,9 +252,14 @@ answer = '''
 - `[[card]]`: exactly `question`, `topics`, `answer`; unknown keys fail (catches `topic =`).
 - `question`: 8–100 characters after trimming, one line, inline markup only (`code`, `**bold**`), unique ignoring case.
 - `topics`: 1–3 declared labels, no repeats.
-- `answer`: 1–520 characters after trimming; at most 12 lines (blank and code lines count); code lines at most 52 characters; no tabs.
+- `answer`: 1–520 characters after trimming; at most 12 lines (blank and code lines count); code lines at most 46 characters; no tabs.
+- Characters: only what the two fonts cover (Shantell's latin file and Radon); anything else fails, naming the character and its code point. The covered set is extracted once from the two font files (e.g. with fontTools through `uvx`) and committed as `shared/glyphs.ts`.
 - **Id**: derived, `slug(question)` (lowercase ASCII, `-` separated, at most 64 characters); duplicates fail.
-- **Markdown**: rendered by `Bun.markdown.html` with `hardSoftBreaks: true`, `noHtmlBlocks: true`, `noHtmlSpans: true`, `tables: false`, `tasklists: false`, `strikethrough: false`, `autolinks: false`. Allowed output tags in an answer: `p`, `br`, `ul`, `ol`, `li`, `strong`, `code`, `pre` (attributes stripped except `start` on `ol`); in a question: `code`, `strong` (the outer `p` removed). Anything else fails with the card and the reason: headings, links, images, block quotes, rules, emphasis, a list inside a list, a literal HTML tag in the source outside code, an unclosed fence.
+- **Markdown**: rendered by `Bun.markdown.html` (an unstable Bun API: pin Bun, test it) with `noHtmlBlocks: true`, `noHtmlSpans: true`, `noIndentedCodeBlocks: true`, `tables: false`, `tasklists: false`, `strikethrough: false`, `autolinks: false` (tables, strikethrough and task lists are on by default despite Bun's docs; `hardSoftBreaks` does nothing in 1.3.14). Then the renderer:
+  - turns each `\n` inside `p` and `li` text (outside `pre`) into `<br>`, so each source line is a line on the card;
+  - strips every attribute but `start` on `ol` (so `code` loses its `class="language-…"`);
+  - typesets `-&gt;` and `&lt;-` (the escaped forms it receives) as → and ← in text outside `code` and `pre`.
+- Allowed output in an answer: `p`, `br`, `ul`, `ol`, `li`, `strong`, `code`, `pre`, where `li` holds inline content only (no `p`, `pre` or list inside it: a loose list, with blank lines between items, fails); in a question: `code` and `strong` (the outer `p` removed). Anything else fails with the card and the reason: headings (including a setext `---` under a line), links, images, block quotes, rules, emphasis, a list inside a list. An unclosed fence is caught on the source (an odd number of fence lines). A literal HTML tag is not an error: it renders as escaped text, visibly.
 - **Failing loudly**: every problem at once, one per line, naming the card: `card 12 "what-does-redis-do-by-default-when-memory-is-full": answer is 611 characters (max 520)`. TOML syntax errors with line and column. `bun run cards:check` exits 1; the server refuses to start with the same list.
 - **Version**: the first 12 characters of the base64url SHA-256 of the canonical JSON of the deck. It is the ETag and what `/healthz` reports.
 - **Wire shape** (`shared/types.ts`):
@@ -256,7 +273,7 @@ export type Deck = { version: string; topics: string[]; cards: Card[] };
 
 ## 10. Stack (exact pins; each at least 7 days old)
 
-- Runtime: Bun pinned to the laptop's `bun --version` (1.3.14) on the droplet; Hono 4.13.x with its Bun static serving; Zod 4.6.x; smol-toml 1.9.1; React 19.3.x and react-dom; TanStack Query 5.x; vite-plugin-pwa 2.0.x (with `workbox-window`).
+- Runtime: Bun pinned to the laptop's `bun --version` (1.3.14) on the droplet; Hono 4.13.13 with `@hono/bun` 1.0.1 for `serveStatic` (`hono/bun`'s is deprecated, to be removed in v5; Hono's static serving sends no ETag); Zod 4.6.7; smol-toml 1.9.1; React 19.3.1 and react-dom; TanStack Query 5.104.5; vite-plugin-pwa 2.0.0.
 - Dev: TypeScript **7.0.2**; Vite 8.3.x; `@vitejs/plugin-react` 6.1.x; `@types/react`, `@types/react-dom` 19.3.x; `@types/bun` matching the runtime; Biome 2.6.x (`--error-on-warnings`, two spaces, double quotes).
 - Test: Vitest 5.0.x; happy-dom 21.x; `@testing-library/react`, `@testing-library/dom`, `@testing-library/user-event`; `@playwright/test` 1.64.x; `@axe-core/playwright` 4.14.x.
 - `bunfig.toml`: `[install] minimumReleaseAge = 604800` and `exact = true`.
@@ -269,6 +286,7 @@ flash/
 ├── cards/cards.toml               the deck
 ├── shared/types.ts                wire types (M0)
 ├── shared/schema.ts               Zod schema of the TOML file, LIMITS
+├── shared/glyphs.ts               the characters the two fonts cover (extracted once)
 ├── server/markdown.ts             Bun.markdown → allowlisted HTML; arrows
 ├── server/deck.ts                 TOML text → Deck; DeckError lists every problem
 ├── server/api.ts                  createApi(deck): Hono routes /api/cards, /healthz; type Api
@@ -284,7 +302,7 @@ flash/
 ├── src/gesture/                   gesture.ts, useSwipe.ts
 ├── src/motion/                    timing.ts
 ├── src/stage/                     CardStage.tsx, stage.module.css
-├── src/card/                      CardView.tsx, EndCard.tsx, fit.ts, card.module.css
+├── src/card/                      CardView.tsx, EndCard.tsx, MessageCard.tsx, fit.ts, card.module.css
 ├── src/panel/                     TopicPanel.tsx, colours.ts, panel.module.css
 ├── src/desk/                      Wordmark.tsx, desk.module.css
 ├── src/platform/                  fullscreen.ts, wakeLock.ts, haptics.ts, FullscreenChip.tsx
@@ -307,7 +325,7 @@ Two tsconfigs: `tsconfig.json` (DOM: `src`, `shared`, `server/api.ts` by import,
 ```ts
 // shared/schema.ts
 export const LIMITS = { topics: 30, topicLabel: 20, cards: 500, id: 64, cardTopics: 3,
-  questionMin: 8, questionMax: 100, answerMax: 520, answerLines: 12, codeLine: 52 } as const;
+  questionMin: 8, questionMax: 100, answerMax: 520, answerLines: 12, codeLine: 46 } as const;
 export const CardsFileSchema: z.ZodType<CardsFile>; // strict keys
 export type CardsFile = { topics: string[]; card: { question: string; topics: string[]; answer: string }[] };
 export const DeckSchema: z.ZodType<Deck>; // the wire shape, for the contract test
@@ -341,8 +359,9 @@ export interface DeckView {
   prev: Card | null; current: Card | "end"; next: Card | "end" | null;
   side: Side; position: number; total: number; // 1-based position; total = pass size
   selected: ReadonlySet<string>; topics: readonly string[];
-  flip(): void; goNext(): void; goPrev(): void; reshuffle(): void; toggleTopic(label: string): void; selectAll(): void;
+  flip(): void; goNext(): void; goPrev(): void; reshuffle(): void; toggleTopic(label: string): void; clearTopics(): void;
 }
+// goNext() on the end card reshuffles; next() itself is a no-op there. clearTopics() empties the selection (= All).
 
 // src/deck/deck.ts, selection.ts, useDeck.ts
 export function poolFor(cards: readonly Card[], selected: ReadonlySet<string>): string[];
@@ -382,12 +401,16 @@ export function flingDuration(remainingPx: number, vPxPerMs: number): number; //
 export const MOTION: { commitEase: string; cancelMs: number; cancelEase: string; dealMs: number; dealEase: string; fadeMs: number };
 
 // src/stage/CardStage.tsx, src/app/useShortcuts.ts
-export interface CardStageProps { view: DeckView; renderCard(card: Card | "end", role: "prev" | "current" | "next"): ReactNode }
+// The stage calls useShortcuts itself, so → and l animate exactly as a swipe does (through useSwipe's commit).
+export interface CardStageProps { view: DeckView; renderCard(card: Card | "end", role: "prev" | "current" | "next"): ReactNode;
+  onFullscreen(): void }
 export function useShortcuts(h: { flip(): void; next(): void; prev(): void; reshuffle(): void; fullscreen(): void }): void;
+// renderCard must key the card it returns by card id (or "end"), so a new card never inherits the last one's flip.
 
 // src/card/*, src/panel/*, src/desk/*
 export interface CardViewProps { card: Card; side: Side; position: number; total: number; colourOf(topic: string): string }
 export interface EndCardProps { total: number }
+export interface MessageCardProps { title: string; hint?: string; tone?: "pencil" | "error"; onTap?(): void } // loading, error, empty
 export function chooseStep(fits: (step: number) => boolean, steps: number): number | "scroll";
 export function useFit(ref: RefObject<HTMLElement | null>, steps: number, key: string): number | "scroll"; // awaits fonts.load
 export interface TopicPanelProps { topics: readonly string[]; counts: ReadonlyMap<string, number>; total: number;
@@ -403,6 +426,20 @@ export function FullscreenChip(): ReactNode; // null when not applicable
 ```
 
 `CardStage` takes a render prop, so the stage never imports the card's components.
+
+### DOM contract between the stage (P3) and the card (P4), outer to inner
+
+- `stage` (P3): positions the layers, renders the blank cards peeking behind (it knows position and total), sets `data-flipping` while a flip runs and `data-state="idle|dragging|animating"`. Never clips.
+- `layer[data-role="prev|current|next"]` (P3): one per role, absolutely positioned over the card box; the drag `translate`/`rotate` is written inline here and never transitioned. A layer not in play is `visibility: hidden; pointer-events: none`.
+- `lift` (P3): the press scale (section 4), so the press never makes the dragged card trail the finger.
+- `frame` (P4): the 5:3 box filling the layer; `container-type: size`; no visuals.
+- `flipper` (P4): the flip transform and `data-side`; `transform-style: preserve-3d`; nothing that flattens it (section 4).
+- `face` × 2 (P4): paper, radius, grain, the shadow (a pseudo-element whose opacity the press raises), the content. The back is pre-rotated. The hidden face is `inert` and `aria-hidden`.
+- The card underneath hides its content while the stage has `data-flipping` (P4's CSS reacting to P3's attribute: `[data-flipping] [data-role="next"] .face > *`).
+
+### Cross-package wiring
+
+During M1 a package imports only M0's files and its own; it never imports another package's module (they don't exist on its branch). All cross-package wiring is M2's `App`: haptics on commit and on a chip toggle, `f` and the fullscreen chip (`toggleFullscreen`, passed to the stage as `onFullscreen` and to the panel as `lead`), the wake lock, `MessageCard` for loading, error and empty, the counts for the panel, the wordmark's place.
 
 ### Server behaviour
 
@@ -428,12 +465,15 @@ export function FullscreenChip(): ReactNode; // null when not applicable
 A failing test first, the simplest change to green, refactor at green, commit at green. Type declarations, configuration and pure wiring are not behaviour and need no test. Tests own behaviour, not implementation.
 
 - **Unit** (`bun test` for `server/` and `scripts/`, Vitest for `src/`): schema and file rules, Markdown allowlist, deck loading, HTTP handlers via `app.request()`, deck engine, selection, gesture maths, timing, colours, fit chooser, budget script.
-- **Component** (Vitest, happy-dom, Testing Library, rendered in `<StrictMode>`): TopicPanel, CardView, EndCard, FullscreenChip, CardStage with `useSwipe` (synthetic `PointerEvent`s with explicit `clientX` and `timeStamp`, an injected `animate` that records keyframes and exposes `finish()`), App with an injected fetch. A `<Profiler>` asserts **zero React commits during a drag**.
+- **Component** (Vitest, happy-dom, Testing Library, rendered in `<StrictMode>`): TopicPanel, CardView, EndCard, MessageCard, FullscreenChip, CardStage with `useSwipe` (synthetic `PointerEvent`s with explicit `clientX` and `timeStamp`, an injected `animate` that records keyframes and exposes `finish()`), App with an injected fetch. A `<Profiler>` asserts **zero React commits during a drag**.
+  - happy-dom 21.0.4 gaps, verified: no `document.fonts` and no `document.getAnimations`; `(pointer: coarse)` is false; `fullscreenEnabled`, `navigator.vibrate` and `navigator.wakeLock` are undefined; `PointerEvent` ignores `timeStamp` in its init (set it with `Object.defineProperty(e, "timeStamp", { value })`, which survives dispatch); no layout. Inject or stub these; everything visual and timing-real is Playwright's.
+- **Conventions** (`tests/conventions.test.ts`, Vitest): reads the sources with `import.meta.glob("/src/**/*.{ts,tsx}", { query: "?raw", import: "default", eager: true })` and regexes; never imports `typescript` (TypeScript 7's package exports no compiler API).
 - **Contract**: `server/api.test.ts` parses the `/api/cards` body against the wire types' Zod mirror; the client compiles against `Api` (the typecheck); the e2e tests render the real server's response through the real client.
 - **End to end** (Playwright 1.64 Chromium against `build/server.js` serving `dist/`, via `webServer`): two servers, port 4173 with `tests/fixtures/cards.toml` (deterministic flows and screenshots) and port 4174 with `cards/cards.toml` (the fit test).
   - Projects: `pixel11` (viewport and screen 923 × 412, `deviceScaleFactor` 2.625, `isMobile`, `hasTouch`, a Chrome Android user agent, `en-GB`); `portrait` (412 × 923); `laptop` (1280 × 800, fine pointer).
   - Determinism: a seeded `Math.random` (mulberry32, seed 42) via `page.addInitScript`; swipes through CDP `Input.dispatchTouchEvent` (a `swipe(page, { from, to, ms })` helper sending a move every 8 ms with explicit timestamps); `settled()` waits for `document.getAnimations().length === 0`; the app sets `performance.mark("flash:first-card")` after `document.fonts.load()`, and screenshots wait for it.
-  - Specs: reading (first card, tap flips, swipe left next, swipe right previous, cancel, end card and reshuffle), topics (toggle, OR, All, persistence across a reload, the card on screen survives), keyboard, fit (every real card fits without scrolling), layout (no sideways scroll on every project, every control at least 44 × 44 under a coarse pointer, the card at least 48 px from the right edge, a 40 px left inset simulated through a CSS variable), accessibility, performance, PWA (manifest fields, precache, an offline reload shows a card, a single deck request thanks to the preload), screens.
+  - Specs: reading (first card, tap flips, swipe left next, swipe right previous, cancel, a fling against the drag cancels, rapid flicks, end card and reshuffle), topics (toggle, OR, All, persistence across a reload, the card on screen survives, every seed chip visible without scrolling on the real deck), keyboard, fit (every real card fits without scrolling; every text line on the back sits on the rule grid), layout (no sideways scroll on every project; every visible control at least 44 × 44 under a coarse pointer, skipping the visually hidden buttons; the card at least 48 px from the right edge; a 40 px camera inset through CDP `Emulation.setSafeAreaInsetsOverride`, never a test-only CSS variable), accessibility, performance, PWA (manifest fields, precache, a single deck request thanks to the preload; offline: load, wait for `navigator.serviceWorker.controller`, reload online, then go offline and reload: a card shows), screens.
+  - The fullscreen chip shows on every Playwright page (they are `display-mode: browser` with fullscreen enabled, and CDP cannot emulate the display mode). A tap-triggered `requestFullscreen` does switch headless Chromium to `display-mode: fullscreen`, so every `pixel11` screenshot and layout check except "the fullscreen chip in a tab" presses `f` first.
 - **Visual** (`toHaveScreenshot`, `animations: "disabled"`, `caret: "hide"`, `maxDiffPixelRatio: 0.001`), on `pixel11` unless named: front; back with a list and inline code; back with a code block; back at fit step 2; end card; loading; error; three topics selected; `portrait` front; `laptop` back; the fullscreen chip in a tab; a 40 px camera inset.
 - **Accessibility**: axe (`wcag2a`, `wcag2aa`, `wcag21aa`, `wcag22aa`) reports nothing on the front, the back, the end card, loading, error and a selection; a keyboard-only reading flow; visible focus; the counter `aria-live="polite"`; under reduced motion only opacity animates.
 - **Budgets** (`scripts/budget.ts` after the build; `perf.spec.ts` with CDP 4× CPU throttling):
@@ -488,7 +528,7 @@ Adapted from `~/github/plant-selection/scripts/deploy-do.sh`.
 - One idea per card: what you could answer aloud in 20–40 s. Two facts share a card when one explains the other.
 - About 65 cards across the 13 topics declared above (Patterns, Case studies, Sharding, Real-time, Edge, Postgres, SQL, Queues, Streams, Redis, Consistency, Concurrency); merge or split within ±5.
 - Questions: what you would be asked (What, Why, How, When, "Walk through", "Sketch"), never a bare noun; 40–80 characters, at most 100.
-- Answers: the gist first in one line, then up to 4 bullets; highlight at most one or two key facts; 150–350 characters, at most 520 and 12 lines; code lines at most 52; numbers with units; British spelling; self-contained.
+- Answers: the gist first in one line, then up to 4 bullets; highlight at most one or two key facts; 150–350 characters, at most 520 and 12 lines; code lines at most 46; tight lists only (no blank lines between items); numbers with units; British spelling; self-contained.
 - Stubs ("Scaling writes: ...", "Webhooks"): no cards; named in the comment at the top of the file.
 - Wrong statements: corrected on the card, with a `# Corrected:` comment above it citing the notes' line and a primary source; listed in `docs/seed.md` and in the hand-off email. Additions beyond the notes only where an answer would otherwise be wrong or not self-contained, marked `# Added:` with a source.
 - The fact-check of the notes (eleven wrong or misleading statements, and the nuances) is the input; every card is then reviewed against the notes and against the primary sources for the corrected claims.
@@ -497,14 +537,15 @@ Adapted from `~/github/plant-selection/scripts/deploy-do.sh`.
 
 One agent per package, each in its own git worktree on a branch `pkg/<id>`, committing at every green. Each file has exactly one owner. `package.json`, `bun.lock` and the configs belong to M0 and then integration; a package that needs a dependency asks, it does not add one.
 
-- **M0 Scaffold** (one agent): the pinned `package.json` and `bunfig.toml`, both tsconfigs, `biome.json`, `vitest.config.ts`, `playwright.config.ts` (projects, two web servers), `vite.config.ts` (React, the PWA block, the proxy), `index.html`, the type-only files `shared/types.ts` and `src/deck/types.ts`, `src/styles/tokens.css`, the fonts and `fonts.css`, the fixture deck, `.gitignore`, CLAUDE.md v1 with the ownership map. Commit on `main`.
+- **M0 Scaffold** (one agent): the pinned `package.json` and `bunfig.toml`, both tsconfigs, `biome.json`, `vitest.config.ts`, `playwright.config.ts` (projects, two web servers), `vite.config.ts` (React, the PWA block, the proxy), `index.html`, the type-only files `shared/types.ts` and `src/deck/types.ts`, `src/styles/tokens.css`, the fonts and `fonts.css`, the fixture deck, `.gitignore`, CLAUDE.md v1 with the ownership map. Commit on `main`. Done: `306506a`, then `d4bbca4` (font stacks, `workbox-window` dropped).
+- During M1 a package imports only M0's files and its own (section 11, "Cross-package wiring").
 - **M1, in parallel**:
-  - **P1 Server and data**: `shared/schema.ts`, `server/*`, `scripts/check-cards.ts`, `src/api/*`.
+  - **P1 Server and data**: `shared/schema.ts`, `shared/glyphs.ts`, `server/*`, `scripts/check-cards.ts`, `src/api/*`.
   - **P2 Deck engine**: `src/deck/*`.
   - **P3 Stage and gestures**: `src/gesture/*`, `src/motion/*`, `src/stage/*`, `src/app/useShortcuts.ts`.
   - **P4 Look and feel**: `src/styles/global.css`, `src/card/*`, `src/panel/*`, `src/desk/*`, `public/icon.svg` and the PNG icons generated from it.
   - **P5 Platform and PWA**: `src/platform/*`, `tests/e2e/pwa.spec.ts` (self-contained; red until integration).
-  - **P6 Seed cards**: `cards/cards.toml` and `docs/seed.md` (scope, stubs not carded, the corrections log), then reviewed by two independent checkers (fidelity to the notes; correctness against primary sources).
+  - **P6 Seed cards**: `cards/cards.toml` and `docs/seed.md` (scope, stubs not carded, the corrections log), then reviewed by two independent checkers (fidelity to the notes; correctness against primary sources). P1's `cards:check` doesn't exist on P6's branch, so P6 checks every rule with a throwaway script; M2 runs `cards:check` and the fit test on the real deck and fixes what they find.
   - **P7 Ops and docs**: `scripts/deploy-do.sh`, `scripts/budget.ts`, `README.md`, `docs/cards.md`.
 - **M2 Integration**: merge the branches in order (P1, P2, P3, P4, P5, P6, P7) with `--no-ff`; `src/main.tsx`, `src/app/App.tsx` and its test, every e2e spec but `pwa.spec.ts`, the baselines, `tests/conventions.test.ts`; `verify` green on `main`.
 - **M3 Review**: code review and a design review of the whole thing against this plan and the original request, the design review on screenshots of the Pixel 11 project and iterated until it finds nothing worth changing; fixes; `verify` green.

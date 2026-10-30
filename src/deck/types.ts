@@ -22,5 +22,5 @@ export interface DeckView {
   goPrev(): void;
   reshuffle(): void;
   toggleTopic(label: string): void;
-  selectAll(): void;
+  clearTopics(): void; // empties the selection (= All)
 }
