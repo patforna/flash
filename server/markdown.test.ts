@@ -6,6 +6,7 @@
 // [x] fenced code renders as pre > code without its class, its lines and escapes intact
 // [x] inline code and bold render; -> and <- are typeset as → and ← outside code
 // [x] <-> as ↔, --> as →, <-- as ←
+// [x] an arrow holds on to what it points at (U+00A0 after it)
 // [x] a word joiner after a hyphen inside a word, and after every hyphen in inline code; none in code blocks
 // [x] a range never breaks at its en dash (U+2060), a number never from the word after it (U+00A0)
 // [x] inline code holds together (U+00A0) where a break would split it: a span of up to 20 characters, a word of one or
@@ -52,13 +53,19 @@ describe("renderAnswer", () => {
 
   test("renders inline code and bold, and typesets -> and <- as arrows outside code", () => {
     expect(renderAnswer("A -> B, `a -> b`, **x <- y**\n- c -> d\n```\ne <- f\n```")).toEqual({
-      html: "<p>A → B, <code>a\u00a0-\u2060&gt;\u00a0b</code>, <strong>x ← y</strong></p><ul><li>c → d</li></ul><pre><code>e &lt;- f\n</code></pre>",
+      html: "<p>A →\u00a0B, <code>a\u00a0-\u2060&gt;\u00a0b</code>, <strong>x ←\u00a0y</strong></p><ul><li>c →\u00a0d</li></ul><pre><code>e &lt;- f\n</code></pre>",
+    });
+  });
+
+  test("holds an arrow to what it points at: a line may break before it, never after it", () => {
+    expect(renderAnswer("expand campaign -> users, then a -> b -> c")).toEqual({
+      html: "<p>expand campaign →\u00a0users, then a →\u00a0b →\u00a0c</p>",
     });
   });
 
   test("typesets both-way and long arrows too: <-> as ↔, --> as →, <-- as ←", () => {
     expect(renderAnswer("Client <-> server, a --> b <-- c, x <--> y; `a <-> b`")).toEqual({
-      html: "<p>Client ↔ server, a → b ← c, x ↔ y; <code>a\u00a0&lt;-\u2060&gt;\u00a0b</code></p>",
+      html: "<p>Client ↔\u00a0server, a →\u00a0b ←\u00a0c, x ↔\u00a0y; <code>a\u00a0&lt;-\u2060&gt;\u00a0b</code></p>",
     });
   });
 
@@ -181,7 +188,7 @@ describe("renderAnswer", () => {
 describe("renderQuestion", () => {
   test("renders the line without its paragraph, with inline code, bold and arrows", () => {
     expect(renderQuestion("What does `SETNX` do -> **and why**?")).toEqual({
-      html: "What does <code>SETNX</code> do → <strong>and why</strong>?",
+      html: "What does <code>SETNX</code> do →\u00a0<strong>and why</strong>?",
     });
   });
 

@@ -119,6 +119,8 @@ function render(src: string, allowed: ReadonlySet<string>) {
             .replace(/&lt;-+&gt;/g, "↔")
             .replace(/-+&gt;/g, "→")
             .replace(/&lt;-+/g, "←")
+            // An arrow holds on to what it points at: a line may break before it, never after it.
+            .replace(/([→←↔]) /g, `$1${HOLD}`)
             .replace(/([\p{L}\p{N}])-(?=[\p{L}\p{N}])/gu, `$1-${JOIN}`)
             // A range never breaks at its dash (2–4, a–z), and a number holds on to the word it counts (7 days, 1 s,
             // 100k writes), unless it is part of a word or a version (s3, v1.2).
