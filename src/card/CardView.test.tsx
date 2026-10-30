@@ -1,6 +1,6 @@
 // To do:
 // [x] the DOM contract: frame > flipper[data-side] > two faces, front then back
-// [ ] the hidden face is inert and aria-hidden; the face on show is neither
+// [x] the hidden face is inert and aria-hidden; the face on show is neither
 // [ ] the front: the question, and the band in the first topic's colour
 // [ ] the front: the card's topics as dots with labels, each dot in its topic's colour
 // [ ] the front: the counter, the position zero-padded to the total's width ("07 / 16")
@@ -48,5 +48,15 @@ describe("CardView", () => {
     expect(flipper.dataset.side).toBe("front");
     expect(faces.map((face) => face.classList.contains(styles.face))).toEqual([true, true]);
     expect(faces.map((face) => face.classList.contains(styles.back))).toEqual([false, true]);
+  });
+
+  it.each([
+    ["front", [false, true]],
+    ["back", [true, false]],
+  ] as const)("on the %s hides the other face from input and assistive tech", (side, hidden) => {
+    const { container } = render(<CardView card={vacuum} side={side} position={7} total={16} colourOf={colourOf} />);
+    const faces = Array.from(container.querySelectorAll<HTMLElement>(`.${styles.face}`));
+    expect(faces.map((face) => face.inert)).toEqual(hidden);
+    expect(faces.map((face) => face.getAttribute("aria-hidden") === "true")).toEqual(hidden);
   });
 });

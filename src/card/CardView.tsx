@@ -14,9 +14,14 @@ export function CardView({ side }: CardViewProps) {
   return (
     <div className={styles.frame}>
       <div className={styles.flipper} data-side={side}>
-        <div className={styles.face} />
-        <div className={`${styles.face} ${styles.back}`} />
+        <div className={styles.face} {...hiddenUnless(side === "front")} />
+        <div className={`${styles.face} ${styles.back}`} {...hiddenUnless(side === "back")} />
       </div>
     </div>
   );
+}
+
+// The face turned away takes no input and is hidden from assistive tech.
+function hiddenUnless(shown: boolean) {
+  return shown ? {} : { inert: true, "aria-hidden": true };
 }
