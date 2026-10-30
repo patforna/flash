@@ -9,8 +9,8 @@
 import { configure, render } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { Card } from "../../shared/types";
-import styles from "./card.module.css";
 import { CardView } from "./CardView";
+import styles from "./card.module.css";
 
 configure({ reactStrictMode: true });
 
