@@ -43,7 +43,12 @@ export function CardStage({ view, renderCard, onFullscreen, onMove, dealFirst = 
     can: () => ({ prev: view.prev !== null, next: view.next !== null || view.current === "end" }),
     // The end card has no back: a tap (a key, its button) flies it off as a swipe does, the next pass dealt under it.
     onTap: () => (view.current === "end" ? swipe.commit("next") : view.flip()),
-    onDecide: onMove,
+    onDecide: (dir) => {
+      onMove();
+      // The stack under the end card comes and goes with the move to it and from it, not once the move lands.
+      if (dir === "next" && view.next === "end") stage.current?.setAttribute("data-closing", "");
+      if (dir === "prev" && view.current === "end") stage.current?.setAttribute("data-opening", "");
+    },
     onCommit: (dir) => {
       const to = view[dir];
       landing.current = to && keyOf(to);
@@ -81,6 +86,9 @@ export function CardStage({ view, renderCard, onFullscreen, onMove, dealFirst = 
     const el = stage.current;
     if (key !== shown.current.key) {
       stopFlip();
+      // The stack now shows as the move had it show (or, should a move be dropped, as the new card has it).
+      el?.removeAttribute("data-closing");
+      el?.removeAttribute("data-opening");
       if (key !== landing.current) swipe.deal();
     } else if (el && view.side !== shown.current.side) {
       el.setAttribute("data-flipping", "");

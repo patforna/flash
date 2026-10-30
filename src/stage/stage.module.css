@@ -48,6 +48,15 @@
   opacity: 1;
 }
 
+/* The move to the end card, or back from it, is under way: the stack under the end card comes or goes with it. */
+.stage[data-closing] .blank {
+  opacity: 1;
+}
+
+.stage[data-opening] .blank {
+  opacity: 0;
+}
+
 /* A layer not in play takes no space on screen and no pointer: the previous card rests here, hidden, until a drag
    brings it back (the gesture writes its transform and visibility inline, and clears them). */
 .layer {

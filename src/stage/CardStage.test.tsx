@@ -1,7 +1,7 @@
 // To do:
 // [x] a layer per role through renderCard, each with data-role and a lift inside; the previous and next layers inert
 // [x] the blank cards behind show while at least 2, and at least 3, cards remain after the current one; both under
-//     the end card
+//     the end card, coming and going with the move to it and from it (data-closing, data-opening), not as it lands
 // [x] a tap flips the card; on the end card it goes next (which reshuffles), flying the end card off as a swipe does;
 //     so do the end card's button and s
 // [x] onMove as each move is decided: a release, a key, a button, a tap on the end card; never a flip
@@ -155,6 +155,32 @@ describe("layers", () => {
 
   test("the end card lies on the pass it closes: both blank cards under it, ready to shuffle", () => {
     expect(setup({ start: 4 }).stage.querySelectorAll("[data-shown]")).toHaveLength(2);
+  });
+
+  test("they come with the move to the end card, as it is decided, not as it lands", async () => {
+    const { stage, layer } = setup({ start: 3 });
+    flick(stage, layer);
+    expect(stage.hasAttribute("data-closing")).toBe(true);
+    await land();
+    expect(stage.hasAttribute("data-closing")).toBe(false);
+    expect(stage.querySelectorAll("[data-shown]")).toHaveLength(2);
+  });
+
+  test("…and go with the move back from it", async () => {
+    const { stage } = setup({ start: 4 });
+    fireEvent.keyDown(document.body, { key: "ArrowLeft" });
+    expect(stage.hasAttribute("data-opening")).toBe(true);
+    await land();
+    expect(stage.hasAttribute("data-opening")).toBe(false);
+    expect(stage.querySelectorAll("[data-shown]")).toHaveLength(0);
+  });
+
+  test("no other move marks them", async () => {
+    const { stage, layer } = setup({ start: 1 });
+    flick(stage, layer);
+    fireEvent.keyDown(document.body, { key: "ArrowLeft" });
+    await land();
+    expect([stage.hasAttribute("data-closing"), stage.hasAttribute("data-opening")]).toEqual([false, false]);
   });
 });
 
