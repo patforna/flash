@@ -21,7 +21,7 @@ export function useDeck(deck: Deck, { rng = Math.random }: { rng?: Rng; storage?
     goNext: () =>
       setPass((p) => (p.index < p.order.length ? next(p) : reshuffle(p, poolFor(deck.cards, new Set()), rng))),
     goPrev: () => setPass(prev),
-    reshuffle: none,
+    reshuffle: () => setPass((p) => reshuffle(p, poolFor(deck.cards, new Set()), rng)),
     toggleTopic: none,
     clearTopics: none,
   };
