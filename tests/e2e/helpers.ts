@@ -160,3 +160,13 @@ export async function centre(page: Page): Promise<Point> {
   if (!box) throw new Error("no card on the stage");
   return { x: box.x + box.width / 2, y: box.y + box.height / 2 };
 }
+
+// Across most of the card, quickly, as a thumb flicks it: left for the next card, right for the previous one.
+export async function flick(page: Page, dir: "left" | "right", { by = 300, ms = 120 } = {}): Promise<void> {
+  const from = await centre(page);
+  await swipe(page, { from, to: { x: from.x + (dir === "left" ? -by : by), y: from.y }, ms });
+}
+
+// The card's topics, as its front lists them.
+export const topicsOf = (page: Page): Promise<string[]> =>
+  layer(page).locator("[data-side] > :first-child li").allTextContents();

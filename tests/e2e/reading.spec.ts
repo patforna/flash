@@ -5,6 +5,7 @@ import {
   expect,
   finger,
   firstCard,
+  flick,
   flipper,
   layer,
   question,
@@ -24,12 +25,6 @@ test.beforeEach(async ({ page }) => {
   await firstCard(page);
   await settled(page);
 });
-
-// Across most of the card, quickly, as a thumb flicks it.
-async function flick(page: Page, dir: "left" | "right", { by = 300, ms = 120 } = {}) {
-  const from = await centre(page);
-  await swipe(page, { from, to: { x: from.x + (dir === "left" ? -by : by), y: from.y }, ms });
-}
 
 // The inline transform the gesture wrote on the card on top ("" at rest).
 const dragged = (page: Page) => layer(page).evaluate((el) => el.style.transform);
