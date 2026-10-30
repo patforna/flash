@@ -6,7 +6,7 @@
 // - [x] flip turns the card over; landing on any card shows its front
 // - [x] goNext on the end card reshuffles, never starting with the last card seen
 // - [x] reshuffle deals a new pass, never starting with the card on screen
-// - [ ] the first render deals a pass of the stored selection
+// - [x] the first render deals a pass of the stored selection
 // - [ ] toggleTopic keeps the card on screen, on the same side, when it still matches; the pass is the new pool
 // - [ ] toggleTopic deals afresh, front up, when the card on screen no longer matches
 // - [ ] toggleTopic and clearTopics persist the selection
@@ -128,5 +128,11 @@ describe("useDeck", () => {
       expect(result.current).toMatchObject({ position: 1, total: 5, side: "front" });
       expect(result.current.current).not.toBe(shown);
     }
+  });
+
+  it("deals a pass of the stored selection on the first render", () => {
+    const { result } = setup({ stored: '["Queues"]' });
+    expect(result.current.selected).toEqual(new Set(["Queues"]));
+    expect(walk(result).toSorted()).toEqual(["c", "d"]);
   });
 });
