@@ -89,7 +89,7 @@
 }
 
 /* Pushed in under a pointer from the moment it goes down (data-pressed: press.ts), and by the keyboard's Space; :active
-   only with the keyboard's focus, as a tap's own comes once it has lifted and would push the chip in again. */
+   only with the keyboard's focus, as a tap's own comes once it has lifted and would hold the chip in after the thumb. */
 .chip[data-pressed],
 .chip:active:focus-visible {
   --press: 2px;
