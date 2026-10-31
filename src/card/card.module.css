@@ -280,8 +280,9 @@
   font: inherit;
 }
 
-/* Bold is a highlighter stroke. Broken over two lines it is sliced, not cloned: in Chromium a cloned inline turns
-   text-wrap: pretty off for its whole block, which then ends on a lone word. Inline code likewise. */
+/* Bold is a highlighter stroke, its ink translucent: the rule it crosses shows through (the face isolates the blend).
+   Broken over two lines it is sliced, not cloned: in Chromium a cloned inline turns text-wrap: pretty off for its
+   whole block, which then ends on a lone word. Inline code likewise. */
 .question strong,
 .header strong,
 .answer strong {
@@ -289,6 +290,7 @@
   padding: 0 calc(2 * var(--u));
   font-weight: 620;
   background: linear-gradient(transparent 18%, var(--hl) 18% 86%, transparent 86%);
+  mix-blend-mode: multiply;
 }
 
 /* The last resort (a real card never gets here: the fit test fails the build): the answer scrolls, fading out over
