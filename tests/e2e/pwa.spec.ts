@@ -84,9 +84,9 @@ test("once loaded, the service worker controls the page, its precache holding in
       "/index.html",
       script,
       stylesheet,
+      // The arrows' 1.8 kB file is inlined into the stylesheet (Vite's 4 kB limit), so it isn't its own entry.
       expect.stringMatching(/^\/assets\/caveat-latin-wght-normal-[\w-]+\.woff2$/),
       expect.stringMatching(/^\/assets\/permanent-marker-latin-400-normal-[\w-]+\.woff2$/),
-      expect.stringMatching(/^\/assets\/klee-one-arrows-400-normal-[\w-]+\.woff2$/),
       expect.stringMatching(/^\/assets\/geist-latin-wght-normal-[\w-]+\.woff2$/),
     ]),
   );
