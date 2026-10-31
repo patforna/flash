@@ -1,4 +1,5 @@
 import type { Page } from "@playwright/test";
+import type { Deck } from "../../shared/types";
 import { centre, expect, finger, firstCard, fullscreen, insets, layer, settled, test } from "./helpers";
 
 // The desk's geometry (docs/plan.md §2): nothing scrolls sideways, every control is big enough for a thumb, the card
@@ -59,7 +60,9 @@ for (const [deck, baseURL] of [
     test.skip(project() === "laptop", "a fine pointer");
     await open(page, baseURL);
     const shown = await controls(page);
-    expect(shown.length).toBeGreaterThan(deck === "real" ? 13 : 7);
+    // All and a chip for each of the deck's topics, at least.
+    const { topics }: Deck = await (await page.request.get(`${baseURL}/api/cards`)).json();
+    expect(shown.length).toBeGreaterThan(topics.length);
     expect(tooSmall(shown)).toEqual([]);
   });
 }

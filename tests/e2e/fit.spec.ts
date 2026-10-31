@@ -1,4 +1,5 @@
 import type { Page } from "@playwright/test";
+import type { Deck } from "../../shared/types";
 import { announcer, expect, firstCard, flipper, insets, settled, test } from "./helpers";
 
 // The real deck fits the screen. Long answers (docs/plan.md §7 and §8): every card fits both its faces without the
@@ -145,7 +146,7 @@ test.describe("the fixture deck, which uses every kind of markup", () => {
 });
 
 // Every chip in full view, none under the panel's fade, nothing to scroll. In a tab, so the fullscreen chip leads: the
-// fullest panel, with All and the 13 topics after it.
+// fullest panel, with All and every topic after it.
 test.describe("the real deck's topics", () => {
   test.beforeEach(async ({ page }) => {
     await page.goto("/");
@@ -156,7 +157,9 @@ test.describe("the real deck's topics", () => {
   async function inFullView(page: Page) {
     const panel = page.getByRole("group", { name: "Topics" });
     const chips = panel.getByRole("button");
-    await expect(chips).toHaveCount(15);
+    // Whatever the deck being shipped holds: the fullscreen chip and All, then a chip for each of its topics.
+    const { topics }: Deck = await (await page.request.get("/api/cards")).json();
+    await expect(chips).toHaveCount(topics.length + 2);
     expect(await panel.evaluate((el) => el.scrollHeight <= el.clientHeight)).toBe(true);
     const box = await panel.boundingBox();
     if (!box) throw new Error("no panel");
