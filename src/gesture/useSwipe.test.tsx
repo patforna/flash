@@ -30,7 +30,7 @@
 //     next frame
 // [x] reduced motion: no rotation while following; opacity-only animations
 // [x] commit(dir): the same fling from rest on MOTION.commitEase; not where can() forbids, nor while a pointer is down
-// [x] tap(): completes a running commit, then onTap
+// [x] tap() and reshuffle(): complete a running commit, then onTap or onReshuffle; nothing while a pointer is down
 // [x] deal(): drops a running commit; translateY(14px) → 0 and opacity 0 → 1 over 220 ms, the card underneath
 //     settling from the top card's place to its own
 // [x] a horizontal drag finishes a running flip
@@ -91,12 +91,14 @@ function Stage({ options, prev, next, held }: StageProps) {
 function setup(overrides: Partial<SwipeOptions> = {}, { prev = true, next = true } = {}) {
   const animations: FakeAnimation[] = [];
   const onTap = vi.fn();
+  const onReshuffle = vi.fn();
   const onDecide = vi.fn();
   const onCommit = vi.fn();
   const options: SwipeOptions = {
     layers: () => null,
     can: () => ({ prev: true, next: true }),
     onTap,
+    onReshuffle,
     onDecide,
     onCommit,
     reducedMotion: () => false,
@@ -124,7 +126,7 @@ function setup(overrides: Partial<SwipeOptions> = {}, { prev = true, next = true
     if (!held.swipe) throw new Error("not rendered");
     return held.swipe;
   };
-  return { stage, layer, animations, onTap, onDecide, onCommit, renders: () => renders, swipe };
+  return { stage, layer, animations, onTap, onReshuffle, onDecide, onCommit, renders: () => renders, swipe };
 }
 
 describe("taps", () => {
@@ -952,14 +954,32 @@ describe("commit(dir), for keys and buttons", () => {
   });
 });
 
-describe("tap(), for keys and buttons", () => {
-  test("completes a running commit first, so the card that lands is the one that flips", () => {
+describe("tap() and reshuffle(), for keys and buttons", () => {
+  test("tap() completes a running commit first, so the card that lands is the one that flips", () => {
     const { onTap, onCommit, swipe } = setup();
     act(() => swipe().commit("next"));
     act(() => swipe().tap());
     expect(onCommit).toHaveBeenCalledOnce();
     expect(onTap).toHaveBeenCalledOnce();
     expect(onCommit.mock.invocationCallOrder[0]).toBeLessThan(onTap.mock.invocationCallOrder[0] ?? 0);
+  });
+
+  test("reshuffle() does too, so it goes by the card that lands", () => {
+    const { onReshuffle, onCommit, swipe } = setup();
+    act(() => swipe().commit("prev"));
+    act(() => swipe().reshuffle());
+    expect(onCommit).toHaveBeenCalledExactlyOnceWith("prev");
+    expect(onReshuffle).toHaveBeenCalledOnce();
+    expect(onCommit.mock.invocationCallOrder[0]).toBeLessThan(onReshuffle.mock.invocationCallOrder[0] ?? 0);
+  });
+
+  test("neither does anything while a finger is down: the card under it is the finger's", () => {
+    const { stage, layer, onTap, onReshuffle, swipe } = setup();
+    press(stage, layer("current"), 700, 200).move(650, 200);
+    act(() => swipe().tap());
+    act(() => swipe().reshuffle());
+    expect(onTap).not.toHaveBeenCalled();
+    expect(onReshuffle).not.toHaveBeenCalled();
   });
 });
 

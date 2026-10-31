@@ -43,6 +43,8 @@ export function CardStage({ view, renderCard, onFullscreen, onMove, dealFirst = 
     can: () => ({ prev: view.prev !== null, next: view.next !== null || view.current === "end" }),
     // The end card has no back: a tap (a key, its button) flies it off as a swipe does, the next pass dealt under it.
     onTap: () => (view.current === "end" ? swipe.commit("next") : view.flip()),
+    // On the end card, a reshuffle (s) is its move on.
+    onReshuffle: () => (view.current === "end" ? swipe.commit("next") : view.reshuffle()),
     onDecide: (dir) => {
       onMove();
       // The stack under the end card comes and goes with the move to it and from it, not once the move lands.
@@ -67,8 +69,7 @@ export function CardStage({ view, renderCard, onFullscreen, onMove, dealFirst = 
     flip: swipe.tap,
     next: () => swipe.commit("next"),
     prev: () => swipe.commit("prev"),
-    // On the end card, a reshuffle is its move on.
-    reshuffle: () => (view.current === "end" ? swipe.commit("next") : view.reshuffle()),
+    reshuffle: swipe.reshuffle,
     fullscreen: onFullscreen,
   });
 

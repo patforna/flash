@@ -14,7 +14,8 @@
 // [x] buttons: "Show answer" / "Show question", "Previous" and "Next", which go as a swipe does
 // [x] the buttons stay put, so focus never falls to the page: "Previous" is aria-disabled on a first card; on the end
 //     card the third reads "Shuffle again"
-// [x] shortcuts: → and ← go as a swipe does, Space flips, s reshuffles, f calls onFullscreen
+// [x] shortcuts: → and ← go as a swipe does, Space flips, s reshuffles, f calls onFullscreen; s goes by the card a move
+//     in flight lands on; neither Space nor s touches a card under a thumb
 // (Styles aren't computed here: happy-dom gets no CSS modules. The feel check covers them in Chromium.)
 import { act, fireEvent, render, screen } from "@testing-library/react";
 import { StrictMode, useState } from "react";
@@ -494,5 +495,26 @@ describe("shortcuts", () => {
     fireEvent.keyDown(document.body, { key: "f" });
     expect(calls).toEqual(["flip", "reshuffle"]);
     expect(onFullscreen).toHaveBeenCalledOnce();
+  });
+
+  test("s while the last card comes back over the end card goes by the card that lands: it reshuffles", async () => {
+    const { layer, calls } = setup({ start: 4 });
+    fireEvent.keyDown(document.body, { key: "ArrowLeft" });
+    fireEvent.keyDown(document.body, { key: "s" });
+    await land();
+    expect(calls).toEqual(["move", "goPrev", "reshuffle"]);
+    expect(layer("current").textContent).toBe("b?");
+  });
+
+  test("Space and s do nothing while a drag is in progress: the card under the thumb is the thumb's", () => {
+    const { stage, layer, calls } = setup();
+    const finger = press(stage, layer("current"), 700, 200);
+    finger.move(650, 200);
+    fireEvent.keyDown(document.body, { key: " " });
+    fireEvent.keyDown(document.body, { key: "s" });
+    expect(calls).toEqual([]);
+    expect(layer("current").textContent).toBe("a?");
+    expect(layer("current").querySelector("[data-side]")?.getAttribute("data-side")).toBe("front");
+    finger.up();
   });
 });

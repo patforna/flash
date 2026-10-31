@@ -7,6 +7,7 @@ export interface SwipeOptions {
   layers(): { current: HTMLElement; next: HTMLElement | null; prev: HTMLElement | null } | null;
   can(): { prev: boolean; next: boolean };
   onTap(): void;
+  onReshuffle(): void; // once anything in flight has landed, so it goes by the card then on top
   onDecide(dir: "next" | "prev"): void; // as a release, a key or a button commits, before anything flies
   onCommit(dir: "next" | "prev"): void; // after the animation finishes
   reducedMotion(): boolean;
@@ -491,9 +492,12 @@ function swipe(stage: RefObject<HTMLElement | null>, options: RefObject<SwipeOpt
     };
   }
 
-  function tap() {
+  // A key or a button acting on the card on top (a flip, a reshuffle): never on a card under a finger, which is the
+  // finger's, and only once anything in flight has landed, so it acts on the card that is then on top.
+  function onTop(act: "onTap" | "onReshuffle") {
+    if (gesture) return;
     finishRunning();
-    options.current.onTap();
+    options.current[act]();
   }
 
   function deal() {
@@ -519,13 +523,13 @@ function swipe(stage: RefObject<HTMLElement | null>, options: RefObject<SwipeOpt
     stage.current?.setAttribute("data-dealing", "");
   }
 
-  return { listen, settle, commit, tap, deal };
+  return { listen, settle, commit, tap: () => onTop("onTap"), reshuffle: () => onTop("onReshuffle"), deal };
 }
 
 export function useSwipe(
   stage: RefObject<HTMLElement | null>,
   o: SwipeOptions,
-): { commit(dir: "next" | "prev"): void; tap(): void; deal(): void } {
+): { commit(dir: "next" | "prev"): void; tap(): void; reshuffle(): void; deal(): void } {
   const options = useRef(o);
   useLayoutEffect(() => {
     options.current = o;
@@ -537,5 +541,5 @@ export function useSwipe(
   useLayoutEffect(() => {
     machine.settle();
   });
-  return { commit: machine.commit, tap: machine.tap, deal: machine.deal };
+  return { commit: machine.commit, tap: machine.tap, reshuffle: machine.reshuffle, deal: machine.deal };
 }
