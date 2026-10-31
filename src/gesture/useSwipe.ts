@@ -55,6 +55,13 @@ interface Flight extends Motion {
   snapshot: HTMLElement;
 }
 
+// A landing over the card still coming back from the last one: where that card is, and a copy of the card it was
+// covering, which leaves the stage's layers as this landing lands.
+interface Covering {
+  from: string;
+  under: HTMLElement | null;
+}
+
 const FLING_TILT = 10; // degrees, as a flung card leaves
 const IN_PLACE = "translateX(0px) rotate(0deg)"; // the card on top at rest, spelt out for keyframes
 
@@ -81,6 +88,14 @@ const waiting = (card: DOMRect) => -card.right;
 const LOW = 0.965;
 const underneath = (p: number) => `scale(${fixed(LOW + (1 - LOW) * p)}) translateY(${fixed(8 * (1 - p))}px)`;
 const risen = (transform: string) => (matrix(transform).m11 - LOW) / (1 - LOW);
+// A card shown on the stage beside its layers, as a copy: no role for the stage's lookups, no input, nothing read out.
+const asCopy = (el: HTMLElement, style: Partial<CSSStyleDeclaration>) => {
+  el.removeAttribute("data-role");
+  el.inert = true;
+  el.setAttribute("aria-hidden", "true");
+  Object.assign(el.style, { visibility: "visible", pointerEvents: "none", ...style });
+  return el;
+};
 
 function swipe(stage: RefObject<HTMLElement | null>, options: RefObject<SwipeOptions>) {
   let gesture: Gesture | null = null;
@@ -132,14 +147,26 @@ function swipe(stage: RefObject<HTMLElement | null>, options: RefObject<SwipeOpt
     if (!run) return;
     if (run.flight) flyOn(run.flight);
     const at = Number(run.arrival?.animation.currentTime);
+    const covered = run.arrival && arriving.length ? covering() : undefined;
     for (const animation of run.animations) animation.finish();
-    if (complete(run) && run.arrival) arrive(run.arrival, at);
+    if (complete(run) && run.arrival) arrive(run.arrival, at, covered);
+  }
+
+  // A card coming back covers the one still coming back from the last landing: taken where it is, before the landing
+  // lets go of it.
+  function covering(): Covering | undefined {
+    const layers = options.current.layers();
+    if (!layers) return undefined;
+    const { current, next } = layers;
+    const under = next && asCopy(next.cloneNode(true) as HTMLElement, { transform: getComputedStyle(next).transform });
+    return { from: getComputedStyle(current).transform, under };
   }
 
   // The card coming back as its move lands early carries on into its place, from where it is on its curve, in the layer
-  // it now has; the card it covers came from the place on top, and settles into its own in the time left. Both end at
-  // their layers' resting styles, so nothing is left filling.
-  function arrive({ keyframes, timing }: Motion, at: number) {
+  // it now has; the card it covers came from the place on top, or, still coming back itself, from where it was, and
+  // settles into its own in the time left, over a copy of the card it had been covering until it lies there. Both end
+  // at their layers' resting styles, so nothing is left filling.
+  function arrive({ keyframes, timing }: Motion, at: number, covered?: Covering) {
     const layers = options.current.layers();
     if (!layers) return;
     const carry = carryOn(layers.current, keyframes, timing);
@@ -147,7 +174,17 @@ function swipe(stage: RefObject<HTMLElement | null>, options: RefObject<SwipeOpt
     const now = [carry];
     if (layers.next && !options.current.reducedMotion()) {
       const left = { duration: Number(timing.duration) - at, easing: MOTION.dealEase };
-      now.push(carryOn(layers.next, [{ transform: underneath(1) }, { transform: underneath(0) }], left));
+      const from = covered?.from ?? underneath(1);
+      const settle = carryOn(layers.next, [{ transform: from }, { transform: underneath(0) }], left);
+      now.push(settle);
+      const under = covered?.under;
+      if (under) {
+        layers.next.before(under);
+        settle.finished.then(
+          () => under.remove(),
+          () => under.remove(),
+        );
+      }
     }
     arriving = now;
     Promise.all(now.map((a) => a.finished)).then(
@@ -177,11 +214,8 @@ function swipe(stage: RefObject<HTMLElement | null>, options: RefObject<SwipeOpt
 
   // A card still flying out as the move lands carries on as a copy, from where it is on its curve, over the stack and
   // out of the stage's way; it goes once it has flown. A thumb flicking on never sees the last card vanish mid-air.
-  function flyOn({ card, snapshot: copy, keyframes, timing, animation }: Flight) {
-    copy.removeAttribute("data-role");
-    copy.inert = true;
-    copy.setAttribute("aria-hidden", "true");
-    Object.assign(copy.style, { visibility: "visible", pointerEvents: "none", transformOrigin: "50% 140%" });
+  function flyOn({ card, snapshot, keyframes, timing, animation }: Flight) {
+    const copy = asCopy(snapshot, { transformOrigin: "50% 140%" });
     card.after(copy);
     const flown = carryOn(copy, keyframes, timing);
     flown.currentTime = animation.currentTime;

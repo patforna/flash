@@ -133,12 +133,12 @@ test("a short, slow drag follows the thumb, then cancels and settles back", asyn
   expect(await layer(page).boundingBox()).toEqual(box);
 });
 
-// Frame by frame from the second touch on, for 30 frames: how fast the card with this question moved since the frame
+// Frame by frame from the `from`th touch on, for 30 frames: how fast the card with this question moved since the frame
 // before (its layer's x, in px per ms), whichever layer it is in. A dropped frame doesn't make a card faster; a jump
 // is a frame's worth of its way in no time.
-const speeds = (page: Page, writing: string) =>
+const speeds = (page: Page, writing: string, from = 2) =>
   page.evaluate(
-    (writing) =>
+    ({ writing, from }) =>
       new Promise<number[]>((resolve) => {
         let touches = 0;
         addEventListener("pointerdown", () => touches++, { capture: true });
@@ -149,14 +149,15 @@ const speeds = (page: Page, writing: string) =>
             (layer) => layer.querySelector("h2")?.textContent === writing,
           );
           const x = card ? new DOMMatrix(getComputedStyle(card).transform).m41 : null;
-          if (touches >= 2 && last !== null && x !== null && t > last.t) seen.push(Math.abs(x - last.x) / (t - last.t));
+          if (touches >= from && last !== null && x !== null && t > last.t)
+            seen.push(Math.abs(x - last.x) / (t - last.t));
           last = x === null ? null : { t, x };
           if (seen.length === 30) return resolve(seen);
           requestAnimationFrame(look);
         };
         requestAnimationFrame(look);
       }),
-    writing,
+    { writing, from },
   );
 
 test("a card coming back when the next touch lands its move carries on into its place: it never jumps", async ({
@@ -179,6 +180,30 @@ test("a card coming back when the next touch lands its move carries on into its 
   // never a jump, which read 14 and more.
   const fastest = Math.max(...(await moving));
   expect(fastest, "still coming back as the second touch lands, in px/ms").toBeGreaterThan(1);
+  expect(fastest, "its fastest from one frame to the next, in px/ms").toBeLessThanOrEqual(6);
+  await expect(announcer(page)).toHaveText("Card 1 of 9");
+});
+
+test("…nor when a third flick lands the second's move, covering it: it settles under the card back from where it is", async ({
+  page,
+}) => {
+  for (let i = 0; i < 3; i++) {
+    await page.keyboard.press("l");
+    await settled(page);
+  }
+  const back = (await question(page, "prev").textContent()) ?? "";
+  await slowMotion(page);
+  const moving = speeds(page, back, 3);
+
+  for (let i = 0; i < 3; i++) {
+    if (i) await new Promise((resolve) => setTimeout(resolve, 80));
+    await flick(page, "right");
+  }
+
+  // In the animations' time: still coming back as the third touch lands (about 2.4 px/ms at most), and never a jump,
+  // which read 42.
+  const fastest = Math.max(...(await moving));
+  expect(fastest, "still coming back as the third touch lands, in px/ms").toBeGreaterThan(1);
   expect(fastest, "its fastest from one frame to the next, in px/ms").toBeLessThanOrEqual(6);
   await expect(announcer(page)).toHaveText("Card 1 of 9");
 });

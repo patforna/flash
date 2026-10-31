@@ -20,7 +20,8 @@
 // [x] the end card (no card under it) is let go of at once: the move lands while a copy flies off
 // [x] a pointerdown, a key or a button that lands a slide in early lets the card coming back carry on into its place
 //     from where it was, out of the next touch's way; a drag the other way or a key going on takes hold of it where it
-//     is; the next landing and a deal end it
+//     is; the next landing and a deal end it, the landing settling it from where it is into its place underneath, over
+//     a copy of the card it was covering, which leaves the layers then
 // [x] …while the next touch may still be a tap it is left be, whichever way the touch goes; taken hold of, it leans
 //     only as it is dragged on past where it was held, and back in its place it is upright, the card it covers in its own
 // [x] a pointerdown on the card during a cancel catches the cards where they are, the drag going on from there (a rubber
@@ -711,6 +712,55 @@ describe("input during an animation", () => {
     const arriving = animations.slice(before);
     act(() => swipe().deal());
     expect(arriving.map((a) => a.playState)).toEqual(["idle", "idle"]);
+  });
+
+  test("…while the next landing covers it, the card it then lies under settling from where it was, not from on top", () => {
+    const { stage, layer, animations, swipe } = setup();
+    flickRight(stage, layer);
+    act(() => swipe().commit("prev"));
+    // The first card back still on its way into its place, the card it covers settling into its own.
+    animatedAt([
+      [layer("current"), "translateX(-160px)"],
+      [layer("next"), "scale(0.99) translateY(2px)"],
+    ]);
+    const before = animations.length;
+    act(() => swipe().commit("prev"));
+    const settles = animations.slice(before).filter((a) => a.el === layer("next"));
+    expect(settles.map((a) => [a.keyframes, a.options])).toEqual([
+      [
+        [{ transform: "translateX(-160px)" }, { transform: "scale(0.965) translateY(8px)" }],
+        { duration: 320, easing: "cubic-bezier(0.2, 0.8, 0.2, 1)" },
+      ],
+    ]);
+  });
+
+  test("…over a copy of the card it was covering, which leaves the layers then and goes once it is covered", async () => {
+    const { stage, layer, animations, swipe } = setup();
+    flickRight(stage, layer);
+    act(() => swipe().commit("prev"));
+    layer("next").textContent = "the card covered";
+    animatedAt([
+      [layer("current"), "translateX(-160px)"],
+      [layer("next"), "scale(0.99) translateY(2px)"],
+    ]);
+    act(() => swipe().commit("prev"));
+    const copy = layer("next").previousElementSibling;
+    if (!(copy instanceof HTMLElement)) throw new Error("no copy under the card settling");
+    expect(copy.textContent).toBe("the card covered");
+    // Where it was, out of the way: no role for the stage's lookups, no input, nothing read out.
+    expect([copy.style.visibility, copy.style.transform]).toEqual(["visible", "scale(0.99) translateY(2px)"]);
+    expect(copy.hasAttribute("data-role")).toBe(false);
+    expect([copy.inert, copy.getAttribute("aria-hidden")]).toEqual([true, "true"]);
+    await act(async () => animations.find((a) => a.el === layer("next"))?.finish());
+    expect(copy.isConnected).toBe(false);
+  });
+
+  test("…under reduced motion, nothing to settle and nothing copied: the card under it is in its place at once", () => {
+    const { stage, layer, swipe } = setup({ reducedMotion: () => true });
+    flickRight(stage, layer);
+    act(() => swipe().commit("prev"));
+    act(() => swipe().commit("prev"));
+    expect([...stage.children].filter((el) => !el.hasAttribute("data-role"))).toEqual([]);
   });
 
   test("under reduced motion the card coming back fades in on, in its place", () => {
