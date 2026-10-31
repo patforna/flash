@@ -21,6 +21,8 @@
 // [x] a pointerdown, a key or a button that lands a slide in early lets the card coming back carry on into its place
 //     from where it was, out of the next touch's way; a drag the other way or a key going on takes hold of it where it
 //     is; the next landing and a deal end it
+// [x] …while the next touch may still be a tap it is left be, whichever way the touch goes; taken hold of, it leans
+//     only as it is dragged on past where it was held, and back in its place it is upright, the card it covers in its own
 // [x] a pointerdown on the card during a cancel catches the cards where they are, the drag going on from there (a rubber
 //     band from where it gives); a tap after it springs them back from there; off the card it finishes the cancel
 // [x] a pointerdown during a deal finishes it
@@ -592,6 +594,43 @@ describe("input during an animation", () => {
     expect(arriving.map((a) => a.playState)).toEqual(["idle", "idle"]);
   });
 
+  test("…as does a flick back whose first move goes a pixel left, while the touch may still be a tap", () => {
+    const { stage, layer, animations, onCommit } = setup();
+    flickRight(stage, layer);
+    const before = animations.length;
+    const again = press(stage, layer("current"), 400, 200, 200);
+    const arriving = animations.slice(before);
+    animatedAt([
+      [layer("current"), "translateX(-300px)"],
+      [layer("next"), "scale(0.9825) translateY(4px)"],
+    ]);
+    again.move(399, 200);
+    for (let i = 1; i <= 8; i++) again.move(399 + 20 * i, 200);
+    expect(arriving.map((a) => a.playState)).toEqual(["running", "running"]);
+    expect(layer("current").style.transform).toBe("");
+    expect(layer("prev").style.visibility).toBe("visible");
+    again.up();
+    // The first move landed as the touch went down; the second slides the card before in now.
+    expect(onCommit).toHaveBeenCalledOnce();
+    expect(animations.at(-1)?.el).toBe(layer("prev"));
+  });
+
+  test("…and a tap's jitter to the left", () => {
+    const { stage, layer, animations, onTap } = setup();
+    flickRight(stage, layer);
+    const before = animations.length;
+    const again = press(stage, layer("current"), 400, 200, 200);
+    const arriving = animations.slice(before);
+    animatedAt([
+      [layer("current"), "translateX(-300px)"],
+      [layer("next"), "scale(0.9825) translateY(4px)"],
+    ]);
+    again.move(399, 200);
+    again.up(40);
+    expect(onTap).toHaveBeenCalledOnce();
+    expect(arriving.map((a) => a.playState)).toEqual(["running", "running"]);
+  });
+
   test("…which a drag the other way takes hold of where it is, with the card it covers", () => {
     const { stage, layer, animations } = setup();
     flickRight(stage, layer);
@@ -611,6 +650,37 @@ describe("input during an animation", () => {
     again.move(646.4, 200);
     expect(layer("current").style.transform).toBe("translateX(-333.6px) rotate(-1.008deg)");
     expect(layer("next").style.transform).toBe("scale(0.9895) translateY(2.4px)");
+  });
+
+  test("…which then leans only as it is dragged on from there: dragged back, it reaches its place upright", () => {
+    const { stage, layer } = setup();
+    flickRight(stage, layer);
+    const again = press(stage, layer("current"), 700, 200, 200);
+    animatedAt([
+      [layer("current"), "translateX(-300px)"],
+      [layer("next"), "scale(0.9825) translateY(4px)"],
+    ]);
+    again.move(680, 200);
+    for (let x = 700; x <= 975; x += 25) again.move(x, 200);
+    // 5 px short of its place; the next move brings out the card before, putting this one at rest, upright.
+    expect(layer("current").style.transform).toBe("translateX(-5px) rotate(0deg)");
+    again.move(990, 200);
+    expect(layer("current").style.transform).toBe("");
+  });
+
+  test("…as the card it covers goes back into its own place with it", () => {
+    const { stage, layer } = setup();
+    flickRight(stage, layer);
+    const again = press(stage, layer("current"), 700, 200, 200);
+    animatedAt([
+      [layer("current"), "translateX(-300px)"],
+      [layer("next"), "scale(0.9825) translateY(4px)"],
+    ]);
+    again.move(680, 200);
+    // Held at −300 px over a card half risen; dragged back to −60 px, a fifth of that way from its place, the card it
+    // covers is a fifth of its way risen: a tenth.
+    again.move(920, 200);
+    expect(layer("next").style.transform).toBe("scale(0.9685) translateY(7.2px)");
   });
 
   test("…as a key going on does, flinging it from there", () => {

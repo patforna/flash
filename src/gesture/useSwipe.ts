@@ -277,10 +277,15 @@ function swipe(stage: RefObject<HTMLElement | null>, options: RefObject<SwipeOpt
     if (layers.prev) rest(layers.prev);
     const { held } = g;
     const x = dx > 0 ? rubberBand(dx) : dx;
-    const deg = options.current.reducedMotion() ? 0 : tilt(x - held.x);
+    // A card taken hold of on its way back leans only as it is dragged on from there: back in its place, it is upright.
+    const deg = options.current.reducedMotion() ? 0 : tilt(held.x < 0 ? Math.min(x - held.x, 0) : x);
     write(layers.current, `translateX(${fixed(x)}px) rotate(${fixed(deg)}deg)`);
-    const rise = held.risen + Math.max(held.x - dx, 0) / rect.width / GESTURE.commitFraction;
-    if (layers.next && dx < 0) write(layers.next, underneath(Math.min(rise, 1)));
+    if (!layers.next || dx >= 0) return;
+    // The card underneath rises as the card on top goes on; dragged back towards its place, a card taken hold of takes
+    // the card under it back into its own place with it.
+    const rise =
+      dx <= held.x ? held.risen + (held.x - dx) / rect.width / GESTURE.commitFraction : (held.risen * dx) / held.x;
+    write(layers.next, underneath(Math.min(rise, 1)));
   }
 
   // A commit's motion, from a release at dx and vx, or from rest for a key or a button (easing given). A released card
@@ -429,9 +434,12 @@ function swipe(stage: RefObject<HTMLElement | null>, options: RefObject<SwipeOpt
   };
 
   // While a touch may still be a tap, the card follows a finger moving more sideways than not from its first pixel; a
-  // tap's jitter never brings out the card before, unless the touch caught the cards on the move.
+  // tap's jitter never brings out the card before, unless the touch caught the cards on the move, nor stops a card
+  // still coming back (a drag takes hold of it once it is one).
   const early = (g: Gesture, e: PointerEvent, dx: number) =>
-    Math.abs(e.clientX - g.start.x) >= Math.abs(e.clientY - g.start.y) && (dx <= 0 || !g.layers.prev || g.from !== 0);
+    !arriving.length &&
+    Math.abs(e.clientX - g.start.x) >= Math.abs(e.clientY - g.start.y) &&
+    (dx <= 0 || !g.layers.prev || g.from !== 0);
 
   const up = (e: PointerEvent) => {
     const g = own(e);
