@@ -46,8 +46,8 @@ const writingUnderneath = (page: Page) =>
 test("a tap turns the card over to its answer", async ({ page }) => {
   await tap(page, await centre(page));
   await expect(flipper(page)).toHaveAttribute("data-side", "back");
-  // Near 90° the card turning is almost edge-on: the card underneath is blank paper meanwhile. Its easing reaches 90°
-  // within a sixth of its time and lies flat by half of it.
+  // Near 90° the card turning is almost edge-on: the card underneath is blank paper meanwhile. Its easing passes 90°
+  // within a quarter of its time and is within 20° of flat by half of it.
   const frames = await underneathWhile(page, '[data-role="current"] [data-side]', 0.5);
   expect(frames.length, "frames in the first half of the turn").toBeGreaterThanOrEqual(3);
   expect(frames.filter((shown) => shown).length, "of them, frames showing the question underneath").toBe(0);

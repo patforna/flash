@@ -47,9 +47,9 @@
   --font-hand: "Shantell Sans", "Radon hand", system-ui, sans-serif;
   --font-code: "Monaspace Radon", ui-monospace, monospace;
 
-  /* Flip: a CSS transition (rotateX), so a tap mid-flip reverses from the current angle. Under reduced motion the
-     faces cross-fade instead. */
-  --flip-duration: 380ms;
-  --flip-easing: cubic-bezier(0.3, 1.2, 0.45, 1);
+  /* Flip: a CSS transition (rotateX), so a tap mid-flip reverses from the current angle. It ends as its motion does:
+     while it runs, the writing is drawn soft. Under reduced motion the faces cross-fade instead. */
+  --flip-duration: 260ms;
+  --flip-easing: cubic-bezier(0.4, 1.1, 0.65, 1);
   --flip-fade-duration: 140ms;
 }

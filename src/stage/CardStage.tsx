@@ -26,7 +26,7 @@ const keyOf = (card: Card | "end") => (card === "end" ? "end" : card.id);
 const turnLabel = (view: DeckView) =>
   view.current === "end" ? "Shuffle again" : view.side === "front" ? "Show answer" : "Show question";
 const reducedMotion = () => matchMedia("(prefers-reduced-motion: reduce)").matches;
-// A CSS time in ms, whichever unit it is written in: the build's minifier turns 380ms into .38s.
+// A CSS time in ms, whichever unit it is written in: the build's minifier turns 260ms into .26s.
 const ms = (time: string) => Number.parseFloat(time) * (/ms\s*$/.test(time) ? 1 : 1000) || 0;
 
 export function CardStage({ view, renderCard, onFullscreen, onMove, dealFirst = false }: CardStageProps) {
