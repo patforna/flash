@@ -11,18 +11,24 @@
   --u: calc(100cqh / 360);
 }
 
-/* The flip turns the card top over bottom. The perspective is the flipper's own (a perspective on the stage would
-   reach only its children); nothing here may flatten the 3D context: no overflow, opacity, filter, clip or mask. */
+/* The flip turns the card top over bottom; nothing here may flatten the 3D context: no overflow, opacity, filter, clip
+   or mask. Its perspective is the frame's, its direct parent (one on the stage would reach only the stage's children),
+   and only while it turns: at rest a perspective has Chromium draw the card through a projection, which at the Pixel's
+   2.625 device pixels per px blurs the writing. Both centred on the card, the turn is the same either way. */
 .flipper {
   position: absolute;
   inset: 0;
   transform-style: preserve-3d;
-  transform: perspective(1400px) rotateX(0);
+  transform: rotateX(0);
   transition: transform var(--flip-duration) var(--flip-easing);
 }
 
 .flipper[data-side="back"] {
-  transform: perspective(1400px) rotateX(-180deg);
+  transform: rotateX(-180deg);
+}
+
+[data-flipping] [data-role="current"] .frame {
+  perspective: 1400px;
 }
 
 /* A face is a sheet of paper: radius, grain and its own shadow, so the shadow turns with the card. The type steps

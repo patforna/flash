@@ -72,7 +72,8 @@ export function CardStage({ view, renderCard, onFullscreen, onMove, dealFirst = 
     fullscreen: onFullscreen,
   });
 
-  // While a flip runs (data-flipping), the card underneath shows blank paper: edge-on, the flipping card hides little.
+  // While a flip runs (data-flipping), the card turning has its perspective, and the card underneath shows blank paper:
+  // edge-on, the flipping card hides little.
   // It runs from a change of side until the flipper's transform transition ends, or for the flip's duration (a token;
   // under reduced motion the faces cross-fade and no transform ends).
   const flipEnd = useRef<ReturnType<typeof setTimeout>>(undefined);
