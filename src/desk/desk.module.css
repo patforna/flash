@@ -13,3 +13,11 @@
      baseline sits 0.18 em above the foot of a line-height: 1 box, which hangs that much below the panel. */
   margin-bottom: -0.18em;
 }
+
+/* In a tab too short for every chip (under Chrome's toolbars, before the app is installed), the panel scrolls and its
+   last row fades out where the wordmark would be written over it; the browser names the site there anyway. */
+@media (display-mode: browser) and (max-height: 400px) {
+  .wordmark {
+    display: none;
+  }
+}

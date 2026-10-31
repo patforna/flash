@@ -3,7 +3,8 @@ import { announcer, expect, firstCard, flipper, insets, settled, test } from "./
 
 // The real deck fits the screen. Long answers (docs/plan.md §7 and §8): every card fits both its faces without the
 // last resort (data-fit="scroll"), and every line written on a back sits on a rule. Topics (§3): every chip is in full
-// view in the panel. scripts/deploy-do.sh runs this file by name before it ships a deck.
+// view in the panel, and in a tab too short for them none is written over. scripts/deploy-do.sh runs this file by name
+// before it ships a deck.
 //
 // Under reduced motion the faces lie flat, unturned (the back fades in over the front), so both are measured in place
 // without turning the card: the layout is the same either way.
@@ -180,5 +181,27 @@ test.describe("the real deck's topics", () => {
     await expect.poll(() => page.locator("main").evaluate((el) => getComputedStyle(el).paddingLeft)).toBe("48px");
     await settled(page);
     await inFullView(page);
+  });
+
+  // Before it is installed, the app opens in a tab, under Chrome's toolbar and the status bar: the panel scrolls, its
+  // last row fading at its foot.
+  test("in a landscape tab under the browser's toolbars, nothing is drawn over a chip", async ({ page }) => {
+    for (const height of [356, 332]) {
+      await page.setViewportSize({ width: 923, height });
+      await settled(page);
+      const panel = await page.getByRole("group", { name: "Topics" }).boundingBox();
+      const mark = await page.getByText("flash", { exact: true }).boundingBox();
+      if (!panel) throw new Error("no panel");
+      for (const chip of await page.getByRole("group", { name: "Topics" }).getByRole("button").all()) {
+        const b = await chip.boundingBox();
+        const name = (await chip.getAttribute("aria-label")) ?? "";
+        if (!b || !mark) continue;
+        // What shows of the chip, the panel clipping it, against the wordmark.
+        const shown = { top: Math.max(b.y, panel.y), bottom: Math.min(b.y + b.height, panel.y + panel.height) };
+        const across = b.x < mark.x + mark.width && mark.x < b.x + b.width;
+        const under = shown.top < mark.y + mark.height && mark.y < shown.bottom;
+        expect(across && under, `${name} under the wordmark at ${height} px`).toBe(false);
+      }
+    }
   });
 });
