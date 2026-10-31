@@ -1,10 +1,10 @@
 import { type ReactNode, useSyncExternalStore } from "react";
+import styles from "../desk/desk.module.css";
 import { press } from "../panel/press";
 import { canFullscreen, isFullscreen, toggleFullscreen } from "./fullscreen";
-import styles from "./platform.module.css";
 
 // Entering or leaving fullscreen, or the display mode changing (a desktop browser's own fullscreen fires no
-// fullscreenchange), may show or hide the chip.
+// fullscreenchange), may change what the chip is.
 function subscribe(onChange: () => void) {
   const tab = matchMedia("(display-mode: browser)");
   document.addEventListener("fullscreenchange", onChange);
@@ -15,11 +15,9 @@ function subscribe(onChange: () => void) {
   };
 }
 
-export interface FullscreenChipProps {
-  // The way out: shown only while the tab is fullscreen, where the way in has no place.
-  exit?: boolean;
-  className?: string;
-}
+// The way in, from a tab that offers fullscreen; the way out, once the tab is fullscreen; nothing in the installed
+// app, which is fullscreen by its manifest with nothing to leave.
+const state = () => (isFullscreen() ? "exit" : canFullscreen() ? "enter" : "none");
 
 // Corner brackets pointing out: go fullscreen. Pointing in: come back.
 const ICON = {
@@ -27,19 +25,19 @@ const ICON = {
   exit: "M6 2v4H2M10 2v4h4M14 10h-4v4M2 10h4v4",
 };
 
-export function FullscreenChip({ exit = false, className }: FullscreenChipProps): ReactNode {
-  const shown = useSyncExternalStore(subscribe, exit ? isFullscreen : canFullscreen);
-  if (!shown) return null;
+export function FullscreenChip(): ReactNode {
+  const mode = useSyncExternalStore(subscribe, state);
+  if (mode === "none") return null;
   return (
     <button
       type="button"
-      className={className ? `${styles.chip} ${className}` : styles.chip}
-      aria-label={exit ? "Exit full screen" : "Full screen"}
+      className={styles.chip}
+      aria-label={mode === "exit" ? "Exit full screen" : "Full screen"}
       onClick={toggleFullscreen}
       {...press}
     >
       <svg className={styles.icon} viewBox="0 0 16 16" aria-hidden="true">
-        <path d={exit ? ICON.exit : ICON.enter} />
+        <path d={ICON[mode]} />
       </svg>
     </button>
   );

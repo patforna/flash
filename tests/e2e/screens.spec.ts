@@ -1,21 +1,25 @@
 import type { Page } from "@playwright/test";
 import {
   announcer,
+  controls,
   expect,
   firstCard,
   flipper,
   fullscreen,
   insets,
+  openTopics,
   question,
+  revealControls,
+  row,
   settled,
   shuffling,
   test,
 } from "./helpers";
 
 // The screenshot baselines (docs/plan.md §12), in tests/screenshots/<project>/. On the Pixel 11 the page is
-// fullscreen first, as the installed app is, except for the panel, which only a browser tab shows. Loading and error
-// come before there is a stage to take the f key. The seeded shuffle puts the same cards in the same places every
-// run.
+// fullscreen first, as the installed app is, and at rest: the controls have faded after launch (the end card brings
+// them back). Loading and error come before there is a stage to take the f key. The seeded shuffle puts the same
+// cards in the same places every run.
 
 const project = () => test.info().project.name;
 
@@ -24,6 +28,10 @@ async function open(page: Page, { fullscreen: full = project() === "pixel11" } =
   await firstCard(page);
   if (full) await fullscreen(page);
   await settled(page);
+  // The controls have gone, and their fade with them.
+  await expect(controls(page)).toHaveCount(0, { timeout: 5000 });
+  const column = page.getByRole("button", { name: /^Topics/ }).locator("..");
+  await expect.poll(() => column.evaluate((el) => getComputedStyle(el).opacity)).toBe("0");
 }
 
 // Deals with l until the card on top asks `wanted`.
@@ -87,7 +95,9 @@ test.describe("the Pixel 11", () => {
     await page.route("**/api/cards", () => {});
     await page.goto("/");
     await expect(shuffling(page)).toBeVisible();
-    await page.evaluate(() => document.fonts.load('1em "Shantell Sans"'));
+    await page.evaluate(() =>
+      Promise.all([document.fonts.load('1em "Klee One"'), document.fonts.load('1em "Covered By Your Grace"')]),
+    );
     await expect(page).toHaveScreenshot("loading.png");
   });
 
@@ -97,18 +107,26 @@ test.describe("the Pixel 11", () => {
     await expect(page.getByRole("button", { name: "Can’t reach the deck. Tap to try again" })).toBeVisible({
       timeout: 15_000,
     });
-    await page.evaluate(() => document.fonts.load('1em "Shantell Sans"'));
+    await page.evaluate(() =>
+      Promise.all([document.fonts.load('1em "Klee One"'), document.fonts.load('1em "Covered By Your Grace"')]),
+    );
     await expect(page).toHaveScreenshot("error.png");
   });
 
-  test("a browser tab, three topics selected", async ({ page }) => {
-    await open(page, { fullscreen: false });
-    for (const chip of ["Redis, 2 cards", "Postgres, 3 cards", "Real-time, 2 cards"]) {
-      await page.getByRole("button", { name: chip, exact: true }).tap();
-    }
+  test("the topic drawer, three topics selected", async ({ page }) => {
+    await open(page);
+    await openTopics(page);
+    for (const name of ["Redis 2 cards", "Postgres 3 cards", "Real-time 2 cards"]) await row(page, name).tap();
     await expect(announcer(page)).toHaveText(/ of 7$/);
     await settled(page);
-    await expect(page).toHaveScreenshot("three-topics.png");
+    await expect(page).toHaveScreenshot("topics.png");
+  });
+
+  test("the controls, revealed by a tap on the desk", async ({ page }) => {
+    await open(page);
+    await revealControls(page);
+    await settled(page);
+    await expect(page).toHaveScreenshot("controls.png");
   });
 
   test("a 40 px camera cutout on the left", async ({ page }) => {

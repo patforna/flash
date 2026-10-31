@@ -4,11 +4,15 @@ import {
   animated,
   announcer,
   centre,
+  closeTopics,
   expect,
   firstCard,
   flipper,
   layer,
+  openTopics,
   question,
+  revealControls,
+  row,
   settled,
   shuffling,
   tap,
@@ -64,12 +68,17 @@ test.describe("axe", () => {
     expect(await axe(page)).toEqual([]);
   });
 
-  test("finds nothing with topics selected", async ({ page }) => {
+  test("finds nothing in the topic drawer, with topics selected, nor on the desk after it", async ({ page }) => {
     await open(page);
-    await page.getByRole("button", { name: "Redis, 2 cards", exact: true }).tap();
-    await page.getByRole("button", { name: "Sharding, 2 cards", exact: true }).tap();
+    await openTopics(page);
+    await row(page, "Redis 2 cards").tap();
+    await row(page, "Sharding 2 cards").tap();
     await expect(announcer(page)).toHaveText("Card 1 of 4");
     await settled(page);
+    expect(await axe(page)).toEqual([]);
+
+    await closeTopics(page);
+    await revealControls(page);
     expect(await axe(page)).toEqual([]);
   });
 
@@ -135,22 +144,15 @@ test("the keys alone read the deck, the focus always in sight", async ({ page })
   await settled(page);
   const first = await question(page).textContent();
 
-  // Tab through the panel's chips to the card's buttons: every stop shows its ring.
+  // Tab through the controls (which a focus reveals) to the card's buttons: every stop shows its ring.
   const stops: string[] = [];
-  for (let i = 0; i < 12 && stops.at(-1) !== "Show answer"; i++) {
+  for (let i = 0; i < 6 && stops.at(-1) !== "Show answer"; i++) {
     await page.keyboard.press("Tab");
     const focus = await focusRing(page);
     expect(focus, `tab ${i + 1}`).toMatchObject({ ring: "solid 3px rgb(255, 240, 77)", shown: true });
     stops.push(focus?.name ?? "");
   }
-  expect(stops).toEqual([
-    "Full screen",
-    "All, 9 cards",
-    ...["Redis, 2", "Postgres, 3", "Queues, 3", "Consistency, 1", "Sharding, 2", "Real-time, 2", "Case studies, 2"].map(
-      (chip) => `${chip} card${chip.endsWith(" 1") ? "" : "s"}`,
-    ),
-    "Show answer",
-  ]);
+  expect(stops).toEqual(["Full screen", "Topics: all topics", "Show answer"]);
 
   await page.keyboard.press("Enter");
   await expect(flipper(page)).toHaveAttribute("data-side", "back");

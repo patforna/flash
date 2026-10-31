@@ -1,46 +1,66 @@
-/* The topic panel (docs/plan.md §3): sticker chips on the desk, wrapping. It fills its column and scrolls when the
-   topics outgrow it, its foot fading only while there is more below: no fade with every chip in view, none once
-   scrolled to the end, so the last row shows whole. The panel bleeds 6 px past its column so focus rings and sticker
-   shadows are not clipped by the scroller. */
+/* The topic drawer: the list slides in over the desk from the left, a scrim over the cards. The list owns its scroll
+   when the topics outgrow it, its foot fading only while there is more below: no fade with every row in view, none
+   once scrolled to the end, so the last row shows whole. Only transform and opacity ever move. */
 
-/* How far up from the panel's foot its fade reaches: 0 unless the panel's own scroll drives it (the fade animation). */
+/* How far up from the list's foot its fade reaches: 0 unless the list's own scroll drives it (the fade animation). */
 @property --fade {
   syntax: "<length>";
   inherits: false;
   initial-value: 0px;
 }
 
-.panel {
+.scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 3;
+  background: rgb(0 0 0 / 45%);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 220ms ease-out;
+}
+
+.scrim[data-open] {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* The drawer's ground is the desk, a shade darker, so the rows and the wordmark keep their contrast. It bleeds past
+   the screen's left edge by its own shadow's width, so nothing of the desk shows between them while it slides. */
+.drawer {
+  position: fixed;
+  inset: 0 auto 0 0;
+  z-index: 4;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: min(300px, 80vw);
+  padding: 20px 20px 24px max(16px, calc(env(safe-area-inset-left) + 8px));
+  background: var(--desk-deep);
+  box-shadow: 24px 0 48px -16px rgb(0 0 0 / 70%);
+  transform: translateX(-100%);
+  transition: transform 220ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.drawer[data-open] {
+  transform: none;
+}
+
+/* The list: one row per topic, All first. Its fade goes with its own scroll: 24 px until the last 24 px of the scroll
+   (from the top when there is less), then out with it. With nothing to scroll the timeline is inactive, so the fade
+   stays at 0. The timeline and range come after the shorthand, which resets them. */
+.list {
   display: flex;
   flex: 1 1 auto;
-  flex-wrap: wrap;
-  align-content: flex-start;
-  gap: 6px;
+  flex-direction: column;
   min-height: 0;
-  min-inline-size: 0;
   margin: -6px;
   padding: 6px;
-  border: 0;
   overflow-y: auto;
   overscroll-behavior: contain;
   mask-image: linear-gradient(to top, transparent, black var(--fade));
-  /* It arrives once, with the first card and in step with its deal (MOTION in motion/timing.ts), so the stickers don't
-     pop in at the edge of vision while the eye follows the card. Its fade goes with its own scroll: 24 px until the
-     last 24 px of the scroll (from the top when there is less), then out with it. With nothing to scroll the timeline
-     is inactive, so the fade stays at 0. The timeline and range come after the shorthand, which resets them. */
-  animation:
-    arrive 220ms cubic-bezier(0.2, 0.8, 0.2, 1) backwards,
-    fade linear both;
-  animation-timeline: auto, scroll(self);
-  animation-range:
-    normal,
-    max(0px, 100% - 24px) 100%;
-}
-
-@keyframes arrive {
-  from {
-    opacity: 0;
-  }
+  animation: fade linear both;
+  animation-timeline: scroll(self);
+  animation-range: max(0px, 100% - 24px) 100%;
 }
 
 @keyframes fade {
@@ -53,89 +73,93 @@
   }
 }
 
-/* A chip takes everything from its sticker's colour. Not selected, it is a muted sticker: a faint fill, an outline
-   and a label tinted with it. Selected, it is stuck on: filled, tilted, with a hard shadow in a dark shade of its own
-   colour, like an offset print. Pressing pushes the sticker into its shadow. Only transform and opacity ever move. */
-.chip {
-  --press: 0px;
-  --turn: 0deg;
-  position: relative;
-  isolation: isolate;
-  min-width: 44px; /* a label may be a single letter */
+/* A row: the dot in the topic's colour, the name, the count; selected, it is lit, ticked and its dot full. Pressed
+   (data-pressed, from a pointer going down: press.ts), it darkens under the thumb at once. */
+.row {
+  display: grid;
+  flex: none;
+  grid-template-columns: 16px minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: center;
   height: 44px;
-  padding: 0 10px;
+  padding: 0 10px 0 8px;
   border: 0;
-  border-radius: 7px;
+  border-radius: 8px;
   background: none;
-  color: color-mix(in oklab, var(--sticker) 35%, var(--chalk));
-  font-family: var(--font-hand);
-  font-size: 14px;
-  font-weight: 600;
-  font-variation-settings: "INFM" 25;
-  line-height: 1;
-  white-space: nowrap;
+  color: var(--chalk-dim);
+  font-family: var(--font-ui);
+  font-size: 15px;
+  font-weight: 500;
+  text-align: left;
   cursor: pointer;
-  transform: translate(var(--press), var(--press)) rotate(var(--turn));
-  transition: transform 90ms ease-out;
 }
 
-.chip::before,
-.chip::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
+.row[aria-pressed="true"] {
+  color: var(--chalk);
+  background: color-mix(in srgb, var(--chalk) 8%, transparent);
 }
 
-.chip::after {
-  z-index: -1;
-  background: color-mix(in oklab, var(--sticker) 18%, var(--desk));
-  box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--sticker) 60%, transparent);
+.row[data-pressed],
+.row:active:focus-visible {
+  background: color-mix(in srgb, var(--chalk) 16%, transparent);
 }
 
-.chip::before {
-  z-index: -2;
-  background: color-mix(in oklab, var(--sticker) 40%, black);
-  opacity: 0;
-  transform: translate(calc(3px - var(--press)), calc(3px - var(--press)));
-  transition: transform 90ms ease-out;
+.row:focus-visible {
+  outline: 3px solid var(--hl);
+  outline-offset: -3px;
 }
 
-.chip[aria-pressed="true"] {
-  --turn: var(--tilt);
-  color: var(--sticker-ink);
+.dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--sticker);
+  justify-self: center;
+  opacity: 0.55;
 }
 
-.chip[aria-pressed="true"]::after {
-  background: var(--grain), var(--sticker);
-  box-shadow: none;
-}
-
-.chip[aria-pressed="true"]::before {
+.row[aria-pressed="true"] .dot {
   opacity: 1;
 }
 
-/* Pushed in under a pointer from the moment it goes down (data-pressed: press.ts), and by the keyboard's Space; :active
-   only with the keyboard's focus, as a tap's own comes once it has lifted and would hold the chip in after the thumb. */
-.chip[data-pressed],
-.chip:active:focus-visible {
-  --press: 2px;
+.label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.chip:focus-visible {
-  outline: 3px solid var(--hl);
-  outline-offset: 2px;
+/* The tick is decoration: the row's state is its aria-pressed, so it adds nothing to the name. */
+.row[aria-pressed="true"] .label::after {
+  content: " ✓" / "";
+  color: var(--hl);
 }
 
-/* Reduced motion: the stickers change state at once; the panel fades in as the first card does, and its foot still
-   fades with its scroll (direct manipulation is not motion). */
+.count {
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+  opacity: 0.7;
+}
+
+/* "cards": read out, never seen. */
+.unit {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* Reduced motion: the drawer fades in place of sliding; the scrim already only fades. */
 @media (prefers-reduced-motion: reduce) {
-  .chip,
-  .chip::before {
-    transition: none;
+  .drawer {
+    transform: none;
+    opacity: 0;
+    transition: opacity 140ms ease-out;
   }
 
-  .panel {
-    animation-duration: 140ms, auto;
+  .drawer[data-open] {
+    opacity: 1;
   }
 }

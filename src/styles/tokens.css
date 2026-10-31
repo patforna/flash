@@ -22,16 +22,20 @@
      where the sticker pink is 2.4:1). */
   --pen-pink: #d02a68;
 
-  /* Highlighter: bold in answers, the focus ring, the wordmark. The wash sits behind inline code and code blocks. */
+  /* Highlighters: yellow for bold, the focus ring and the wordmark; blue for code. The card's stylesheet draws them as
+     translucent marker strokes. */
   --hl: #fff04d;
-  --code-wash: rgb(31 45 107 / 7%);
+  --mark-code: #a9d4ff;
 
-  /* On the desk, chalk (15.4:1): the page's text, the stage's buttons, the base of every chip's tint, and the colour All
-     and the fullscreen chip are muted in. Text on a sticker (at least 7.6:1 on all eight). */
+  /* On the desk, chalk (15.4:1): the page's text, the stage's buttons, the controls' tint and the selected rows of the
+     topic list; dim chalk for the rows not selected (7.2:1 on the drawer). The drawer's ground is the desk, a shade
+     deeper (85 % desk, 15 % black). */
   --chalk: #eceae3;
-  --sticker-ink: #121318;
+  --chalk-dim: #9a9daa;
+  --desk-deep: #0e1016;
 
-  /* Stickers: a topic's colour is its declared index mod 8, in this order. */
+  /* Stickers: a topic's colour is its declared index mod 8, in this order: the dots in the topic list and on the
+     topics chip. */
   --s-pink: #ff7aa8;
   --s-marigold: #ffc93c;
   --s-mint: #45e0a0;
@@ -41,10 +45,12 @@
   --s-teal: #34d1c1;
   --s-lime: #d7f25a;
 
-  /* Type: the handwriting falls back to Radon at its own size, which carries the → and ← that Shantell lacks (typeset
-     from -> and <-). */
-  --font-hand: "Shantell Sans", "Radon hand", system-ui, sans-serif;
-  --font-code: "Monaspace Radon", ui-monospace, monospace;
+  /* Type: a marker for the question, a fineliner for the answer and everything else on the paper (code included: a
+     highlighter marks it), and a grotesque for what is typed rather than written. The arrows the marker lacks come
+     from the fineliner. */
+  --font-marker: "Covered By Your Grace", "Klee One", cursive;
+  --font-hand: "Klee One", system-ui, sans-serif;
+  --font-ui: "Geist", system-ui, sans-serif;
 
   /* Flip: a CSS transition (rotateX), so a tap mid-flip reverses from the current angle. It ends as its motion does:
      while it runs, the writing is drawn soft. Under reduced motion the faces cross-fade instead. */

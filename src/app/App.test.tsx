@@ -5,15 +5,17 @@
 // [x] the first card of a pass on the stage, front up; the next card underneath, front up too
 // [x] the first card is dealt onto the stack, after the loading card or within 200 ms
 // [x] only the card on top shows the side it was turned to
-// [x] the panel: All with the deck's total, the topics in order with their counts, the wordmark at its foot
-// [x] a chip toggles its topic, All clears the selection
-// [x] colours by the topic's declared index, on the chips
+// [x] the topic drawer (the topics chip, or t): closed and inert until opened, Escape closes it; All with the deck's
+//     total, the topics in order with their counts, the wordmark at its foot
+// [x] a row toggles its topic, All clears the selection
+// [x] colours by the topic's declared index: the rows' dots, and the chip's dots for the selected topics
+// [x] the controls show at launch and stay on the end card
 // [x] the end card closes the pass
 // [x] a live region says where you are: "Card 1 of 3", the end card's text
 // [x] …and, before there is a deck, what the loading and error cards say; the same region once the deck arrives
-// [x] haptics as next or previous is decided, on a reshuffle, the end card's reshuffle and a chip toggle; never on a
+// [x] haptics as next or previous is decided, on a reshuffle, the end card's reshuffle and a row toggle; never on a
 //     flip
-// [x] the fullscreen chip leads the panel; f toggles fullscreen; gone fullscreen, the exit chip on the desk comes back
+// [x] the fullscreen chip is among the controls; f toggles fullscreen; gone fullscreen, the chip is the way out
 // [x] the wake lock is asked for on the first input
 // [x] performance mark flash:first-card once the fonts are in and the first card is on screen, once per page load;
 //     also when a font fails to load
@@ -255,51 +257,94 @@ describe("reading", () => {
 });
 
 describe("topics", () => {
-  // The chips in the panel, by their accessible names.
-  const chips = () =>
-    within(screen.getByRole("group", { name: "Topics" }))
-      .getAllByRole("button")
-      .map((chip) => chip.getAttribute("aria-label"));
-  const chip = (name: string) => within(screen.getByRole("group", { name: "Topics" })).getByRole("button", { name });
+  const drawer = () => screen.getByRole("dialog", { name: "Topics", hidden: true });
+  const rows = () =>
+    within(drawer())
+      .getAllByRole("button", { hidden: true })
+      .map((row) => row.textContent);
+  const row = (name: string) => within(drawer()).getByRole("button", { name, hidden: true });
+  const open = () => fireEvent.click(screen.getByRole("button", { name: /^Topics/ }));
+  const live = () => document.querySelector("[aria-live]")?.textContent;
 
-  test("the panel offers All with the deck's total, then each topic in the deck's order with its count", async () => {
+  test("the drawer is closed and inert until the topics chip opens it, and Escape closes it again", async () => {
     await reading();
+    expect(drawer().hasAttribute("inert")).toBe(true);
 
-    expect(chips()).toEqual(["All, 3 cards", "Redis, 2 cards", "Postgres, 1 card", "Queues, 1 card"]);
+    open();
+    expect(drawer().hasAttribute("inert")).toBe(false);
+    expect(drawer().hasAttribute("data-open")).toBe(true);
+
+    fireEvent.keyDown(window, { key: "Escape" });
+    expect(drawer().hasAttribute("inert")).toBe(true);
   });
 
-  test("a topic's chip narrows the pass to its cards; All widens it again, keeping the card on top", async () => {
+  test("t opens and closes it too", async () => {
     await reading();
+    fireEvent.keyDown(document.body, { key: "t" });
+    expect(drawer().hasAttribute("data-open")).toBe(true);
+    fireEvent.keyDown(document.body, { key: "t" });
+    expect(drawer().hasAttribute("data-open")).toBe(false);
+  });
 
-    const live = () => document.querySelector("[aria-live]")?.textContent;
+  test("the list offers All with the deck's total, then each topic in the deck's order with its count", async () => {
+    await reading();
+    open();
 
-    fireEvent.click(chip("Queues, 1 card"));
-    expect(chip("Queues, 1 card").getAttribute("aria-pressed")).toBe("true");
+    expect(rows()).toEqual(["All 3 cards", "Redis 2 cards", "Postgres 1 card", "Queues 1 card"]);
+  });
+
+  test("a topic's row narrows the pass to its cards; All widens it again, keeping the card on top", async () => {
+    await reading();
+    open();
+
+    fireEvent.click(row("Queues 1 card"));
+    expect(row("Queues 1 card").getAttribute("aria-pressed")).toBe("true");
     expect([question(layer("current")), live()]).toEqual(["Why queue work?", "Card 1 of 1"]);
 
-    fireEvent.click(chip("All, 3 cards"));
-    expect(chip("All, 3 cards").getAttribute("aria-pressed")).toBe("true");
+    fireEvent.click(row("All 3 cards"));
+    expect(row("All 3 cards").getAttribute("aria-pressed")).toBe("true");
     expect([question(layer("current")), live()]).toEqual(["Why queue work?", "Card 1 of 3"]);
   });
 
-  test("the wordmark sits at the foot of the panel, under the topics", async () => {
+  test("the wordmark sits at the foot of the drawer, under the topics", async () => {
     await reading();
 
-    expect(screen.getByRole("group", { name: "Topics" }).nextElementSibling?.textContent).toBe("flash");
+    expect(drawer().lastElementChild?.textContent).toBe("flash");
   });
 
-  test("colours each topic's chip by its place in the deck", async () => {
+  test("colours each topic's row by its place in the deck, and the chip with the selected topics", async () => {
     await reading();
-
-    expect(["Redis, 2 cards", "Postgres, 1 card", "Queues, 1 card"].map((name) => sticker(chip(name)))).toEqual([
+    open();
+    const dot = (name: string) => row(name).querySelector<HTMLElement>("span")?.style.getPropertyValue("--sticker");
+    expect(["Redis 2 cards", "Postgres 1 card", "Queues 1 card"].map(dot)).toEqual([
       "var(--s-pink)",
       "var(--s-marigold)",
+      "var(--s-mint)",
+    ]);
+
+    fireEvent.click(row("Queues 1 card"));
+
+    const chip = screen.getByRole("button", { name: "Topics: Queues" });
+    expect(Array.from(chip.querySelectorAll("i"), (d) => d.style.getPropertyValue("--sticker"))).toEqual([
       "var(--s-mint)",
     ]);
   });
 });
 
-const sticker = (chip: HTMLElement) => chip.style.getPropertyValue("--sticker");
+describe("the controls", () => {
+  const revealed = () => document.querySelector("[data-revealed]") !== null;
+
+  test("show at launch", async () => {
+    await reading();
+    expect(revealed()).toBe(true);
+  });
+
+  test("stay on the end card", async () => {
+    await reading();
+    for (let i = 0; i < 3; i++) await goNext();
+    expect(revealed()).toBe(true);
+  });
+});
 
 describe("announcements", () => {
   const live = () => document.querySelector('[aria-live="polite"]');
@@ -367,15 +412,16 @@ describe("haptics", () => {
     expect(vibrate.mock.calls).toEqual([[8]]);
   });
 
-  test("a tick as a chip changes the selection; none from All when there is nothing to clear", async () => {
+  test("a tick as a row changes the selection; none from All when there is nothing to clear", async () => {
     const vibrate = phone();
     await reading();
-    const chip = (name: string) => within(screen.getByRole("group", { name: "Topics" })).getByRole("button", { name });
+    fireEvent.click(screen.getByRole("button", { name: /^Topics/ }));
+    const row = (name: string) => within(screen.getByRole("dialog", { name: "Topics" })).getByRole("button", { name });
 
-    fireEvent.click(chip("All, 3 cards"));
+    fireEvent.click(row("All 3 cards"));
     expect(vibrate).not.toHaveBeenCalled();
-    fireEvent.click(chip("Redis, 2 cards"));
-    fireEvent.click(chip("All, 3 cards"));
+    fireEvent.click(row("Redis 2 cards"));
+    fireEvent.click(row("All 3 cards"));
 
     expect(vibrate.mock.calls).toEqual([[8], [8]]);
   });
@@ -398,18 +444,16 @@ describe("fullscreen", () => {
     Reflect.deleteProperty(document.documentElement, "requestFullscreen");
   });
 
-  test("in a tab, the fullscreen chip leads the panel and goes fullscreen", async () => {
+  test("in a tab, the fullscreen chip is among the controls and goes fullscreen", async () => {
     const request = fullscreenTab();
     await reading();
 
-    const [lead] = within(screen.getByRole("group", { name: "Topics" })).getAllByRole("button");
-    expect(lead?.getAttribute("aria-label")).toBe("Full screen");
-    fireEvent.click(lead as HTMLElement);
+    fireEvent.click(screen.getByRole("button", { name: "Full screen" }));
 
     expect(request).toHaveBeenCalledWith({ navigationUI: "hide" });
   });
 
-  test("gone fullscreen, the panel's chip has no place, and the exit chip on the desk comes back out", async () => {
+  test("gone fullscreen, the chip is the way out", async () => {
     fullscreenTab();
     const exit = vi.fn(async () => {});
     Object.defineProperty(document, "fullscreenElement", { configurable: true, value: document.documentElement });

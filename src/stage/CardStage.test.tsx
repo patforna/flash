@@ -102,6 +102,7 @@ function Reader({ calls, onFullscreen, onMove, start, held }: ReaderProps) {
         </div>
       )}
       onFullscreen={onFullscreen}
+      onTopics={() => {}}
       onMove={onMove}
     />
   );
@@ -374,6 +375,7 @@ describe("dealing", () => {
         }}
         renderCard={(c) => <div key={c === "end" ? "end" : c.id}>{c === "end" ? "end" : c.questionHtml}</div>}
         onFullscreen={() => {}}
+        onTopics={() => {}}
         onMove={() => {}}
         dealFirst
       />,

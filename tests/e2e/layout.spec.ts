@@ -1,11 +1,25 @@
 import type { Page } from "@playwright/test";
 import type { Deck } from "../../shared/types";
-import { centre, expect, finger, firstCard, fullscreen, insets, layer, settled, test } from "./helpers";
+import {
+  centre,
+  closeTopics,
+  controls,
+  expect,
+  finger,
+  firstCard,
+  fullscreen,
+  insets,
+  layer,
+  openTopics,
+  revealControls,
+  settled,
+  test,
+} from "./helpers";
 
 // The desk's geometry (docs/plan.md §2): nothing scrolls sideways, every control is big enough for a thumb, the card
-// keeps clear of the strip the Android back gesture owns, a camera cutout covers nothing, and fullscreen shows the
-// cards alone. On the Pixel 11 the page is fullscreen first, as the installed app is, except where the panel is what
-// is checked: that shows in a tab.
+// keeps clear of the strip the Android back gesture owns, a camera cutout covers nothing, the controls stand along the
+// card's left edge and show only when asked for, and fullscreen has a way out. On the Pixel 11 the page is
+// fullscreen first, as the installed app is.
 
 const project = () => test.info().project.name;
 
@@ -38,11 +52,13 @@ test("nothing scrolls sideways while a card is dragged off the left of the scree
 });
 
 // The controls on screen, each with its size. The stage's buttons for keyboards and screen readers stay clipped away
-// until they are focused, so they don't count.
-function controls(page: Page) {
+// until they are focused, so they don't count; the drawer's rows count only while it is open (closed, it is inert).
+function shown(page: Page) {
   return page.getByRole("button").evaluateAll((buttons) =>
     buttons
-      .filter((el) => el.checkVisibility() && getComputedStyle(el).clipPath === "none")
+      .filter(
+        (el) => el.checkVisibility() && getComputedStyle(el).clipPath === "none" && el.closest("[inert]") === null,
+      )
       .map((el) => {
         const { width, height } = el.getBoundingClientRect();
         return { name: el.getAttribute("aria-label") ?? el.textContent, width, height };
@@ -50,8 +66,8 @@ function controls(page: Page) {
   );
 }
 
-const tooSmall = (shown: Awaited<ReturnType<typeof controls>>) =>
-  shown.filter(({ width, height }) => width < 44 || height < 44);
+const tooSmall = (buttons: Awaited<ReturnType<typeof shown>>) =>
+  buttons.filter(({ width, height }) => width < 44 || height < 44);
 
 for (const [deck, baseURL] of [
   ["fixture", "http://127.0.0.1:4173"],
@@ -59,16 +75,17 @@ for (const [deck, baseURL] of [
 ] as const) {
   test(`every visible control is at least 44 × 44 px (${deck} deck)`, async ({ page }) => {
     test.skip(project() === "laptop", "a fine pointer");
-    await open(page, { baseURL, fullscreen: false });
-    const shown = await controls(page);
-    // All and a chip for each of the deck's topics, at least.
+    await open(page, { baseURL });
+    await openTopics(page);
+    const buttons = await shown(page);
+    // The two chips, All and a row for each of the deck's topics.
     const { topics }: Deck = await (await page.request.get(`${baseURL}/api/cards`)).json();
-    expect(shown.length).toBeGreaterThan(topics.length);
-    expect(tooSmall(shown)).toEqual([]);
+    expect(buttons).toHaveLength(topics.length + 3);
+    expect(tooSmall(buttons)).toEqual([]);
   });
 }
 
-test("a topic of two letters still gets a 44 px chip", async ({ page }) => {
+test("a topic of two letters still gets a 44 px row", async ({ page }) => {
   test.skip(project() === "laptop", "a fine pointer");
   // The deck rules allow a label of one character: the fixture deck as served, with Redis renamed Go.
   await page.route("**/api/cards", async (route) => {
@@ -78,11 +95,12 @@ test("a topic of two letters still gets a 44 px chip", async ({ page }) => {
     for (const card of deck.cards) card.topics = card.topics.map(rename);
     await route.fulfill({ json: deck });
   });
-  await open(page, { fullscreen: false });
+  await open(page);
+  await openTopics(page);
 
-  const shown = await controls(page);
-  expect(shown.map((control) => control.name)).toContain("Go, 2 cards");
-  expect(tooSmall(shown)).toEqual([]);
+  const buttons = await shown(page);
+  expect(buttons.map((control) => control.name)).toContain("Go 2 cards");
+  expect(tooSmall(buttons)).toEqual([]);
 });
 
 test("the card keeps 48 px clear of the right edge, where the back gesture starts", async ({ page }) => {
@@ -93,65 +111,72 @@ test("the card keeps 48 px clear of the right edge, where the back gesture start
   expect(width - ((box?.x ?? 0) + (box?.width ?? 0))).toBeGreaterThanOrEqual(48);
 });
 
-// The panel stands beside the card: its first chip level with the card's top edge, the wordmark's letters standing on
-// the line of its foot.
-async function besideTheCard(page: Page) {
+// The controls stand in a column along the card's left edge, clear of it: the fullscreen chip level with the card's
+// top edge, the topics chip with its foot.
+async function alongTheCard(page: Page) {
   const card = await layer(page).boundingBox();
-  // Where the chip is laid out: a selected chip is tilted, which grows its bounding box.
-  const chip = await page
-    .getByRole("group", { name: "Topics" })
-    .getByRole("button")
+  const top = await page
+    .getByRole("button", { name: /full screen$/i })
     .first()
-    .evaluate((el) => (el as HTMLElement).offsetTop);
-  // The wordmark's baseline, where an empty inline block sits.
-  const baseline = await page.getByText("flash", { exact: true }).evaluate((el) => {
-    const probe = document.createElement("span");
-    probe.style.display = "inline-block";
-    el.append(probe);
-    const y = probe.getBoundingClientRect().bottom;
-    probe.remove();
-    return y;
-  });
-  if (!card) throw new Error("no card");
-  expect(Math.abs(chip - card.y), `the first chip at ${chip}, the card at ${card.y}`).toBeLessThanOrEqual(1);
-  const foot = card.y + card.height;
+    .boundingBox();
+  const foot = await page.getByRole("button", { name: /^Topics/ }).boundingBox();
+  if (!card || !top || !foot) throw new Error("no card or no controls");
+  expect(Math.abs(top.y - card.y), `the first control at ${top.y}, the card at ${card.y}`).toBeLessThanOrEqual(1);
   expect(
-    Math.abs(baseline - foot),
-    `the wordmark stands at ${baseline}, the card's foot at ${foot}`,
+    Math.abs(foot.y + foot.height - (card.y + card.height)),
+    `the last control ends at ${foot.y + foot.height}, the card at ${card.y + card.height}`,
   ).toBeLessThanOrEqual(1);
+  expect(top.x + top.width, "beside the card, not on it").toBeLessThan(card.x);
 }
 
-test("the panel stands beside the card, from its top edge to its foot", async ({ page }) => {
-  test.skip(project() === "portrait", "portrait stacks the card over the chips");
-  await open(page, { fullscreen: false });
-  await besideTheCard(page);
+test("the controls stand along the card's left edge, from its top to its foot", async ({ page }) => {
+  test.skip(project() === "portrait", "portrait puts the controls under the card");
+  await open(page);
+  await alongTheCard(page);
 });
 
-// Fullscreen is for reading: the panel and the wordmark go, the card is centred on the desk, and the one control left
-// is a tab's way back out, where the fullscreen chip that brought it here was.
-test("fullscreen shows the cards alone, the exit chip top left, level with the card, bringing the tab back", async ({
-  page,
-}) => {
+// Reading is undisturbed: the controls show for a moment at launch, go, come back on a tap on the desk (not on the
+// card), and go again as a card moves.
+test("the controls fade out after launch, come back on a tap on the desk, and go as a card moves", async ({ page }) => {
+  test.skip(project() !== "pixel11", "taps, on the Pixel 11");
+  await open(page);
+  await expect(controls(page)).toHaveCount(0, { timeout: 5000 });
+  const column = page.getByRole("button", { name: /^Topics/ }).locator("..");
+  await expect.poll(() => column.evaluate((el) => getComputedStyle(el).opacity)).toBe("0");
+
+  await revealControls(page);
+  await expect.poll(() => column.evaluate((el) => getComputedStyle(el).opacity)).toBe("1");
+
+  await page.keyboard.press("l");
+  await expect(controls(page)).toHaveCount(0);
+});
+
+test("fullscreen has a way out: the chip in the corner brings the tab back", async ({ page }) => {
   test.skip(project() === "portrait", "landscape");
   await open(page, { fullscreen: true });
-  await expect(page.getByRole("group", { name: "Topics" })).toBeHidden();
-  await expect(page.getByText("flash", { exact: true })).toBeHidden();
-  const shown = await controls(page);
-  // The one control on the desk; a fine pointer also has the stage's ‹ and › waiting at the card's edges.
-  if (project() === "pixel11") expect(shown.map((control) => control.name)).toEqual(["Exit full screen"]);
-  else expect(shown.map((control) => control.name)).toContain("Exit full screen");
-  expect(tooSmall(shown)).toEqual([]);
-  const exit = page.getByRole("button", { name: "Exit full screen" });
-  const [chip, card] = await Promise.all([exit.boundingBox(), layer(page).boundingBox()]);
-  if (!chip || !card) throw new Error("no chip or no card");
-  expect(Math.abs(chip.y - card.y), `the chip at ${chip.y}, the card at ${card.y}`).toBeLessThanOrEqual(1);
-  expect(chip.x + chip.width, "beside the card, not on it").toBeLessThan(card.x);
+  await revealControls(page);
+  const exit = page.getByRole("button", { name: "Exit full screen", exact: true });
+  await expect(exit).toBeVisible();
+  await alongTheCard(page);
 
   await exit.click();
 
   await expect.poll(() => page.evaluate(() => matchMedia("(display-mode: fullscreen)").matches)).toBe(false);
-  await expect(page.getByRole("group", { name: "Topics" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Full screen", exact: true })).toBeVisible();
   await expect(exit).toHaveCount(0);
+});
+
+test("the drawer slides over the desk, and a tap beside it closes it", async ({ page }) => {
+  test.skip(project() !== "pixel11", "taps, on the Pixel 11");
+  await open(page);
+  const drawer = await openTopics(page);
+  const box = await drawer.boundingBox();
+  if (!box) throw new Error("no drawer");
+  expect(box.x).toBe(0);
+  expect(box.height).toBe(412);
+
+  await closeTopics(page, "tap");
+  await expect(drawer).not.toHaveAttribute("data-open", "");
 });
 
 test.describe("on the Pixel 11 with a camera cutout", () => {
@@ -159,16 +184,18 @@ test.describe("on the Pixel 11 with a camera cutout", () => {
     test.skip(project() !== "pixel11", "the phone's safe areas");
   });
 
-  test("a 40 px cutout on the left: the card narrows, and the panel still stands beside it", async ({ page }) => {
-    await open(page, { fullscreen: false });
-    await insets(page, { left: 40 });
-    await expect.poll(() => page.locator("main").evaluate((el) => getComputedStyle(el).paddingLeft)).toBe("48px");
-    await settled(page);
-    await besideTheCard(page);
-  });
-
-  // Fullscreen pads the desk by the exit chip's column too (44 px and the 24 px gap).
+  // Fullscreen pads the desk by the controls' column too (44 px and the 24 px gap).
   const aside = 44 + 24;
+
+  test("a 40 px cutout on the left: the card narrows, and the controls still stand along it", async ({ page }) => {
+    await open(page);
+    await insets(page, { left: 40 });
+    await expect
+      .poll(() => page.locator("main").evaluate((el) => getComputedStyle(el).paddingLeft))
+      .toBe(`${48 + aside}px`);
+    await settled(page);
+    await alongTheCard(page);
+  });
 
   test("a 40 px cutout on the left covers nothing", async ({ page }) => {
     await open(page);
@@ -178,10 +205,14 @@ test.describe("on the Pixel 11 with a camera cutout", () => {
       .toBe(`${48 + aside}px`);
     await settled(page);
 
+    // Whatever is on screen (the closed drawer waits off it, inert) and reaches under the cutout.
     const under = await page.locator("main").evaluate((main) =>
       Array.from(main.querySelectorAll("*"))
-        .filter((el) => el.checkVisibility() && el.getBoundingClientRect().width > 0)
-        .filter((el) => el.getBoundingClientRect().left < 40)
+        .filter((el) => el.checkVisibility() && el.closest("[inert]") === null && getComputedStyle(el).opacity !== "0")
+        .filter((el) => {
+          const { left, right, width } = el.getBoundingClientRect();
+          return width > 0 && right > 0 && left < 40;
+        })
         .map((el) => el.outerHTML.slice(0, 80)),
     );
     expect(under).toEqual([]);

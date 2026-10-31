@@ -102,17 +102,17 @@
   background: var(--desk);
   box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--chalk) 35%, transparent);
   color: var(--chalk);
-  font-family: var(--font-hand);
-  font-weight: 600;
+  font-family: var(--font-ui);
+  font-weight: 500;
   cursor: pointer;
 }
 
-/* Shantell's ascent and descent (1.02 and 0.32 em) sit a chevron low in its line: the padding below centres it. */
+/* The chevrons sit a little low in their line: the padding below centres them. */
 .prev,
 .next {
   top: 50%;
   width: 44px;
-  padding-bottom: 5px;
+  padding-bottom: 3px;
   font-size: 26px;
   line-height: 1;
 }

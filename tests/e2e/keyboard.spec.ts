@@ -2,8 +2,8 @@ import type { Page } from "@playwright/test";
 import { announcer, expect, firstCard, flipper, question, settled, test } from "./helpers";
 
 // The keys (docs/plan.md §4): Space, Enter, ↑, ↓, j and k flip; →, l and PageDown next; ←, h and PageUp previous;
-// s reshuffles; f toggles fullscreen. Nothing fires with Alt, Ctrl or Meta, and a focused button keeps Space and
-// Enter for itself. On the laptop, where there is a keyboard. The fixture deck holds 9 cards.
+// s reshuffles; f toggles fullscreen; t opens and closes the topic drawer, in which the card keys do nothing. Nothing
+// fires with Alt, Ctrl or Meta, and a focused button keeps Space and Enter for itself. On the laptop, where there is a keyboard. The fixture deck holds 9 cards.
 
 test.beforeEach(async ({ page }) => {
   test.skip(test.info().project.name !== "laptop", "keys, on the laptop");
@@ -83,10 +83,26 @@ test("f goes fullscreen, where the exit chip takes the fullscreen chip's place, 
   await expect(exit).toHaveCount(0);
 });
 
+test("t opens the topic drawer, in which the card keys do nothing, and Escape closes it", async ({ page }) => {
+  const drawer = page.getByRole("dialog", { name: "Topics" });
+  await press(page, "t");
+  await expect(drawer).toHaveAttribute("data-open", "");
+  await expect(page.getByRole("button", { name: "All 9 cards", exact: true })).toBeFocused();
+
+  await press(page, "l");
+  await expect(announcer(page)).toHaveText("Card 1 of 9");
+
+  await press(page, "Escape");
+  await expect(drawer).not.toHaveAttribute("data-open", "");
+  await expect(page.getByRole("button", { name: /^Topics/ })).toBeFocused();
+  await press(page, "l");
+  await expect(announcer(page)).toHaveText("Card 2 of 9");
+});
+
 test("nothing fires with Alt, Ctrl or Meta held", async ({ page }) => {
   const first = await question(page).textContent();
   for (const modifier of ["Alt", "Control", "Meta"]) {
-    for (const key of ["Space", "j", "l", "ArrowRight", "s", "f"]) await page.keyboard.press(`${modifier}+${key}`);
+    for (const key of ["Space", "j", "l", "ArrowRight", "s", "f", "t"]) await page.keyboard.press(`${modifier}+${key}`);
   }
   // Every action starts on keydown (a flip renders, a move animates, fullscreen switches): two frames are plenty.
   await page.evaluate(() => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))));
@@ -97,6 +113,7 @@ test("nothing fires with Alt, Ctrl or Meta held", async ({ page }) => {
   await expect(question(page)).toHaveText(first ?? "");
   await expect(announcer(page)).toHaveText("Card 1 of 9");
   expect(await isFullscreen(page)).toBe(false);
+  await expect(page.getByRole("dialog", { name: "Topics" })).not.toHaveAttribute("data-open", "");
   // The same keys alone do fire.
   await press(page, "l");
   await expect(announcer(page)).toHaveText("Card 2 of 9");
@@ -117,7 +134,9 @@ test("a focused button takes Space and Enter for itself: they press it, and noth
   await expect(announcer(page)).toHaveText("Card 2 of 9");
   await expect(flipper(page)).toHaveAttribute("data-side", "front");
 
-  const redis = page.getByRole("button", { name: "Redis, 2 cards", exact: true });
+  // A row of the topic drawer, once t has opened it.
+  await press(page, "t");
+  const redis = page.getByRole("button", { name: "Redis 2 cards", exact: true });
   await redis.focus();
   await press(page, "Enter");
   await expect(redis).toHaveAttribute("aria-pressed", "true");

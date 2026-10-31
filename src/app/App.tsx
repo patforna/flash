@@ -1,5 +1,5 @@
 import type { UseQueryResult } from "@tanstack/react-query";
-import { type ReactNode, useEffect, useMemo, useState } from "react";
+import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import type { Deck } from "../../shared/types";
 import { useDeckQuery } from "../api/useDeckQuery";
@@ -9,9 +9,11 @@ import { FONTS } from "../card/fit";
 import { MessageCard, type MessageCardProps } from "../card/MessageCard";
 import type { DeckView } from "../deck/types";
 import { useDeck } from "../deck/useDeck";
-import { Wordmark } from "../desk/Wordmark";
+import { Controls } from "../desk/Controls";
+import { TopicsChip } from "../desk/TopicsChip";
 import { colourFor } from "../panel/colours";
-import { TopicPanel } from "../panel/TopicPanel";
+import { TopicDrawer } from "../panel/TopicDrawer";
+import { TopicList } from "../panel/TopicList";
 import { FullscreenChip } from "../platform/FullscreenChip";
 import { toggleFullscreen } from "../platform/fullscreen";
 import { tick } from "../platform/haptics";
@@ -19,6 +21,8 @@ import { useWakeLock } from "../platform/wakeLock";
 import { CardStage } from "../stage/CardStage";
 import { StillStage } from "../stage/StillStage";
 import styles from "./App.module.css";
+import { useDeskTap } from "./useDeskTap";
+import { useReveal } from "./useReveal";
 
 // A deck that arrives within this long never shows "shuffling…", so a quick start doesn't flash it.
 const LOADING_AFTER_MS = 200;
@@ -40,11 +44,19 @@ export function App() {
 }
 
 // The stack is on the desk from the first frame, with a card on top that says why there is nothing to read yet, read
-// out as it shows.
+// out as it shows. The one control is the way in or out of fullscreen, shown throughout: there is nothing to read yet.
 function Waiting({ deck, late, live }: { deck: UseQueryResult<Deck, Error>; late: boolean; live: HTMLElement | null }) {
   const message = say(deck, late);
   return (
-    <Desk live={live} announce={[message.title, message.hint].filter(Boolean).join(" ")}>
+    <Desk
+      live={live}
+      announce={[message.title, message.hint].filter(Boolean).join(" ")}
+      controls={
+        <Controls revealed>
+          <FullscreenChip />
+        </Controls>
+      }
+    >
       <StillStage>
         <MessageCard {...message} />
       </StillStage>
@@ -53,24 +65,21 @@ function Waiting({ deck, late, live }: { deck: UseQueryResult<Deck, Error>; late
 }
 
 interface DeskProps {
-  panel?: ReactNode;
+  controls: ReactNode;
+  drawer?: ReactNode;
   live: HTMLElement | null;
   announce: string;
   children: ReactNode;
 }
 
-// The desk (docs/plan.md §2): the panel's column, the wordmark at its foot, and the stage beside it. Fullscreen shows
-// the cards alone (the stylesheet drops the panel), with a tab's way back out in the corner where the fullscreen chip
-// was. `announce` is read out through the live region, `live`, as it changes.
-function Desk({ panel, live, announce, children }: DeskProps) {
+// The desk (docs/plan.md §2): the controls along the card's left edge, the stage, and the topic drawer over them.
+// `announce` is read out through the live region, `live`, as it changes.
+function Desk({ controls, drawer, live, announce, children }: DeskProps) {
   return (
     <>
-      <FullscreenChip exit className={styles.exit} />
-      <div className={styles.panel}>
-        {panel}
-        <Wordmark />
-      </div>
+      {controls}
       {children}
+      {drawer}
       {live && createPortal(announce, live)}
     </>
   );
@@ -97,32 +106,64 @@ function Reader({ deck, live }: { deck: Deck; live: HTMLElement | null }) {
   const view = useDeck(deck);
   useFirstCardMark();
   const counts = useMemo(() => countTopics(deck), [deck]);
-  // A topic's colour is its place in the deck's declared order, the same on its chip and on every card.
+  // A topic's colour is its place in the deck's declared order, the same in the list and on the chip.
   const colourOf = useMemo(() => {
     const place = new Map(deck.topics.map((topic, i) => [topic, i]));
     return (topic: string) => colourFor(place.get(topic) ?? 0);
   }, [deck]);
+  const selected = useMemo(() => deck.topics.filter((topic) => view.selected.has(topic)), [deck, view.selected]);
+
+  // The controls show for a moment at launch and after a tap on the desk, stay while the drawer is open or the end
+  // card is up (the moment to change topics), and go as a card moves. A control taking the focus shows them too.
+  const { shown, reveal, hide } = useReveal();
+  useEffect(() => {
+    reveal();
+  }, [reveal]);
+  useDeskTap(reveal);
+  const [topicsOpen, setTopicsOpen] = useState(false);
+  const chip = useRef<HTMLButtonElement>(null);
+  // Closing hands the focus back to the chip: a keyboard keeps the controls in sight from there.
+  const closeTopics = useCallback(() => {
+    setTopicsOpen(false);
+    chip.current?.focus();
+  }, []);
+  const toggleTopics = useCallback(() => {
+    if (topicsOpen) closeTopics();
+    else setTopicsOpen(true);
+  }, [topicsOpen, closeTopics]);
+  const revealed = shown || topicsOpen || view.current === "end";
+
   return (
     <Desk
       live={live}
       announce={whereYouAre(view)}
-      panel={
-        <TopicPanel
-          topics={deck.topics}
-          counts={counts}
-          total={deck.cards.length}
-          selected={view.selected}
-          onToggle={ticked(view.toggleTopic)}
-          // All with nothing selected changes nothing, so it doesn't buzz.
-          onAll={view.selected.size > 0 ? ticked(view.clearTopics) : view.clearTopics}
-          colourOf={colourOf}
-          lead={<FullscreenChip />}
-        />
+      controls={
+        <Controls revealed={revealed} onFocusWithin={(within) => within && reveal()}>
+          <FullscreenChip />
+          <TopicsChip ref={chip} selected={selected} colourOf={colourOf} open={topicsOpen} onClick={toggleTopics} />
+        </Controls>
+      }
+      drawer={
+        <TopicDrawer open={topicsOpen} onClose={closeTopics}>
+          <TopicList
+            topics={deck.topics}
+            counts={counts}
+            total={deck.cards.length}
+            selected={view.selected}
+            onToggle={ticked(view.toggleTopic)}
+            // All with nothing selected changes nothing, so it doesn't buzz.
+            onAll={view.selected.size > 0 ? ticked(view.clearTopics) : view.clearTopics}
+            colourOf={colourOf}
+          />
+        </TopicDrawer>
       }
     >
       <CardStage
         view={{ ...view, reshuffle: ticked(view.reshuffle) }}
-        onMove={() => tick()}
+        onMove={() => {
+          tick();
+          hide();
+        }}
         renderCard={(card, role) =>
           card === "end" ? (
             <EndCard key="end" total={view.total} />
@@ -131,6 +172,7 @@ function Reader({ deck, live }: { deck: Deck; live: HTMLElement | null }) {
           )
         }
         onFullscreen={toggleFullscreen}
+        onTopics={toggleTopics}
         dealFirst
       />
     </Desk>
@@ -153,7 +195,7 @@ function whereYouAre(view: DeckView): string {
   return `${title} ${hint}`;
 }
 
-// How many cards carry each topic: the panel names each chip with its count.
+// How many cards carry each topic: the list shows each row's count and names it.
 function countTopics({ topics, cards }: Deck): Map<string, number> {
   return new Map(topics.map((topic) => [topic, cards.filter((card) => card.topics.includes(topic)).length]));
 }

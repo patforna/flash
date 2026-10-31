@@ -1,6 +1,6 @@
 # flash
 
-Flash cards for studying on a Pixel 11 held sideways: a hand-written index card on a dark desk, alone in fullscreen, topic stickers beside it in a browser tab. Tap the card to turn it over; swipe it away for the next one. The app only reads: the deck is `cards/cards.toml`, edited here and shipped with one command.
+Flash cards for studying on a Pixel 11 held sideways: a hand-written index card alone on a dark desk. Tap the card to turn it over; swipe it away for the next one. The app only reads: the deck is `cards/cards.toml`, edited here and shipped with one command.
 
 **https://flash.patforna.com**
 
@@ -10,7 +10,7 @@ Flash cards for studying on a Pixel 11 held sideways: a hand-written index card 
 2. ⋮ → **Install**. Not "Create shortcut": that only opens it in a tab.
 3. Start it from the home screen: fullscreen, in landscape.
 
-Once it has opened twice with a connection, it works offline: the first launch installs the app, the second keeps the deck on the phone. In a browser tab, the corner-brackets sticker at the top of the panel goes fullscreen, and the same sticker, top left, comes back out.
+Once it has opened twice with a connection, it works offline: the first launch installs the app, the second keeps the deck on the phone. Tap the desk beside the card and two stickers appear for a moment: in a browser tab, the corner brackets go fullscreen and, once there, come back out; the lower sticker opens the topics.
 
 ## Reading
 
@@ -18,7 +18,7 @@ Once it has opened twice with a connection, it works offline: the first launch i
 - **Swipe left** for the next card, from either side, so a card can be skipped unread.
 - **Swipe right** for the previous one. Every card you land on shows its question first.
 - Each pass is a fresh shuffle with no repeats. After the last card, tap or swipe left to shuffle again.
-- **Topics**: in a browser tab, tap stickers to narrow the deck; a card shows if it has any selected topic. **All** clears the selection. The selection survives closing the app; the place in the pass doesn't. Fullscreen, and so the installed app, shows the cards alone: how topics are chosen there is still being designed, so the installed app reads the whole deck for now.
+- **Topics**: tap the desk beside the card, then the lower sticker (or press `t`): the topics slide in. Tap topics to narrow the deck; a card shows if it has any selected topic. **All** clears the selection. Tap beside the list to close it. The selection survives closing the app; the place in the pass doesn't.
 - The screen stays on while you read, until 5 minutes without a touch.
 
 With a keyboard:
@@ -30,6 +30,7 @@ With a keyboard:
 | ←, `h`, Page Up              | previous card          |
 | `s`                          | shuffle again          |
 | `f`                          | fullscreen, on and off |
+| `t`, Escape                  | topics, open and shut  |
 
 ## Cards
 

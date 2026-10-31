@@ -7,9 +7,8 @@ export function chooseStep(fits: (step: number) => boolean, steps: number): numb
   return "scroll";
 }
 
-// The faces' type: the handwriting, Radon for code and the counter's digits, and Radon at the handwriting's size for
-// the arrows Shantell lacks.
-export const FONTS = ['1em "Shantell Sans"', '1em "Monaspace Radon"', '1em "Radon hand"'];
+// The faces' type: the fineliner the answer is written in (and code, and the arrows), and the marker of the question.
+export const FONTS = ['1em "Klee One"', '1em "Covered By Your Grace"'];
 
 // A face fits when none of its parts overflows its box, down or across (a code line wider than its column). A
 // highlighter stroke may end at the column's edge with its 2 units of padding past it (card.module.css): no overflow.

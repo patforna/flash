@@ -7,8 +7,8 @@ import "./styles/global.css";
 import { App } from "./app/App";
 import { FONTS } from "./card/fit";
 
-// The fonts start loading now, alongside the deck. A card is measured only once they are in, and nothing would ask
-// for Radon (code, the counter, the arrows) before the first card mounts: it would show blank for a frame.
+// The fonts start loading now, alongside the deck. A card is measured only once they are in, and nothing else asks
+// for them before the first card mounts: it would show blank for a frame.
 for (const font of FONTS) document.fonts.load(font).catch(() => {});
 
 const root = document.getElementById("root");

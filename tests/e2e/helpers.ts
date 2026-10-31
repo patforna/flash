@@ -250,3 +250,35 @@ export async function topicsOf(page: Page): Promise<string[]> {
   if (!card) throw new Error(`no card asks "${asked}"`);
   return card.topics;
 }
+
+// The topic drawer, opened with its key and settled.
+export async function openTopics(page: Page): Promise<Locator> {
+  await page.keyboard.press("t");
+  const drawer = page.getByRole("dialog", { name: "Topics" });
+  await expect(drawer).toHaveAttribute("data-open", "");
+  await settled(page);
+  return drawer;
+}
+
+// Closes it: Escape, or a tap on the desk beside it.
+export async function closeTopics(page: Page, how: "key" | "tap" = "key"): Promise<void> {
+  if (how === "key") await page.keyboard.press("Escape");
+  else await tap(page, { x: 800, y: 200 });
+  await expect(page.getByRole("dialog", { name: "Topics" })).not.toHaveAttribute("data-open", "");
+  await settled(page);
+}
+
+// A row of the topic list, by its name ("Redis 2 cards").
+export const row = (page: Page, name: string): Locator =>
+  page.getByRole("dialog", { name: "Topics" }).getByRole("button", { name, exact: true });
+
+// The desk's controls while they are revealed (none otherwise).
+export const controls = (page: Page): Locator => page.locator("[data-revealed]");
+
+// A tap on the desk between the controls' column and the card reveals the controls.
+export async function revealControls(page: Page): Promise<void> {
+  const card = await layer(page).boundingBox();
+  if (!card) throw new Error("no card on the stage");
+  await tap(page, { x: card.x - 30, y: card.y + card.height / 2 });
+  await expect(controls(page)).toHaveCount(1);
+}

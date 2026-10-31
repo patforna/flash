@@ -11,6 +11,7 @@ export interface CardStageProps {
   view: DeckView;
   renderCard(card: Card | "end", role: Role): ReactNode;
   onFullscreen(): void;
+  onTopics(): void;
   // A move is decided, before its card has flown: a swipe let go past its threshold, a key, a button, or a tap on the
   // end card (which flies it off, dealing the next pass).
   onMove(): void;
@@ -39,7 +40,7 @@ const startNow = (flipper: Element | null) => {
   }
 };
 
-export function CardStage({ view, renderCard, onFullscreen, onMove, dealFirst = false }: CardStageProps) {
+export function CardStage({ view, renderCard, onFullscreen, onTopics, onMove, dealFirst = false }: CardStageProps) {
   const stage = useRef<HTMLDivElement>(null);
   const layers = useRef<Record<Role, HTMLDivElement | null>>({ next: null, current: null, prev: null });
 
@@ -81,6 +82,7 @@ export function CardStage({ view, renderCard, onFullscreen, onMove, dealFirst = 
     prev: () => swipe.commit("prev"),
     reshuffle: swipe.reshuffle,
     fullscreen: onFullscreen,
+    topics: onTopics,
   });
 
   // While a flip runs (data-flipping), the card turning has its perspective, and the card underneath shows blank paper:

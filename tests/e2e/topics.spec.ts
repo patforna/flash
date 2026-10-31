@@ -2,22 +2,26 @@ import type { Page } from "@playwright/test";
 import {
   announcer,
   centre,
+  closeTopics,
   expect,
   finger,
   firstCard,
   flick,
   flipper,
+  openTopics,
   question,
+  revealControls,
+  row,
   settled,
   tap,
   test,
   topicsOf,
 } from "./helpers";
 
-// Choosing topics (docs/plan.md §3 and §5): chips toggle, a card is in the pass if it carries any selected topic, All
-// clears, the card on screen survives a change that keeps it, and the selection outlives a reload. The fixture deck:
-// 9 cards; Redis 2, Postgres 3, Queues 3 (one of them also Postgres), Consistency 1, Sharding 2, Real-time 2,
-// Case studies 2.
+// Choosing topics (docs/plan.md §3 and §5), in the drawer the topics chip (or t) opens: rows toggle, a card is in the
+// pass if it carries any selected topic, All clears, the card on screen survives a change that keeps it, and the
+// selection outlives a reload. The fixture deck: 9 cards; Redis 2, Postgres 3, Queues 3 (one of them also Postgres),
+// Consistency 1, Sharding 2, Real-time 2, Case studies 2.
 
 test.beforeEach(async ({ page }) => {
   test.skip(test.info().project.name !== "pixel11", "taps, on the Pixel 11");
@@ -25,8 +29,6 @@ test.beforeEach(async ({ page }) => {
   await firstCard(page);
   await settled(page);
 });
-
-const chip = (page: Page, name: string) => page.getByRole("button", { name, exact: true });
 
 // Walks the pass to its end card, returning the topics of every card on the way.
 async function walk(page: Page, total: number): Promise<string[][]> {
@@ -42,18 +44,24 @@ async function walk(page: Page, total: number): Promise<string[][]> {
 }
 
 test("a topic narrows the pass to its cards", async ({ page }) => {
-  await chip(page, "Postgres, 3 cards").tap();
+  await openTopics(page);
+  await row(page, "Postgres 3 cards").tap();
 
-  await expect(chip(page, "Postgres, 3 cards")).toHaveAttribute("aria-pressed", "true");
-  await expect(chip(page, "All, 9 cards")).toHaveAttribute("aria-pressed", "false");
+  await expect(row(page, "Postgres 3 cards")).toHaveAttribute("aria-pressed", "true");
+  await expect(row(page, "All 9 cards")).toHaveAttribute("aria-pressed", "false");
   await expect(announcer(page)).toHaveText("Card 1 of 3");
+  // The chip says what is being read.
+  await expect(page.getByRole("button", { name: "Topics: Postgres" })).toHaveCount(1);
+  await closeTopics(page);
   for (const topics of await walk(page, 3)) expect(topics).toContain("Postgres");
 });
 
 test("two topics: the pass holds every card carrying either (OR)", async ({ page }) => {
   // Postgres 3 and Queues 3 share one card: AND would make 1, OR makes 5.
-  await chip(page, "Postgres, 3 cards").tap();
-  await chip(page, "Queues, 3 cards").tap();
+  await openTopics(page);
+  await row(page, "Postgres 3 cards").tap();
+  await row(page, "Queues 3 cards").tap();
+  await closeTopics(page);
 
   await expect(announcer(page)).toHaveText("Card 1 of 5");
   const seen = await walk(page, 5);
@@ -66,16 +74,17 @@ test("All clears the selection; with nothing selected it changes nothing", async
   await expect(announcer(page)).toHaveText("Card 2 of 9");
   await settled(page);
   const second = await question(page).textContent();
-  await chip(page, "All, 9 cards").tap();
+  await openTopics(page);
+  await row(page, "All 9 cards").tap();
   await expect(announcer(page)).toHaveText("Card 2 of 9");
   await expect(question(page)).toHaveText(second ?? "");
 
-  await chip(page, "Redis, 2 cards").tap();
+  await row(page, "Redis 2 cards").tap();
   await expect(announcer(page)).toHaveText("Card 1 of 2");
-  await chip(page, "All, 9 cards").tap();
+  await row(page, "All 9 cards").tap();
 
-  await expect(chip(page, "All, 9 cards")).toHaveAttribute("aria-pressed", "true");
-  await expect(chip(page, "Redis, 2 cards")).toHaveAttribute("aria-pressed", "false");
+  await expect(row(page, "All 9 cards")).toHaveAttribute("aria-pressed", "true");
+  await expect(row(page, "Redis 2 cards")).toHaveAttribute("aria-pressed", "false");
   await expect(announcer(page)).toHaveText("Card 1 of 9");
 });
 
@@ -86,7 +95,8 @@ test("the card on screen survives a change that keeps it, on the side it was tur
   await expect(flipper(page)).toHaveAttribute("data-side", "back");
   await settled(page);
 
-  await page.getByRole("button", { name: new RegExp(`^${topic}, \\d+ cards?$`) }).tap();
+  await openTopics(page);
+  await page.getByRole("button", { name: new RegExp(`^${topic} \\d+ cards?$`) }).tap();
 
   await expect(announcer(page)).not.toHaveText("Card 1 of 9");
   await expect(announcer(page)).toHaveText(/^Card 1 of \d$/);
@@ -104,7 +114,8 @@ test("a change that drops the card on screen deals a fresh pass, front up", asyn
   await expect(flipper(page)).toHaveAttribute("data-side", "back");
   await settled(page);
 
-  await page.getByRole("button", { name: new RegExp(`^${other}, \\d+ cards?$`) }).tap();
+  await openTopics(page);
+  await page.getByRole("button", { name: new RegExp(`^${other} \\d+ cards?$`) }).tap();
 
   await expect(announcer(page)).toHaveText(/^Card 1 of \d$/);
   await expect(question(page)).not.toHaveText(first ?? "");
@@ -112,21 +123,22 @@ test("a change that drops the card on screen deals a fresh pass, front up", asyn
   expect(await topicsOf(page)).toContain(other);
 });
 
-// How far a chip is pushed in (its transform's x offset, in px: a press pushes it 2 px into its shadow).
+// How far a control is pushed in (its transform's x offset, in px: a press pushes it 2 px into the desk).
 const pushed = (el: Element) => new DOMMatrix(getComputedStyle(el).transform).m41;
 
 // A touch screen sets :active only once a quick tap has lifted, and holds it 150 ms: the push came after the thumb.
-test("a chip pushes in under the thumb as it touches, and comes back out as it lifts", async ({ page }) => {
-  const redis = chip(page, "Redis, 2 cards");
-  const box = await redis.boundingBox();
+test("the topics chip pushes in under the thumb as it touches, and comes back out as it lifts", async ({ page }) => {
+  await revealControls(page);
+  const chip = page.getByRole("button", { name: /^Topics/ });
+  const box = await chip.boundingBox();
   if (!box) throw new Error("no chip");
   const thumb = await finger(page, { x: box.x + box.width / 2, y: box.y + box.height / 2 });
-  await expect.poll(() => redis.evaluate(pushed), { timeout: 1000 }).toBe(2);
+  await expect.poll(() => chip.evaluate(pushed), { timeout: 1000 }).toBe(2);
 
   // Frame by frame for 300 ms from the lift (as the page sees it: the finger stamps its events with the time it is
   // given): how long after it, and how far the chip is pushed in.
   type Frame = { t: number; x: number };
-  await redis.evaluate((el) => {
+  await chip.evaluate((el) => {
     const lift = new Promise<Frame[]>((resolve) => {
       const frames: Frame[] = [];
       addEventListener(
@@ -155,19 +167,22 @@ test("a chip pushes in under the thumb as it touches, and comes back out as it l
     frames.filter(({ t }) => t >= 200).map(({ x }) => x),
     "out well within its 90 ms of the lift",
   ).toEqual(frames.filter(({ t }) => t >= 200).map(() => 0));
-  await expect(redis).toHaveAttribute("aria-pressed", "true");
+  // The tap opened the drawer.
+  await expect(page.getByRole("dialog", { name: "Topics" })).toHaveAttribute("data-open", "");
 });
 
 test("the selection outlives a reload", async ({ page }) => {
-  await chip(page, "Queues, 3 cards").tap();
-  await chip(page, "Redis, 2 cards").tap();
+  await openTopics(page);
+  await row(page, "Queues 3 cards").tap();
+  await row(page, "Redis 2 cards").tap();
   await expect(announcer(page)).toHaveText("Card 1 of 5");
 
   await page.reload();
   await firstCard(page);
+  await openTopics(page);
 
-  await expect(chip(page, "Queues, 3 cards")).toHaveAttribute("aria-pressed", "true");
-  await expect(chip(page, "Redis, 2 cards")).toHaveAttribute("aria-pressed", "true");
-  await expect(chip(page, "All, 9 cards")).toHaveAttribute("aria-pressed", "false");
+  await expect(row(page, "Queues 3 cards")).toHaveAttribute("aria-pressed", "true");
+  await expect(row(page, "Redis 2 cards")).toHaveAttribute("aria-pressed", "true");
+  await expect(row(page, "All 9 cards")).toHaveAttribute("aria-pressed", "false");
   await expect(announcer(page)).toHaveText("Card 1 of 5");
 });

@@ -1,23 +1,113 @@
-/* The wordmark (docs/plan.md §3): Shantell at its most informal and bouncy, in highlighter on the desk. */
-.wordmark {
-  display: block;
-  font-family: var(--font-hand);
-  font-size: 22px;
-  font-weight: 700;
-  font-variation-settings:
-    "INFM" 100,
-    "BNCE" 50;
-  line-height: 1;
-  color: color-mix(in srgb, var(--hl) 85%, transparent);
-  /* Its letters stand on the line of the card's foot, as the first chip is level with its top edge: Shantell's
-     baseline sits 0.18 em above the foot of a line-height: 1 box, which hangs that much below the panel. */
-  margin-bottom: -0.18em;
+/* The desk's own furniture: the controls along the card's left edge, the stickers they are, and the wordmark. */
+
+/* The controls: a column from the card's top edge to its foot, above the stage, which takes every touch on the desk.
+   Faded out they take no tap, so a blind tap in the corner does nothing; shown while revealed (the stylesheets key
+   off data-revealed), and while one of them has the keyboard's focus. Only opacity moves. */
+.controls {
+  position: absolute;
+  z-index: 2;
+  top: calc(24px + (var(--room) - var(--row)) / 2);
+  bottom: calc(24px + (var(--room) - var(--row)) / 2);
+  left: var(--left);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 160ms ease-out;
 }
 
-/* In a tab too short for every chip (under Chrome's toolbars, before the app is installed), the panel scrolls and its
-   last row fades out where the wordmark would be written over it; the browser names the site there anyway. */
-@media (display-mode: browser) and (max-height: 400px) {
-  .wordmark {
-    display: none;
+.controls[data-revealed],
+.controls:has(:focus-visible) {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* A control is a 44 px sticker, muted in chalk. Pressing pushes it 2 px, as a sticker is pushed into the desk. */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 1.5px solid color-mix(in srgb, var(--chalk) 60%, transparent);
+  border-radius: 7px;
+  background: color-mix(in oklab, var(--chalk) 18%, var(--desk));
+  color: var(--chalk);
+  cursor: pointer;
+  transition: transform 90ms ease-out;
+}
+
+.chip[data-pressed],
+.chip:active:focus-visible {
+  transform: translate(2px, 2px);
+}
+
+.chip:focus-visible {
+  outline: 3px solid var(--hl);
+  outline-offset: 2px;
+}
+
+/* Glyphs drawn with the outline's 1.5 px pen: the corner brackets, the list. */
+.icon {
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* The selected topics as dots in their colours: one centred, two in a row, three and a plus in a square. */
+.dots {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 4px;
+  width: 22px;
+}
+
+.dots i {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--sticker);
+}
+
+.dots b {
+  width: 9px;
+  height: 9px;
+  font: 600 12px / 9px var(--font-ui);
+  text-align: center;
+}
+
+/* The wordmark (docs/plan.md §3): written with the marker, in highlighter, at the foot of the topic drawer. */
+.wordmark {
+  display: block;
+  font-family: var(--font-marker);
+  font-size: 26px;
+  font-weight: 400;
+  line-height: 1;
+  color: color-mix(in srgb, var(--hl) 85%, transparent);
+}
+
+/* Portrait (a browser tab only): the card sits at the top; the controls go in a row under it. */
+@media (orientation: portrait) {
+  .controls {
+    top: calc(32px + var(--row));
+    bottom: auto;
+    left: 16px;
+    flex-direction: row;
+    gap: 12px;
+  }
+}
+
+/* Reduced motion: the stickers change state at once. */
+@media (prefers-reduced-motion: reduce) {
+  .controls,
+  .chip {
+    transition: none;
   }
 }

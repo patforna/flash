@@ -6,6 +6,7 @@ interface Handlers {
   prev(): void;
   reshuffle(): void;
   fullscreen(): void;
+  topics(): void;
 }
 
 // Arrows plus h j k l, as in plant-selection (docs/plan.md §4).
@@ -24,11 +25,13 @@ const KEYS: Record<string, keyof Handlers> = {
   PageUp: "prev",
   s: "reshuffle",
   f: "fullscreen",
+  t: "topics",
 };
 
 const within = (target: EventTarget | null, selector: string) =>
   target instanceof Element && target.closest(selector) !== null;
 const FIELDS = 'input, textarea, [contenteditable]:not([contenteditable="false"])';
+const DIALOG = '[role="dialog"]';
 
 export function useShortcuts(h: Handlers): void {
   useEffect(() => {
@@ -37,6 +40,8 @@ export function useShortcuts(h: Handlers): void {
       if (!action || e.repeat || e.altKey || e.ctrlKey || e.metaKey || within(e.target, FIELDS)) return;
       // A focused button presses itself on Space and Enter.
       if ((e.key === " " || e.key === "Enter") && within(e.target, "button")) return;
+      // In the topic drawer the cards are under a scrim: only its own key means anything (Escape is the drawer's).
+      if (action !== "topics" && within(e.target, DIALOG)) return;
       e.preventDefault();
       h[action]();
     };

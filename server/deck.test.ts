@@ -288,12 +288,13 @@ answer = "Dead tuples."
 
   test("fails what neither font covers, naming each character once with its code point", () => {
     const toml = file([
-      card({ question: "Why 😀 and 😀 again?", answer: "Fine: → ≤ é ü.\nNot: 漢字." }),
+      card({ question: "Why 😀 and 😀 again?", answer: "Fine: → é ü.\nNot: ≤ 漢字." }),
       card({ question: "Which question has\ta tab?" }),
     ]);
 
     expect(problemsOf(toml)).toEqual([
       'card 1 "why-and-again": question has "😀" (U+1F600), which neither font covers',
+      'card 1 "why-and-again": answer has "≤" (U+2264), which neither font covers',
       'card 1 "why-and-again": answer has "漢" (U+6F22), which neither font covers',
       'card 1 "why-and-again": answer has "字" (U+5B57), which neither font covers',
       'card 2 "which-question-has-a-tab": question has a tab',

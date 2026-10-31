@@ -62,7 +62,7 @@ test("the page links a manifest with every field of plan §6, its icons PNGs of 
   }
 });
 
-test("once loaded, the service worker controls the page, its precache holding index.html, the JS, the CSS and both fonts", async ({
+test("once loaded, the service worker controls the page, its precache holding index.html, the JS, the CSS and the fonts", async ({
   page,
 }) => {
   await page.goto("/");
@@ -84,8 +84,9 @@ test("once loaded, the service worker controls the page, its precache holding in
       "/index.html",
       script,
       stylesheet,
-      expect.stringMatching(/^\/assets\/shantell-sans-latin-full-normal-[\w-]+\.woff2$/),
-      expect.stringMatching(/^\/assets\/monaspace-radon-latin-400-normal-[\w-]+\.woff2$/),
+      expect.stringMatching(/^\/assets\/klee-one-latin-400-normal-[\w-]+\.woff2$/),
+      expect.stringMatching(/^\/assets\/covered-by-your-grace-latin-400-normal-[\w-]+\.woff2$/),
+      expect.stringMatching(/^\/assets\/geist-latin-wght-normal-[\w-]+\.woff2$/),
     ]),
   );
 });

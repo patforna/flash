@@ -166,14 +166,14 @@ test("whatever runs animates only transform and opacity", async ({ page }) => {
   await f.up();
   const cancel = await animated(page);
   await settled(page);
-  // Mid-deal (s reshuffles), and a chip pressed.
+  // Mid-deal (s reshuffles), and the topic drawer sliding in (t).
   await page.keyboard.press("s");
   const deal = await animated(page);
   await settled(page);
-  await page.getByRole("button", { name: "Redis, 2 cards", exact: true }).tap();
-  const chip = await animated(page);
+  await page.keyboard.press("t");
+  const drawer = await animated(page);
 
-  for (const [moment, properties] of Object.entries({ flip, fling, cancel, deal, chip })) {
+  for (const [moment, properties] of Object.entries({ flip, fling, cancel, deal, drawer })) {
     expect(properties.length, `${moment}: something runs`).toBeGreaterThan(0);
     expect(compositorOnly(properties), `${moment}: ${properties}`).toBe(true);
   }
