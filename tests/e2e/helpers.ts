@@ -135,6 +135,15 @@ export async function fullscreen(page: Page): Promise<void> {
   await page.waitForFunction(() => matchMedia("(display-mode: fullscreen)").matches);
 }
 
+// The page's animations and transitions at a quarter of their speed (DevTools' playback rate; timers and input keep
+// real time): a test that lands input on a card in flight then has four times as long to do it, however busy the
+// machine is. A jump stays a jump.
+export async function slowMotion(page: Page): Promise<void> {
+  const session = await cdp(page);
+  await session.send("Animation.enable");
+  await session.send("Animation.setPlaybackRate", { playbackRate: 0.25 });
+}
+
 // The phone's safe areas, as env(safe-area-inset-*) reads them (a camera cutout, say).
 export async function insets(page: Page, { left = 0, right = 0 }: { left?: number; right?: number }): Promise<void> {
   const session = await cdp(page);

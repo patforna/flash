@@ -12,6 +12,7 @@ import {
   question,
   questions,
   settled,
+  slowMotion,
   swipe,
   tap,
   test,
@@ -166,14 +167,19 @@ test("a card coming back when the next touch lands its move carries on into its 
     await settled(page);
   }
   const back = (await question(page, "prev").textContent()) ?? "";
+  // The second flick then lands while the first card is still coming back, however busy the machine is.
+  await slowMotion(page);
   const moving = speeds(page, back);
 
   await flick(page, "right");
   await new Promise((resolve) => setTimeout(resolve, 80));
   await flick(page, "right");
 
-  // On its way in it is never faster than 3 px/ms by then; a jump home in one frame was 14.
-  expect(Math.max(...(await moving)), "its fastest from one frame to the next, in px/ms").toBeLessThanOrEqual(6);
+  // In the animations' time, which the frames keep: still coming back as the touch lands (about 4 px/ms by then), and
+  // never a jump, which read 14 and more.
+  const fastest = Math.max(...(await moving));
+  expect(fastest, "still coming back as the second touch lands, in px/ms").toBeGreaterThan(1);
+  expect(fastest, "its fastest from one frame to the next, in px/ms").toBeLessThanOrEqual(6);
   await expect(announcer(page)).toHaveText("Card 1 of 9");
 });
 
@@ -200,13 +206,13 @@ const aroundTouch = (page: Page) =>
   );
 
 test("a card springing back is caught where it is by the next touch", async ({ page }) => {
+  await slowMotion(page);
   const at = await centre(page);
   const f = await finger(page, at);
   // Slowly, and short of the commit distance: it springs back.
   await f.move({ x: at.x - 120, y: at.y }, 600);
   await f.up();
   const caught = aroundTouch(page);
-  await new Promise((resolve) => setTimeout(resolve, 40));
   const again = await finger(page, at);
 
   const { before, after } = await caught;
@@ -292,6 +298,7 @@ const flyingOn = (page: Page) =>
 
 test("a card still flying out when the next touch lands flies on: it never vanishes mid-air", async ({ page }) => {
   const first = (await question(page).textContent()) ?? "";
+  await slowMotion(page);
   const at = await centre(page);
   await swipe(page, { from: at, to: { x: at.x - 160, y: at.y }, ms: 48 });
 
@@ -311,6 +318,7 @@ test("a card still flying out when the next touch lands flies on: it never vanis
 
 test("a reshuffle while a card flies out deals the new pass under it: it flies on", async ({ page }) => {
   const first = (await question(page).textContent()) ?? "";
+  await slowMotion(page);
   const at = await centre(page);
   await swipe(page, { from: at, to: { x: at.x - 160, y: at.y }, ms: 48 });
   await page.keyboard.press("s");
