@@ -122,7 +122,7 @@ These don't fail but show exactly as typed: HTML tags such as `<b>`, tables, `~~
 The 13 topics, in panel order: Patterns, Case studies, Sharding, Real-time, Edge, Postgres, SQL, Redis, Queues, Streams, Consistency, Concurrency.
 
 - **Colour** follows the position in `topics`, cycling through pink, marigold, mint, sky, lilac, tangerine, teal and lime, so neighbours never share one. Inserting a topic shifts the colours of those after it. Topics 8 apart share a colour, so no card may carry two of them (the check names the card): reorder `topics` until none does.
-- **To add one**, put its label in `topics` where it should appear in the panel, and use it on at least one card. The panel is full, though: today's 13 topics fill its six rows, and a 14th, even one as short as `DNS`, lands under the fade at its foot, so the fit test refuses the deck when you ship it. Merge two topics first to make room.
+- **To add one**, put its label in `topics` where it should appear in the panel, and use it on at least one card. A deck may have more topics than fit in the panel (today's 13 fill its six rows): it then scrolls, its foot fading until you reach the end.
 - **To rename one**, change it in `topics` and on every card: search and replace the quoted label, such as `"Real-time"`. The phone forgets a selection whose label disappeared.
 - **To remove one**, take it out of `topics` and off every card; a card left with no topic fails.
 
@@ -142,7 +142,7 @@ card 12 "what-does-redis-do-by-default-when-memory-is-full": answer is 611 chara
 
 The server refuses to start with the same list, so a broken deck never goes live.
 
-`scripts/deploy-do.sh cards` ships the deck alone, never code: it runs the check, stops unless the droplet runs the code this checkout builds (if not, ship the code first with `scripts/deploy-do.sh up`), runs the fit test (every card of the real deck fits without scrolling, and every topic chip in the panel), uploads the file, restarts the server and confirms that https://flash.patforna.com/healthz reports the new deck's version, which `bun scripts/check-cards.ts --version cards/cards.toml` prints. Should the server refuse the deck all the same, the last one goes back.
+`scripts/deploy-do.sh cards` ships the deck alone, never code: it runs the check, stops unless the droplet runs the code this checkout builds (if not, ship the code first with `scripts/deploy-do.sh up`), runs the fit test (every card of the real deck fits without scrolling, and every topic chip comes into full view in the panel), uploads the file, restarts the server and confirms that https://flash.patforna.com/healthz reports the new deck's version, which `bun scripts/check-cards.ts --version cards/cards.toml` prints. Should the server refuse the deck all the same, the last one goes back.
 
 ## The seed deck
 

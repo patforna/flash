@@ -304,7 +304,7 @@ test("three rapid flicks advance exactly three cards, each dragging the card the
   const takeLog = () =>
     page.evaluate(() => ({
       cards: [...new Set((window as unknown as { draggedCards: string[] }).draggedCards.splice(0))],
-      flying: document.getAnimations().length > 0,
+      flying: document.getAnimations().some((a) => a.timeline === document.timeline),
     }));
   const first = await question(page).textContent();
   const second = await question(page, "next").textContent();

@@ -96,21 +96,24 @@ export async function tap(page: Page, at: Point): Promise<void> {
   await session.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
 }
 
-// Nothing moving: no animation or transition running, no flip under way, every stage idle.
+// Nothing moving: no animation or transition running on the clock, no flip under way, every stage idle. The topic
+// panel's fade is an animation its scroll drives: always listed, even with nothing to scroll, it moves only with it.
 export async function settled(page: Page): Promise<void> {
   await page.waitForFunction(
     () =>
-      document.getAnimations().length === 0 &&
+      document.getAnimations().every((animation) => animation.timeline !== document.timeline) &&
       document.querySelector("[data-flipping]") === null &&
       Array.from(document.querySelectorAll<HTMLElement>("[data-state]")).every((el) => el.dataset.state === "idle"),
   );
 }
 
-// Every property the running animations and transitions touch, sorted: [] when nothing moves.
+// Every property the animations and transitions running on the clock touch, sorted: [] when nothing moves (the
+// panel's fade moves only with its scroll).
 export function animated(page: Page): Promise<string[]> {
   return page.evaluate(() => {
     const properties = new Set<string>();
     for (const animation of document.getAnimations()) {
+      if (animation.timeline !== document.timeline) continue;
       if (animation instanceof CSSTransition) properties.add(animation.transitionProperty);
       if (!(animation.effect instanceof KeyframeEffect)) continue;
       for (const keyframe of animation.effect.getKeyframes()) {

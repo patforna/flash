@@ -85,7 +85,8 @@ test("nothing fires with Alt, Ctrl or Meta held", async ({ page }) => {
   // Every action starts on keydown (a flip renders, a move animates, fullscreen switches): two frames are plenty.
   await page.evaluate(() => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))));
 
-  expect(await page.evaluate(() => document.getAnimations().length)).toBe(0);
+  // Nothing on the clock: the topic panel's fade moves only with its scroll.
+  expect(await page.evaluate(() => document.getAnimations().some((a) => a.timeline === document.timeline))).toBe(false);
   await expect(flipper(page)).toHaveAttribute("data-side", "front");
   await expect(question(page)).toHaveText(first ?? "");
   await expect(announcer(page)).toHaveText("Card 1 of 9");

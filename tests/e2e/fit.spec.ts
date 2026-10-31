@@ -1,11 +1,11 @@
-import type { Page } from "@playwright/test";
+import type { Locator, Page } from "@playwright/test";
 import type { Deck } from "../../shared/types";
-import { announcer, expect, firstCard, flipper, insets, settled, test } from "./helpers";
+import { announcer, expect, finger, firstCard, flipper, insets, settled, test } from "./helpers";
 
 // The real deck fits the screen. Long answers (docs/plan.md §7 and §8): every card fits both its faces without the
 // last resort (data-fit="scroll"), and every line written on a back sits on a rule. Topics (§3): every chip is in full
-// view in the panel, and in a tab too short for them none is written over. scripts/deploy-do.sh runs this file by name
-// before it ships a deck.
+// view in the panel, or, when the topics outgrow it, scrolls into it, and in a tab too short for them none is written
+// over. scripts/deploy-do.sh runs this file by name before it ships a deck.
 //
 // Under reduced motion the faces lie flat, unturned (the back fades in over the front), so both are measured in place
 // without turning the card: the layout is the same either way.
@@ -145,8 +145,10 @@ test.describe("the fixture deck, which uses every kind of markup", () => {
   });
 });
 
-// Every chip in full view, none under the panel's fade, nothing to scroll. In a tab, so the fullscreen chip leads: the
-// fullest panel, with All and every topic after it.
+// Every chip in full view. With room for them all: none under the panel's fade, which shows only while there is more
+// below, and nothing to scroll. Outgrown: the panel scrolls, its foot fading at the top of the scroll, and a thumb
+// scrolling it to the end brings the last chip into full view, the fade gone. In a tab, so the fullscreen chip leads:
+// the fullest panel, with All and every topic after it.
 test.describe("the real deck's topics", () => {
   test.beforeEach(async ({ page }) => {
     await page.goto("/");
@@ -154,28 +156,48 @@ test.describe("the real deck's topics", () => {
     await settled(page);
   });
 
+  // How far up from the panel's foot its fade reaches, in px: where its mask turns opaque.
+  const fade = (panel: Locator) =>
+    panel.evaluate((el) => Number(/([\d.]+)px\)$/.exec(getComputedStyle(el).maskImage)?.[1] ?? 0));
+
   async function inFullView(page: Page) {
     const panel = page.getByRole("group", { name: "Topics" });
     const chips = panel.getByRole("button");
     // Whatever the deck being shipped holds: the fullscreen chip and All, then a chip for each of its topics.
     const { topics }: Deck = await (await page.request.get("/api/cards")).json();
     await expect(chips).toHaveCount(topics.length + 2);
-    expect(await panel.evaluate((el) => el.scrollHeight <= el.clientHeight)).toBe(true);
     const box = await panel.boundingBox();
     if (!box) throw new Error("no panel");
-    const fade = 24;
-    for (const chip of await chips.all()) {
+    // Inside the panel and clear of its fade as it is drawn now.
+    const whole = async (chip: Locator) => {
       const b = await chip.boundingBox();
       const name = (await chip.getAttribute("aria-label")) ?? "";
       if (!b) throw new Error(`${name} has no box`);
+      const foot = box.y + box.height - (await fade(panel));
       expect(b.x, name).toBeGreaterThanOrEqual(box.x);
       expect(b.y, name).toBeGreaterThanOrEqual(box.y);
       expect(b.x + b.width, name).toBeLessThanOrEqual(box.x + box.width);
-      expect(b.y + b.height, `${name} clear of the fade`).toBeLessThanOrEqual(box.y + box.height - fade);
+      expect(b.y + b.height, `${name} clear of the fade`).toBeLessThanOrEqual(foot);
+    };
+    if (await panel.evaluate((el) => el.scrollHeight <= el.clientHeight)) {
+      await expect.poll(() => fade(panel), "no fade with nothing to scroll").toBe(0);
+      for (const chip of await chips.all()) await whole(chip);
+      return;
     }
+    await expect.poll(() => fade(panel), "the foot fades at the top of the scroll").toBe(24);
+    // A thumb scrolls it, held still before it lifts so nothing flings on; then on to the very end.
+    const x = box.x + box.width / 2;
+    const thumb = await finger(page, { x, y: box.y + box.height - 30 });
+    await thumb.move({ x, y: box.y + box.height - 130 }, 200);
+    await thumb.move({ x, y: box.y + box.height - 130 }, 80);
+    await thumb.up();
+    await expect.poll(() => panel.evaluate((el) => el.scrollTop), "the panel scrolls under a thumb").toBeGreaterThan(0);
+    await panel.evaluate((el) => el.scrollTo({ top: el.scrollHeight }));
+    await expect.poll(() => fade(panel), "no fade at the end of the scroll").toBe(0);
+    await whole(chips.last());
   }
 
-  test("at 923 × 412 every chip is in full view, none under the panel's fade, nothing to scroll", async ({ page }) => {
+  test("at 923 × 412 every chip is in full view, or scrolls into it", async ({ page }) => {
     await inFullView(page);
   });
 
@@ -186,9 +208,11 @@ test.describe("the real deck's topics", () => {
     await inFullView(page);
   });
 
-  // Before it is installed, the app opens in a tab, under Chrome's toolbar and the status bar: the panel scrolls, its
-  // last row fading at its foot.
-  test("in a landscape tab under the browser's toolbars, nothing is drawn over a chip", async ({ page }) => {
+  // Before it is installed, the app opens in a tab, under Chrome's toolbar and the status bar: the wordmark gives way,
+  // and at 332 px the real deck's panel scrolls.
+  test("so they are in a landscape tab under the browser's toolbars, where nothing is drawn over a chip", async ({
+    page,
+  }) => {
     for (const height of [356, 332]) {
       await page.setViewportSize({ width: 923, height });
       await settled(page);
@@ -205,6 +229,7 @@ test.describe("the real deck's topics", () => {
         const under = shown.top < mark.y + mark.height && mark.y < shown.bottom;
         expect(across && under, `${name} under the wordmark at ${height} px`).toBe(false);
       }
+      await inFullView(page);
     }
   });
 });
