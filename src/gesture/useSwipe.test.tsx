@@ -14,7 +14,8 @@
 // [x] a vertical drag and a pointercancel do nothing; a pointercancel mid-drag cancels
 // [x] only the first pointer counts; a pointer that went down off the card, on a button or with another button is ignored
 // [x] a pointerdown during a commit finishes it, completing the commit (flushSync) before reading layers() again
-// [x] …while a copy of the flying card flies on from where it was, out of the stage's way, and goes when it lands
+// [x] …while a copy of the flying card flies on from where it was, out of the stage's way, and goes when it lands; a key
+//     or a deal does the same, the copy taken as the card was flung (a deal finds another card in its layer)
 // [x] the end card (no card under it) is let go of at once: the move lands while a copy flies off
 // [x] a pointerdown, a key or a button that lands a slide in early lets the card coming back carry on into its place
 //     from where it was, out of the next touch's way; a drag the other way or a key going on takes hold of it where it
@@ -471,6 +472,26 @@ describe("input during an animation", () => {
     act(() => swipe().commit("next"));
     act(() => swipe().commit("next"));
     expect(animations.filter((a) => a.el !== flying && !a.el.hasAttribute("data-role"))).toHaveLength(1);
+  });
+
+  test("so does a deal, as a copy of the card as it was flung: by then its layer holds the card dealt", () => {
+    const { layer, animations, swipe } = setup();
+    layer("current").textContent = "the flung card";
+    act(() => swipe().commit("next"));
+    const [fling] = animations;
+    if (fling) fling.currentTime = 100;
+    // A reshuffle renders the new pass's first card into the same layer, then the stage deals it.
+    layer("current").textContent = "the card dealt";
+    act(() => swipe().deal());
+    const copy = animations.find((a) => !a.el.hasAttribute("data-role"));
+    if (!copy || !(copy.el instanceof HTMLElement)) throw new Error("no copy flies on");
+    expect(copy.el.textContent).toBe("the flung card");
+    expect([copy.keyframes, copy.options, copy.currentTime]).toEqual([fling?.keyframes, fling?.options, 100]);
+    expect([copy.el.isConnected, copy.el.inert, copy.el.getAttribute("aria-hidden")]).toEqual([true, true, "true"]);
+    expect(animations.filter((a) => a.el === layer("current")).map((a) => a.keyframes)).toContainEqual([
+      { transform: "translateY(14px)", opacity: 0 },
+      { transform: "translateY(0px)", opacity: 1 },
+    ]);
   });
 
   test("a pointerdown mid-slide lands the move, the card coming back carrying on into its place from where it was", () => {

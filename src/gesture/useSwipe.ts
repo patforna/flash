@@ -47,8 +47,11 @@ interface Motion {
   animation: Animation;
 }
 
+// The card flying out: its layer, and a copy of it as it was flung, which flies on should its move land early. By then a
+// reshuffle may have put another card in that layer.
 interface Flight extends Motion {
   card: HTMLElement;
+  snapshot: HTMLElement;
 }
 
 const FLING_TILT = 10; // degrees, as a flung card leaves
@@ -173,8 +176,7 @@ function swipe(stage: RefObject<HTMLElement | null>, options: RefObject<SwipeOpt
 
   // A card still flying out as the move lands carries on as a copy, from where it is on its curve, over the stack and
   // out of the stage's way; it goes once it has flown. A thumb flicking on never sees the last card vanish mid-air.
-  function flyOn({ card, keyframes, timing, animation }: Flight) {
-    const copy = card.cloneNode(true) as HTMLElement;
+  function flyOn({ card, snapshot: copy, keyframes, timing, animation }: Flight) {
     copy.removeAttribute("data-role");
     copy.inert = true;
     copy.setAttribute("aria-hidden", "true");
@@ -206,6 +208,7 @@ function swipe(stage: RefObject<HTMLElement | null>, options: RefObject<SwipeOpt
 
   // A new card came from elsewhere (a reshuffle, a topic change): what was in flight belongs to the old one.
   function abort() {
+    if (running?.flight) flyOn(running.flight);
     for (const animation of running?.animations ?? []) animation.cancel();
     arrived();
     stop();
@@ -296,7 +299,8 @@ function swipe(stage: RefObject<HTMLElement | null>, options: RefObject<SwipeOpt
           { transform: current.style.transform || IN_PLACE },
           { transform: `translateX(${to}px) rotate(${-FLING_TILT}deg)` },
         ];
-    const flight = { card: current, keyframes, timing: { ...timing, fill: "forwards" as const } };
+    const snapshot = current.cloneNode(true) as HTMLElement;
+    const flight = { card: current, snapshot, keyframes, timing: { ...timing, fill: "forwards" as const } };
     const animation = carryOn(current, flight.keyframes, flight.timing);
     const animations = [animation];
     if (next) {

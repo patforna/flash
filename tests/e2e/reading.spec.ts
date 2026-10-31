@@ -307,6 +307,21 @@ test("a card still flying out when the next touch lands flies on: it never vanis
   await f.up();
 });
 
+test("a reshuffle while a card flies out deals the new pass under it: it flies on", async ({ page }) => {
+  const first = (await question(page).textContent()) ?? "";
+  const at = await centre(page);
+  await swipe(page, { from: at, to: { x: at.x - 160, y: at.y }, ms: 48 });
+  await page.keyboard.press("s");
+  const flight = await flyingOn(page);
+
+  expect(flight.length, "frames of the flight after the reshuffle").toBe(3);
+  expect(flight.every(({ text }) => text.includes(first))).toBe(true);
+  const rights = flight.map(({ right }) => right);
+  expect(rights[0], "on screen as the reshuffle lands").toBeGreaterThan(0);
+  expect(new Set(rights).size, "moving").toBe(3);
+  await expect(announcer(page)).toHaveText("Card 1 of 9");
+});
+
 test("a swipe on the end card deals the next pass at once, under the end card flying off", async ({ page }) => {
   for (let i = 0; i < 9; i++) {
     await page.keyboard.press("l");

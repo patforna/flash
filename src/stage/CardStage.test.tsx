@@ -411,6 +411,15 @@ describe("dealing", () => {
     expect(animations.slice(before)).toEqual([]);
   });
 
+  test("a reshuffle mid-fling deals the new pass under the card flying out, which flies on as it was", () => {
+    const { layer, deck } = setup();
+    fireEvent.keyDown(document.body, { key: "ArrowRight" });
+    act(() => deck().reshuffle());
+    expect(layer("current").textContent).toBe("b?");
+    const copy = animations.find((a) => !a.el.hasAttribute("data-role") && a.el.isConnected);
+    expect(copy?.el.textContent).toBe("a?");
+  });
+
   test("swiping on from the end card deals the new pass at once, under the end card flying off", () => {
     const { stage, layer, calls } = setup({ start: 4 });
     flick(stage, layer);
