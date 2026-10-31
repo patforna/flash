@@ -84,8 +84,9 @@ test("once loaded, the service worker controls the page, its precache holding in
       "/index.html",
       script,
       stylesheet,
-      expect.stringMatching(/^\/assets\/klee-one-latin-400-normal-[\w-]+\.woff2$/),
-      expect.stringMatching(/^\/assets\/covered-by-your-grace-latin-400-normal-[\w-]+\.woff2$/),
+      expect.stringMatching(/^\/assets\/caveat-latin-wght-normal-[\w-]+\.woff2$/),
+      expect.stringMatching(/^\/assets\/permanent-marker-latin-400-normal-[\w-]+\.woff2$/),
+      expect.stringMatching(/^\/assets\/klee-one-arrows-400-normal-[\w-]+\.woff2$/),
       expect.stringMatching(/^\/assets\/geist-latin-wght-normal-[\w-]+\.woff2$/),
     ]),
   );

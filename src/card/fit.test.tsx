@@ -42,7 +42,7 @@ describe("chooseStep", () => {
 
 // happy-dom has no document.fonts: stand one in where the named families are in already and the rest arrive when
 // load() resolves.
-const ALL = ["Klee One", "Covered By Your Grace"];
+const ALL = ["Caveat", "Permanent Marker", "Klee One Arrows"];
 function stubFonts(loaded: string[]) {
   const fonts = {
     check: vi.fn((font: string) => loaded.some((family) => font.includes(family))),
@@ -105,16 +105,16 @@ describe("useFit", () => {
     render(<Face fitKey={key("vacuum")} />);
     const face = screen.getByTestId("face");
     expect(face.dataset.fit).toBeUndefined();
-    expect(fonts.load).toHaveBeenCalledWith(expect.stringContaining("Klee One"));
+    expect(fonts.load).toHaveBeenCalledWith(expect.stringContaining("Caveat"));
     await waitFor(() => expect(face.dataset.fit).toBe("0"));
   });
 
   it("waits for the marker too", async () => {
-    const fonts = stubFonts(["Klee One"]);
+    const fonts = stubFonts(["Caveat", "Klee One Arrows"]);
     render(<Face fitKey={key("vacuum")} />);
     const face = screen.getByTestId("face");
     expect(face.dataset.fit).toBeUndefined();
-    expect(fonts.load).toHaveBeenCalledWith(expect.stringContaining("Covered By Your Grace"));
+    expect(fonts.load).toHaveBeenCalledWith(expect.stringContaining("Permanent Marker"));
     await waitFor(() => expect(face.dataset.fit).toBe("0"));
   });
 

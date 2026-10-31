@@ -96,7 +96,7 @@ test.describe("the Pixel 11", () => {
     await page.goto("/");
     await expect(shuffling(page)).toBeVisible();
     await page.evaluate(() =>
-      Promise.all([document.fonts.load('1em "Klee One"'), document.fonts.load('1em "Covered By Your Grace"')]),
+      Promise.all([document.fonts.load('500 1em "Caveat"'), document.fonts.load('1em "Permanent Marker"')]),
     );
     await expect(page).toHaveScreenshot("loading.png");
   });
@@ -108,7 +108,7 @@ test.describe("the Pixel 11", () => {
       timeout: 15_000,
     });
     await page.evaluate(() =>
-      Promise.all([document.fonts.load('1em "Klee One"'), document.fonts.load('1em "Covered By Your Grace"')]),
+      Promise.all([document.fonts.load('500 1em "Caveat"'), document.fonts.load('1em "Permanent Marker"')]),
     );
     await expect(page).toHaveScreenshot("error.png");
   });

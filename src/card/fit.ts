@@ -7,8 +7,8 @@ export function chooseStep(fits: (step: number) => boolean, steps: number): numb
   return "scroll";
 }
 
-// The faces' type: the fineliner the answer is written in (and code, and the arrows), and the marker of the question.
-export const FONTS = ['1em "Klee One"', '1em "Covered By Your Grace"'];
+// The faces' type: the pen the answer is written in (and code), the marker of the question, and the arrows' file.
+export const FONTS = ['500 1em "Caveat"', '1em "Permanent Marker"', '1em "Klee One Arrows"'];
 
 // A face fits when none of its parts overflows its box, down or across (a code line wider than its column). A
 // highlighter stroke may end at the column's edge with its 2 units of padding past it (card.module.css): no overflow.

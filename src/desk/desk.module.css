@@ -87,7 +87,7 @@
 .wordmark {
   display: block;
   font-family: var(--font-marker);
-  font-size: 26px;
+  font-size: 24px;
   font-weight: 400;
   line-height: 1;
   color: color-mix(in srgb, var(--hl) 85%, transparent);

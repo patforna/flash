@@ -1,7 +1,7 @@
 // To do:
 // [x] printable ASCII is covered, from its first character to its last; control characters are not
-// [x] what only the fineliner covers counts (the marker falls back to it): → ←
-// [x] what neither font covers does not: ≤ ≥ ≈, emoji, CJK, Greek
+// [x] what only the arrows' file covers counts (the pen falls back to it): → ←; and ≤ ≥ ≈, which only the pen has
+// [x] what no font covers does not: emoji, CJK, Greek
 // Run by `bun test`, which serves vitest's API: shared/ is in the browser program too, which has no `bun:test`.
 import { describe, expect, test } from "vitest";
 import { isCovered } from "./glyphs";
@@ -16,11 +16,11 @@ describe("isCovered", () => {
     expect(covered("\t\n\r\u001f\u007f")).toEqual([]);
   });
 
-  test("counts what only the fineliner covers, since the marker falls back to it", () => {
-    expect(covered("→←")).toHaveLength(2);
+  test("counts what only the arrows' file covers, and what only the pen has, since the stack falls back", () => {
+    expect(covered("→←≤≥≈")).toHaveLength(5);
   });
 
-  test("does not cover what neither font has", () => {
-    expect(covered("≤≥≈😀漢αλ")).toEqual([]);
+  test("does not cover what no font has", () => {
+    expect(covered("😀漢αλ")).toEqual([]);
   });
 });

@@ -1,25 +1,35 @@
-/* Self-hosted fonts, OFL-1.1 (licences beside the files in src/fonts/), each one Latin file subset from the upstream
-   TTF with pyftsubset: Google's latin range plus the arrows (U+2190–2199) the renderer typesets from -> and <-. No
-   unicode-range: the browser uses every glyph a file has and falls back only for what is missing.
+/* Self-hosted fonts (licences beside the files in src/fonts/: OFL-1.1, Permanent Marker's Apache-2.0), each one Latin
+   file subset from the upstream TTF with pyftsubset: Google's latin range plus the arrows (U+2190–2199) and a few
+   symbols. No unicode-range: the browser uses every glyph a file has and falls back only for what is missing.
    Measure text only after document.fonts.load(), never on document.fonts.status. */
 
-/* The answer, and everything else written on the paper: Fontworks' fineliner hand. Preloaded by index.html; blocks
-   rather than flashing a fallback. */
+/* The answer, and everything else written on the paper: a quick pen hand, variable in weight (500 for the answer, 700
+   for bold). Preloaded by index.html; blocks rather than flashing a fallback. */
 @font-face {
-  font-family: "Klee One";
+  font-family: "Caveat";
   font-style: normal;
-  font-weight: 400;
+  font-weight: 400 700;
   font-display: block;
-  src: url("../fonts/klee-one-latin-400-normal.woff2") format("woff2");
+  src: url("../fonts/caveat-latin-wght-normal.woff2") format("woff2");
 }
 
-/* The question: a quick marker hand. Preloaded too, for the first card's front. */
+/* The question: a marker. Preloaded too, for the first card's front. */
 @font-face {
-  font-family: "Covered By Your Grace";
+  font-family: "Permanent Marker";
   font-style: normal;
   font-weight: 400;
   font-display: block;
-  src: url("../fonts/covered-by-your-grace-latin-400-normal.woff2") format("woff2");
+  src: url("../fonts/permanent-marker-latin-400-normal.woff2") format("woff2");
+}
+
+/* The arrows (→ ← and the rest of U+2190–2199), ≠, ∞ and ∕, which neither hand has: twelve glyphs of Klee One's pen,
+   the fallback at the end of --font-hand. */
+@font-face {
+  font-family: "Klee One Arrows";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("../fonts/klee-one-arrows-400-normal.woff2") format("woff2");
 }
 
 /* What is typed rather than written: the controls on the desk and the topic list. Variable weight. */

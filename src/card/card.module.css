@@ -34,9 +34,9 @@
 /* A face is a sheet of paper: radius, grain and its own shadow, so the shadow turns with the card. The type steps
    are set here; useFit picks one per face (data-fit). */
 .face {
-  --q-size: 36;
-  --q-line: 42;
-  --size: 22;
+  --q-size: 30;
+  --q-line: 36;
+  --size: 26;
   --pitch: 30;
   position: absolute;
   inset: 0;
@@ -50,17 +50,17 @@
 }
 
 .face[data-fit="1"] {
-  --q-size: 32;
-  --q-line: 38;
-  --size: 20;
+  --q-size: 27;
+  --q-line: 32;
+  --size: 23;
   --pitch: 27;
 }
 
 .face[data-fit="2"],
 .face[data-fit="scroll"] {
-  --q-size: 28;
-  --q-line: 33;
-  --size: 18;
+  --q-size: 24;
+  --q-line: 29;
+  --size: 21;
   --pitch: 24;
 }
 
@@ -104,9 +104,9 @@
   background: var(--head-rule), var(--paper);
 }
 
-/* Front: the question in marker, centred a little above the middle over the rules, at most four lines. The marker
-   hand's ascent and descent come to 1.35 em, more than this line height: the box that holds it keeps room for the
-   overhang, or it would count as overflow and step the type down. */
+/* Front: the question in marker, centred a little above the middle over the rules, at most four lines. The marker's
+   ascent and descent come to 1.43 em, more than this line height: the box that holds it keeps room for the overhang,
+   or it would count as overflow and step the type down. */
 .front {
   background:
     var(--head-rule),
@@ -137,11 +137,11 @@
   transform: rotateX(180deg);
 }
 
-/* --rule-baseline: where the baseline falls in a line box, so where each rule is drawn. Klee One's ascent and descent
-   (1.16 and 0.288 em, its hhea metrics, which Chromium lays lines out with) put it at half the pitch plus 0.436 of the
-   type size. */
+/* --rule-baseline: where the baseline falls in a line box, so where each rule is drawn. Caveat's ascent and descent
+   (0.96 and 0.3 em, its typo metrics, which it asks Chromium to lay lines out with) put it at half the pitch plus 0.33
+   of the type size. */
 .answer {
-  --rule-baseline: calc(var(--pitch) / 2 + 0.436 * var(--size));
+  --rule-baseline: calc(var(--pitch) / 2 + 0.33 * var(--size));
   position: absolute;
   left: calc(28 * var(--u));
   right: calc(28 * var(--u));
@@ -150,7 +150,7 @@
   padding-left: calc(20 * var(--u));
   font-size: calc(var(--size) * var(--u));
   line-height: calc(var(--pitch) * var(--u));
-  font-weight: 400;
+  font-weight: 500;
   color: var(--ink-pen);
   background:
     linear-gradient(
@@ -198,10 +198,14 @@
   content: counter(list-item) "." / "";
 }
 
-/* Bold: the yellow highlighter. The hand has one weight; the stroke is the emphasis. */
+/* Bold: the yellow highlighter, and the pen pressed harder (the marker has one weight). */
 .question strong,
 .answer strong {
   --m: var(--hl);
+  font-weight: 700;
+}
+
+.question strong {
   font-weight: 400;
 }
 
@@ -367,22 +371,22 @@ button.message:focus-visible {
   }
 }
 
-/* The title in marker, the hint in the fineliner, as on a card. */
+/* The title in marker, the hint in pen, as on a card. */
 .title {
   display: block;
   margin: 0;
   font-family: var(--font-marker);
-  font-size: calc(36 * var(--u));
-  line-height: calc(42 * var(--u));
+  font-size: calc(32 * var(--u));
+  line-height: calc(40 * var(--u));
   font-weight: 400;
 }
 
 .hint {
   display: block;
   margin: calc(8 * var(--u)) 0 0;
-  font-size: calc(16 * var(--u));
-  line-height: calc(20 * var(--u));
-  font-weight: 400;
+  font-size: calc(19 * var(--u));
+  line-height: calc(24 * var(--u));
+  font-weight: 500;
   color: var(--ink-pencil);
 }
 

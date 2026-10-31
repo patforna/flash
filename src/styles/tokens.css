@@ -35,21 +35,22 @@
   --desk-deep: #0e1016;
 
   /* Stickers: a topic's colour is its declared index mod 8, in this order: the dots in the topic list and on the
-     topics chip. */
-  --s-pink: #ff7aa8;
-  --s-marigold: #ffc93c;
-  --s-mint: #45e0a0;
-  --s-sky: #6cb6ff;
-  --s-lilac: #bfa2ff;
-  --s-tangerine: #ff9150;
-  --s-teal: #34d1c1;
-  --s-lime: #d7f25a;
+     topics chip. Eight hues 45° apart from pink's, at one lightness and chroma (OKLCH L 0.80, C 0.155, gamut-mapped),
+     so no dot outshines another and the closest pair sits 10 ΔE apart. */
+  --s-pink: #ff92b9;
+  --s-marigold: #e4b826;
+  --s-mint: #00ddc2;
+  --s-sky: #9fb9ff;
+  --s-lilac: #e39dff;
+  --s-tangerine: #ff9d69;
+  --s-teal: #00d1ff;
+  --s-lime: #90d469;
 
-  /* Type: a marker for the question, a fineliner for the answer and everything else on the paper (code included: a
-     highlighter marks it), and a grotesque for what is typed rather than written. The arrows the marker lacks come
-     from the fineliner. */
-  --font-marker: "Covered By Your Grace", "Klee One", cursive;
-  --font-hand: "Klee One", system-ui, sans-serif;
+  /* Type: a marker for the question, a pen for the answer and everything else on the paper (code included: a
+     highlighter marks it), and a grotesque for what is typed rather than written. The arrows neither hand has come
+     from twelve glyphs of Klee One's pen. */
+  --font-marker: "Permanent Marker", "Caveat", cursive;
+  --font-hand: "Caveat", "Klee One Arrows", system-ui, sans-serif;
   --font-ui: "Geist", system-ui, sans-serif;
 
   /* Flip: a CSS transition (rotateX), so a tap mid-flip reverses from the current angle. It ends as its motion does:

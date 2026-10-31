@@ -1,8 +1,8 @@
-// The characters the card fonts cover: the union of both files' cmaps, since the question's marker falls back to the
-// answer's fineliner for what it lacks (the arrows). Hex code points and inclusive ranges, extracted once from the
-// repo root with:
+// The characters the card fonts cover: the union of the three files' cmaps, since the question's marker falls back to
+// the answer's pen for what it lacks, and the pen to the arrows' file. Hex code points and inclusive ranges, extracted
+// once from the repo root (U+0000, a control character in the marker's file, left out) with:
 //
-//   uvx --with fonttools --with brotli python - src/fonts/klee-one-*.woff2 src/fonts/covered-by-your-grace-*.woff2 <<'PY'
+//   uvx --with fonttools --with brotli python - src/fonts/caveat-*.woff2 src/fonts/permanent-marker-*.woff2 src/fonts/klee-one-arrows-*.woff2 <<'PY'
 //   import sys
 //   from fontTools.ttLib import TTFont
 //   runs = []
@@ -12,8 +12,8 @@
 //   print(",".join(f"{a:x}" if a == b else f"{a:x}-{b:x}" for a, b in runs))
 //   PY
 const RANGES =
-  "20-7e,a0-ff,131,152-153,2bb-2bc,2c6,2da,2dc,304,308,2002-2003,2010-2016,2018-201a,201c-201e,2020-2022," +
-  "2025-2026,2030,2032-2033,2039-203c,203e,2044,2049,205a,205d,20ac,2122,2190-2194,2196-2199,2212,2215,221e,2260";
+  "20-7e,a0-ff,131,152-153,2bc,2c6,2da,2dc,304,308,2010,2013-2014,2018-201a,201c-201e,2020-2022,2026,2030," +
+  "2032-2033,2039-203a,2044,2052,20ac,2122,2190-2194,2196-2199,2212,2215,221e,2248,2260,2264-2265";
 
 const covered = new Set<number>();
 for (const range of RANGES.split(",")) {
