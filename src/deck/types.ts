@@ -16,7 +16,6 @@ export interface DeckView {
   position: number; // 1-based
   total: number; // pass size
   selected: ReadonlySet<string>;
-  topics: readonly string[];
   flip(): void;
   goNext(): void;
   goPrev(): void;

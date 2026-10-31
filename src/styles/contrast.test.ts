@@ -7,6 +7,7 @@
 // [x] the numerals of a numbered list on the paper
 // [x] the error card's red title, large text only, at 3:1
 import { describe, expect, test } from "vitest";
+import { STICKERS } from "../../shared/stickers";
 import tokens from "./tokens.css?raw";
 
 type Rgba = { rgb: [number, number, number]; alpha: number };
@@ -91,7 +92,8 @@ function ratio(text: string, background: string[]): number {
   return (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05);
 }
 
-const STICKERS = ["pink", "marigold", "mint", "sky", "lilac", "tangerine", "teal", "lime"].map((s) => `--s-${s}`);
+// The stickers' tokens, from the one list the panel and the deck check read.
+const STICKER_TOKENS = STICKERS.map((sticker) => `--s-${sticker}`);
 
 // Text and what it is written on, top first: 4.5:1 for text, 3:1 for large text only.
 const TEXT: [string, string[]][] = [
@@ -105,9 +107,9 @@ const TEXT: [string, string[]][] = [
   ["--chalk", ["--desk"]], // a chip's label
   ["--chalk", ["--desk-glow"]],
   ["--sticker-ink", ["--chalk"]], // All, selected
-  ...STICKERS.map((sticker): [string, string[]] => ["--sticker-ink", [sticker]]), // a topic, selected
+  ...STICKER_TOKENS.map((sticker): [string, string[]] => ["--sticker-ink", [sticker]]), // a topic, selected
   // A chip not selected: its label tinted with its sticker on a muted sticker, all on the desk.
-  ...["--chalk", ...STICKERS].map((sticker): [string, string[]] => [
+  ...["--chalk", ...STICKER_TOKENS].map((sticker): [string, string[]] => [
     mix(sticker, 0.35, "--chalk"),
     [mix(sticker, 0.18, "--desk")],
   ]),

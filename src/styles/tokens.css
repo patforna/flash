@@ -27,9 +27,9 @@
   --hl: #fff04d;
   --code-wash: rgb(31 45 107 / 7%);
 
-  /* On the desk: chip labels (15.4:1); secondary text (6.9:1). Text on a sticker (at least 7.6:1 on all eight). */
+  /* On the desk, chalk (15.4:1): the page's text, the stage's buttons, the base of every chip's tint, and the colour All
+     and the fullscreen chip are muted in. Text on a sticker (at least 7.6:1 on all eight). */
   --chalk: #eceae3;
-  --chalk-dim: #9a9daa;
   --sticker-ink: #121318;
 
   /* Stickers: a topic's colour is its declared index mod 8, in this order. */

@@ -28,10 +28,6 @@ export function useDeck(
   { rng = Math.random, storage = browserStorage() }: { rng?: Rng; storage?: Storage | null } = {},
 ): DeckView {
   const [state, setState] = useState(() => start(deck, loadSelection(storage, deck.topics), rng));
-  if (state.deck.version !== deck.version) {
-    // A new deck: keep the topics it still has and deal afresh. React renders again straight away.
-    setState(start(deck, new Set(deck.topics.filter((t) => state.selected.has(t))), rng));
-  }
   const { selected, pass } = state;
   useEffect(() => {
     saveSelection(storage, selected);
@@ -68,7 +64,6 @@ export function useDeck(
     position: pass.index + 1,
     total: pass.order.length,
     selected,
-    topics: state.deck.topics,
     ...actions,
   };
 }

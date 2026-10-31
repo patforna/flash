@@ -76,7 +76,6 @@ function Reader({ calls, onFullscreen, onMove, start, held }: ReaderProps) {
     position: index + 1,
     total: n,
     selected: new Set(),
-    topics: ["Redis"],
     flip: move("flip", (p) => ({ ...p, side: p.side === "front" ? "back" : "front" })),
     goNext: move("goNext", (p) =>
       p.index === n ? { order: rotate(p.order), index: 0, side: "front" } : { ...p, index: p.index + 1, side: "front" },
@@ -365,7 +364,6 @@ describe("dealing", () => {
           position: 1,
           total: 2,
           selected: new Set(),
-          topics: ["Redis"],
           flip: () => {},
           goNext: () => {},
           goPrev: () => {},

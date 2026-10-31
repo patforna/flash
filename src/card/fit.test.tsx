@@ -75,12 +75,12 @@ type FaceProps = { fitKey: string; overflow?: Overflow; onLayout?: (fit: string 
 
 function Face({ fitKey, overflow, onLayout }: FaceProps) {
   const ref = useRef<HTMLDivElement>(null);
-  const step = useFit(ref, 3, fitKey);
+  useFit(ref, 3, fitKey);
   useLayoutEffect(() => {
     onLayout?.(ref.current?.dataset.fit);
   });
   return (
-    <div ref={ref} data-testid="face" data-step={step}>
+    <div ref={ref} data-testid="face">
       <p ref={overflow && overflowing(overflow)}>How do you choose a shard key?</p>
     </div>
   );
@@ -130,9 +130,7 @@ describe("useFit", () => {
 
   it("steps the type down while a part overflows its box", () => {
     render(<Face fitKey={key("shard")} overflow={{ until: 2, axis: "down" }} />);
-    const face = screen.getByTestId("face");
-    expect(face.dataset.fit).toBe("2");
-    expect(face.dataset.step).toBe("2");
+    expect(screen.getByTestId("face").dataset.fit).toBe("2");
   });
 
   it("also steps down while a part overflows across, as a code line wider than its column does", () => {
@@ -147,9 +145,7 @@ describe("useFit", () => {
 
   it('falls back to "scroll" when even the smallest step overflows', () => {
     render(<Face fitKey={key("too-long")} overflow={{ until: 3, axis: "down" }} />);
-    const face = screen.getByTestId("face");
-    expect(face.dataset.fit).toBe("scroll");
-    expect(face.dataset.step).toBe("scroll");
+    expect(screen.getByTestId("face").dataset.fit).toBe("scroll");
   });
 
   it("measures once per key, not on every render", () => {
@@ -167,15 +163,12 @@ describe("useFit", () => {
     const seen: (string | undefined)[] = [];
     render(<Face fitKey={key("shard")} onLayout={(fit) => seen.push(fit)} />);
     expect(seen[0]).toBe("2");
-    expect(screen.getByTestId("face").dataset.step).toBe("2");
     expect(fonts.load).not.toHaveBeenCalled();
   });
 
   it("measures again when its key changes", () => {
     const { rerender } = render(<Face fitKey={key("vacuum")} />);
     rerender(<Face fitKey={key("shard")} overflow={{ until: 2, axis: "down" }} />);
-    const face = screen.getByTestId("face");
-    expect(face.dataset.fit).toBe("2");
-    expect(face.dataset.step).toBe("2");
+    expect(screen.getByTestId("face").dataset.fit).toBe("2");
   });
 });

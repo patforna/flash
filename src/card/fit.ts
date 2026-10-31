@@ -1,4 +1,4 @@
-import { type RefObject, useLayoutEffect, useState } from "react";
+import { type RefObject, useLayoutEffect } from "react";
 
 export function chooseStep(fits: (step: number) => boolean, steps: number): number | "scroll" {
   for (let step = 0; step < steps; step++) {
@@ -27,16 +27,14 @@ const measured = new Map<string, number | "scroll">();
 
 // Sets data-fit on the face to the largest type step at which nothing overflows ("scroll" if none fits), measured
 // before paint once the fonts are in; the CSS sizes the type from data-fit and hides the content until it is set.
-// Returns the step; measures again only when the key changes, and not at all for a key measured before.
-export function useFit(ref: RefObject<HTMLElement | null>, steps: number, key: string): number | "scroll" {
-  const [fit, setFit] = useState<number | "scroll">(() => measured.get(key) ?? 0);
+// Measures again only when the key changes, and not at all for a key measured before.
+export function useFit(ref: RefObject<HTMLElement | null>, steps: number, key: string): void {
   useLayoutEffect(() => {
     const el = ref.current;
     if (!el) return;
     const known = measured.get(key);
     if (known !== undefined) {
       el.dataset.fit = String(known);
-      setFit(known);
       return;
     }
     let live = true;
@@ -48,7 +46,6 @@ export function useFit(ref: RefObject<HTMLElement | null>, steps: number, key: s
       }, steps);
       el.dataset.fit = String(step);
       measured.set(key, step);
-      setFit(step);
     };
     if (FONTS.every((font) => document.fonts.check(font))) measure();
     else Promise.all(FONTS.map((font) => document.fonts.load(font))).then(measure, measure);
@@ -56,5 +53,4 @@ export function useFit(ref: RefObject<HTMLElement | null>, steps: number, key: s
       live = false;
     };
   }, [ref, steps, key]);
-  return fit;
 }

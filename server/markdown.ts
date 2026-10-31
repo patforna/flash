@@ -15,7 +15,7 @@ const FENCE = /^ *(`{3,}(?=[^`]*$)|~{3,})/;
 // A line Markdown reads as a link reference definition and hides: `[label]: …`, also opening a list item.
 const REFERENCE = /^ *(?:(?:[-+*]|\d{1,9}[.)]) +)?\[[^\]]+\]:/;
 
-export type LineKind = "text" | "fence" | "code";
+type LineKind = "text" | "fence" | "code";
 
 // Each source line's kind as Bun (md4c) reads it with indented code off, where indentation never matters: a fence
 // opens on a FENCE line and closes only on a line of the same character, at least as long, with nothing after it but

@@ -11,8 +11,6 @@
 // - [x] toggleTopic deals afresh, front up, when the card on screen no longer matches
 // - [x] toggleTopic and clearTopics persist the selection
 // - [x] clearTopics returns to every card; with nothing selected it changes nothing
-// - [x] a new deck (a different version) keeps the selection, drops unknown topics and deals afresh
-// - [x] the same version in a new object changes nothing
 // - [x] the callbacks keep their identity across renders
 // - [x] localStorage by default; a blocked localStorage is ignored
 // - [x] a move that changes nothing doesn't render again
@@ -71,7 +69,7 @@ function walk(result: { current: DeckView }): string[] {
 describe("useDeck", () => {
   it("deals a pass of the whole deck on the first render", () => {
     const { result } = setup();
-    expect(result.current).toMatchObject({ prev: null, side: "front", position: 1, total: 5, topics: deck.topics });
+    expect(result.current).toMatchObject({ prev: null, side: "front", position: 1, total: 5 });
     expect(result.current.selected).toEqual(new Set());
     expect(deck.cards).toContain(result.current.current);
   });
@@ -188,34 +186,6 @@ describe("useDeck", () => {
     const { prev, current, next } = result.current;
     act(() => result.current.clearTopics());
     expect(result.current).toMatchObject({ prev, current, next, position: 2 });
-  });
-
-  it("keeps the selection on a new deck, drops topics it no longer has, and deals afresh", () => {
-    const { result, rerender } = setup({ stored: '["Redis","Queues"]' });
-    act(() => result.current.goNext());
-    act(() => result.current.flip());
-    rerender({
-      version: "v2",
-      topics: ["Redis", "Postgres"],
-      cards: [card("a", "Redis"), card("b", "Postgres"), card("f", "Redis")],
-    });
-    expect(result.current.selected).toEqual(new Set(["Redis"]));
-    expect(result.current).toMatchObject({
-      prev: null,
-      side: "front",
-      position: 1,
-      total: 2,
-      topics: ["Redis", "Postgres"],
-    });
-    expect(walk(result).toSorted()).toEqual(["a", "f"]);
-  });
-
-  it("changes nothing for the same deck version in a new object", () => {
-    const { result, rerender } = setup();
-    act(() => result.current.goNext());
-    const { prev, current } = result.current;
-    rerender({ ...deck });
-    expect(result.current).toMatchObject({ prev, current, position: 2 });
   });
 
   it("keeps its callbacks across renders, so the stage can hold on to them", () => {
