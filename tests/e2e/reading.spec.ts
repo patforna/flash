@@ -61,6 +61,28 @@ test("a tap turns the card over to its answer", async ({ page }) => {
   expect(await writingUnderneath(page)).toBe(true);
 });
 
+// How far the card on top has turned (its flipper's angle about the x axis, in degrees) in the first frame after the
+// next pointerup. Started before the tap, read after it.
+const turnedInFirstFrame = (page: Page) =>
+  page.evaluate(
+    () =>
+      new Promise<number>((resolve) => {
+        const flipper = document.querySelector('[data-role="current"] [data-side]');
+        if (!flipper) throw new Error("no card on the stage");
+        const read = () => {
+          const m = new DOMMatrix(getComputedStyle(flipper).transform);
+          resolve((Math.atan2(m.m23, m.m22) * 180) / Math.PI);
+        };
+        addEventListener("pointerup", () => requestAnimationFrame(read), { capture: true, once: true });
+      }),
+  );
+
+test("a tap's turn is under way in the first frame after the thumb lifts: none stands still", async ({ page }) => {
+  const turned = turnedInFirstFrame(page);
+  await tap(page, await centre(page));
+  expect(await turned, "degrees turned in the first frame").toBeLessThan(-5);
+});
+
 test("a swipe left deals the next card, front up", async ({ page }) => {
   const next = await question(page, "next").textContent();
 

@@ -28,6 +28,16 @@ const turnLabel = (view: DeckView) =>
 const reducedMotion = () => matchMedia("(prefers-reduced-motion: reduce)").matches;
 // A CSS time in ms, whichever unit it is written in: the build's minifier turns 260ms into .26s.
 const ms = (time: string) => Number.parseFloat(time) * (/ms\s*$/.test(time) ? 1 : 1000) || 0;
+// The transitions a change of side just set off in the card (asking for them makes them), started at the timeline's
+// time, the last frame's: left pending, they start on the next frame from where they were, and the card stood
+// unturned for a frame.
+const startNow = (flipper: Element | null) => {
+  const now = document.timeline?.currentTime;
+  if (now == null) return;
+  for (const transition of flipper?.getAnimations({ subtree: true }) ?? []) {
+    if (transition instanceof CSSTransition && transition.startTime === null) transition.startTime = now;
+  }
+};
 
 export function CardStage({ view, renderCard, onFullscreen, onMove, dealFirst = false }: CardStageProps) {
   const stage = useRef<HTMLDivElement>(null);
@@ -94,6 +104,8 @@ export function CardStage({ view, renderCard, onFullscreen, onMove, dealFirst = 
       if (key !== landing.current) swipe.deal();
     } else if (el && view.side !== shown.current.side) {
       el.setAttribute("data-flipping", "");
+      // The flipper is the card's [data-side] element (docs/plan.md §11).
+      startNow(el.querySelector('[data-role="current"] [data-side]'));
       clearTimeout(flipEnd.current);
       const duration = getComputedStyle(el).getPropertyValue(
         reducedMotion() ? "--flip-fade-duration" : "--flip-duration",
