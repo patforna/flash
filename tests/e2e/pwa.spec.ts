@@ -1,6 +1,5 @@
-import { expect, type Page, test } from "@playwright/test";
-import type { Deck } from "../../shared/types";
-import { cdp, firstCard } from "./helpers";
+import type { Page } from "@playwright/test";
+import { cdp, expect, firstCard, questions, test } from "./helpers";
 
 // The installable app and its service worker (plan §6 and §12).
 
@@ -13,25 +12,15 @@ test.beforeEach(() => {
 
 const desk = "#11131A";
 
-// Every question of the deck as the reader sees it: the server's HTML through the browser's own parser, its no-break
-// spaces and word joiners kept, since a pattern is matched against the text as it is.
+// Any question of the deck, as the reader sees it (its no-break spaces and word joiners kept, since a pattern is matched
+// against the text as it is).
 async function deckQuestions(page: Page): Promise<RegExp> {
-  const deck: Deck = await (await page.request.get("/api/cards")).json();
-  const questions = await page.evaluate(
-    (html) =>
-      html.map((question) => {
-        const template = document.createElement("template");
-        template.innerHTML = question;
-        return template.content.textContent ?? "";
-      }),
-    deck.cards.map((card) => card.questionHtml),
-  );
-  return new RegExp(questions.map((question) => RegExp.escape(question)).join("|"));
+  return new RegExp((await questions(page)).map((question) => RegExp.escape(question)).join("|"));
 }
 
 // A question of the deck, showing on the card being read (the DOM contract, plan §11).
-function questionShown(page: Page, questions: RegExp) {
-  return page.locator('[data-role="current"]').getByText(questions).filter({ visible: true }).first();
+function questionShown(page: Page, anyQuestion: RegExp) {
+  return page.locator('[data-role="current"]').getByText(anyQuestion).filter({ visible: true }).first();
 }
 
 async function workerInControl(page: Page) {
@@ -102,12 +91,12 @@ test("once loaded, the service worker controls the page, its precache holding in
 });
 
 test("reads offline once the deck has been fetched under the service worker", async ({ page, context }) => {
-  const questions = await deckQuestions(page);
+  const anyQuestion = await deckQuestions(page);
   await page.goto("/");
   await workerInControl(page);
   // The first load's preload ran before the worker took control, so the deck reaches the worker's cache only now.
   await page.reload();
-  await expect(questionShown(page, questions)).toBeVisible();
+  await expect(questionShown(page, anyQuestion)).toBeVisible();
   // The worker answers before it has finished writing the deck to its cache.
   await expect
     .poll(() => page.evaluate(async () => (await caches.match("/api/cards", { ignoreVary: true })) !== undefined))
@@ -116,18 +105,18 @@ test("reads offline once the deck has been fetched under the service worker", as
   await context.setOffline(true);
   await page.reload();
 
-  await expect(questionShown(page, questions)).toBeVisible();
+  await expect(questionShown(page, anyQuestion)).toBeVisible();
 });
 
 test("reads the deck the worker cached when the server answers with an error (Caddy's 502 while the app is down)", async ({
   page,
   context,
 }) => {
-  const questions = await deckQuestions(page);
+  const anyQuestion = await deckQuestions(page);
   await page.goto("/");
   await workerInControl(page);
   await page.reload();
-  await expect(questionShown(page, questions)).toBeVisible();
+  await expect(questionShown(page, anyQuestion)).toBeVisible();
   await expect
     .poll(() => page.evaluate(async () => (await caches.match("/api/cards", { ignoreVary: true })) !== undefined))
     .toBe(true);
@@ -136,18 +125,18 @@ test("reads the deck the worker cached when the server answers with an error (Ca
   await context.route("**/api/cards", (route) => route.fulfill({ status: 502, body: "Bad Gateway" }));
   await page.reload();
 
-  await expect(questionShown(page, questions)).toBeVisible();
+  await expect(questionShown(page, anyQuestion)).toBeVisible();
 });
 
 test("the first load requests the deck once: the app takes the preloaded response", async ({ page }) => {
-  const questions = await deckQuestions(page);
+  const anyQuestion = await deckQuestions(page);
   const deckRequests: string[] = [];
   page.on("request", (request) => {
     if (new URL(request.url()).pathname === "/api/cards") deckRequests.push(request.url());
   });
 
   await page.goto("/");
-  await expect(questionShown(page, questions)).toBeVisible();
+  await expect(questionShown(page, anyQuestion)).toBeVisible();
   await workerInControl(page);
 
   expect(deckRequests).toHaveLength(1);
