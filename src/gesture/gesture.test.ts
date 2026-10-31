@@ -4,8 +4,9 @@
 // [x] velocityX: least squares over the last 80 ms; older samples ignored; one sample gives 0
 // [x] release: 28 % of the width, or 0.45 px/ms with |dx| ≥ 24; a fling against the drag cancels; only what `can` allows
 // [x] rubberBand: 0 gives 0, monotonic, always below 80
+// [x] unband: the pull that gives an offset, for a card caught on its way back
 import { describe, expect, test } from "vitest";
-import { classify, isTap, release, rubberBand, velocityX } from "./gesture";
+import { classify, isTap, release, rubberBand, unband, velocityX } from "./gesture";
 
 const at = (x: number, y: number, t = 0) => ({ t, x, y });
 
@@ -109,5 +110,13 @@ describe("rubberBand", () => {
     expect(new Set(offsets).size).toBe(offsets.length);
     expect(offsets.at(-1)).toBeLessThan(80);
     expect(rubberBand(80)).toBeCloseTo(28.39, 2);
+  });
+});
+
+describe("unband", () => {
+  test("is the pull that gives an offset: 0 for none, 80 px for 28.39 px", () => {
+    expect(unband(0)).toBe(0);
+    expect(unband(rubberBand(80))).toBeCloseTo(80, 9);
+    expect(rubberBand(unband(20))).toBeCloseTo(20, 9);
   });
 });

@@ -16,7 +16,9 @@
 // [x] a pointerdown during a commit finishes it, completing the commit (flushSync) before reading layers() again
 // [x] …while a copy of the flying card flies on from where it was, out of the stage's way, and goes when it lands
 // [x] the end card (no card under it) is let go of at once: the move lands while a copy flies off
-// [x] a pointerdown during a cancel or a deal finishes it
+// [x] a pointerdown on the card during a cancel catches the cards where they are, the drag going on from there (a rubber
+//     band from where it gives); a tap after it springs them back from there; off the card it finishes the cancel
+// [x] a pointerdown during a deal finishes it
 // [x] a move (a fling, a slide in, a spring back, a copy flying on) starts at the timeline's time; a deal waits for the
 //     next frame
 // [x] reduced motion: no rotation while following; opacity-only animations
@@ -29,7 +31,7 @@
 import { act, render } from "@testing-library/react";
 import { Profiler, useRef, useState } from "react";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
-import { FakeAnimation, inline, press } from "./testing";
+import { animatedAt, FakeAnimation, inline, press } from "./testing";
 import { type SwipeOptions, useSwipe } from "./useSwipe";
 
 // The card: 600 × 360 at (280, 24). 28 % of it is 168 px; off screen to the left is −(880 + 80) = −960 px. The previous
@@ -463,12 +465,79 @@ describe("input during an animation", () => {
     expect(animations.filter((a) => a.el !== flying && !a.el.hasAttribute("data-role"))).toHaveLength(1);
   });
 
-  test("a pointerdown mid-cancel finishes it", () => {
+  test("a pointerdown mid-cancel catches the cards where they are, and the drag goes on from there", () => {
+    const { stage, layer, animations } = setup();
+    const finger = press(stage, layer("current"), 700, 200);
+    finger.move(650, 200, 50);
+    finger.up(100);
+    const springs = [...animations];
+    // Some way back: 30 of the 50 px to go.
+    animatedAt([
+      [layer("current"), "translateX(-30px) rotate(-0.9deg)"],
+      [layer("next"), "scale(0.9775) translateY(5.143px)"],
+    ]);
+    const again = press(stage, layer("current"), 700, 200, 140);
+    expect(springs.map((a) => a.playState)).toEqual(["idle", "idle"]);
+    expect(layer("current").style.transform).toBe("translateX(-30px) rotate(-0.9deg)");
+    expect(layer("next").style.transform).toBe("scale(0.9775) translateY(5.143px)");
+    again.move(680, 200);
+    expect(layer("current").style.transform).toBe("translateX(-50px) rotate(-1.5deg)");
+  });
+
+  test("…the previous card too, while any of it shows", () => {
+    const { stage, layer } = setup();
+    const finger = press(stage, layer("current"), 400, 200);
+    finger.move(450, 200, 50);
+    finger.up(100);
+    // 20 px of it still on screen: it waits at −880 px.
+    animatedAt([[layer("prev"), "translateX(-860px)"]]);
+    const again = press(stage, layer("current"), 700, 200, 140);
+    expect(inline(layer("prev"))).toEqual({ transform: "translateX(-860px)", visibility: "visible" });
+    again.move(720, 200);
+    expect(layer("prev").style.transform).toBe("translateX(-840px)");
+  });
+
+  test("…the first card of a pass too, from where it gives as a rubber band", () => {
+    const { stage, layer } = setup({}, { prev: false });
+    const finger = press(stage, layer("current"), 400, 200);
+    finger.move(480, 200, 50);
+    finger.up(100);
+    // 20 px out, where a pull of 48.5 px holds it; pulled 10 px further, it gives 22.9 px.
+    animatedAt([[layer("current"), "translateX(20px) rotate(0.6deg)"]]);
+    press(stage, layer("current"), 700, 200, 140).move(710, 200);
+    expect(layer("current").style.transform).toMatch(/^translateX\(22\.94\d*px\)/);
+  });
+
+  test("…and should the touch be a tap, the card turns over as they spring back from where they were caught", () => {
+    const { stage, layer, animations, onTap } = setup();
+    const finger = press(stage, layer("current"), 700, 200);
+    finger.move(650, 200, 50);
+    finger.up(100);
+    animatedAt([
+      [layer("current"), "translateX(-30px) rotate(-0.9deg)"],
+      [layer("next"), "scale(0.9775) translateY(5.143px)"],
+    ]);
+    const before = animations.length;
+    press(stage, layer("current"), 700, 200, 140).up(60);
+    expect(onTap).toHaveBeenCalledOnce();
+    expect(animations.slice(before).map((a) => [a.el, a.keyframes])).toEqual([
+      [
+        layer("current"),
+        [{ transform: "translateX(-30px) rotate(-0.9deg)" }, { transform: "translateX(0px) rotate(0deg)" }],
+      ],
+      [
+        layer("next"),
+        [{ transform: "scale(0.9775) translateY(5.143px)" }, { transform: "scale(0.965) translateY(8px)" }],
+      ],
+    ]);
+  });
+
+  test("a touch off the card mid-cancel finishes it", () => {
     const { stage, layer, animations } = setup();
     const finger = press(stage, layer("current"), 400, 200);
     finger.move(450, 200, 50);
     finger.up(100);
-    press(stage, layer("current"), 700, 200, 200);
+    press(stage, stage, 100, 200, 200);
     expect(animations[0]?.playState).toBe("finished");
     expect(inline(layer("prev"))).toEqual({ transform: "", visibility: "" });
   });

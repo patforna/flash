@@ -64,3 +64,9 @@ export function rubberBand(dx: number): number {
   const limit = GESTURE.rubberLimit;
   return limit * (1 - 1 / ((0.55 * dx) / limit + 1));
 }
+
+// The drag that has a rubber-banded card give `x`: where a touch catching it on its way back takes it up.
+export function unband(x: number): number {
+  const limit = GESTURE.rubberLimit;
+  return ((limit / 0.55) * x) / (limit - x);
+}

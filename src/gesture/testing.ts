@@ -1,5 +1,6 @@
 // Test support for the gesture and the stage: a recording stand-in for Web Animations, and pointers with timestamps.
 import { act } from "@testing-library/react";
+import { vi } from "vitest";
 
 // Records what was animated; finish() and cancel() settle `finished` as browsers do (cancel rejects it).
 export class FakeAnimation {
@@ -73,3 +74,13 @@ export function press(stage: HTMLElement, target: Element, x: number, y: number,
 
 // What a gesture writes inline on a layer.
 export const inline = (el: HTMLElement) => ({ transform: el.style.transform, visibility: el.style.visibility });
+
+// Where animations have elements now, as a browser's getComputedStyle reads them: happy-dom applies none.
+export function animatedAt(transforms: [Element, string][]) {
+  const at = new Map(transforms);
+  const computed = window.getComputedStyle.bind(window);
+  vi.spyOn(window, "getComputedStyle").mockImplementation((el, pseudo) => {
+    const transform = at.get(el);
+    return transform === undefined ? computed(el, pseudo) : ({ transform } as CSSStyleDeclaration);
+  });
+}

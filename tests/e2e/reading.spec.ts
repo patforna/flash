@@ -132,6 +132,49 @@ test("a short, slow drag follows the thumb, then cancels and settles back", asyn
   expect(await layer(page).boundingBox()).toEqual(box);
 });
 
+// Where the card on top is (its layer's x, in px) in the last frame before the next touch, and in the three after it.
+const aroundTouch = (page: Page) =>
+  page.evaluate(
+    () =>
+      new Promise<{ before: number; after: number[] }>((resolve) => {
+        const card = document.querySelector('[data-role="current"]');
+        if (!card) throw new Error("no card on the stage");
+        let touched = false;
+        addEventListener("pointerdown", () => (touched = true), { capture: true, once: true });
+        let before = Number.NaN;
+        const after: number[] = [];
+        const look = () => {
+          const x = new DOMMatrix(getComputedStyle(card).transform).m41;
+          if (touched) after.push(x);
+          else before = x;
+          if (after.length === 3) return resolve({ before, after });
+          requestAnimationFrame(look);
+        };
+        requestAnimationFrame(look);
+      }),
+  );
+
+test("a card springing back is caught where it is by the next touch", async ({ page }) => {
+  const at = await centre(page);
+  const f = await finger(page, at);
+  // Slowly, and short of the commit distance: it springs back.
+  await f.move({ x: at.x - 120, y: at.y }, 600);
+  await f.up();
+  const caught = aroundTouch(page);
+  await new Promise((resolve) => setTimeout(resolve, 40));
+  const again = await finger(page, at);
+
+  const { before, after } = await caught;
+  expect(before, "still on its way back").toBeLessThan(-15);
+  expect(
+    after.map((x) => Math.abs(x - before)).every((d) => d <= 5),
+    `${before} → ${after}`,
+  ).toBe(true);
+  await again.up();
+  await settled(page);
+  expect(await dragged(page)).toBe("");
+});
+
 test("a fling back against the drag cancels, even past the commit distance", async ({ page }) => {
   const first = await question(page).textContent();
   const at = await centre(page);
