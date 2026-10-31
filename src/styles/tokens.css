@@ -4,10 +4,12 @@
   --desk: #11131a;
   --desk-glow: #1a1e2b;
 
-  /* Paper: the card; the blank cards peeking out behind it; the card's 1 px edge. */
+  /* Paper: the card; the blank cards peeking out behind it; the card's 1 px edge; the white slip a code block is typed
+     on, taped onto the card. */
   --paper: #fffdf6;
   --paper-shade: #f1ebdb;
   --paper-edge: #e2d9c2;
+  --slip: #ffffff;
 
   /* Ruling: the blue lines the answer is written on; the red rule across the head of both faces. */
   --rule-blue: #a9cbea;
@@ -33,6 +35,8 @@
   --chalk: #eceae3;
   --chalk-dim: #9a9daa;
   --desk-deep: #0e1016;
+  /* Ink on the highlighter: the wordmark's letters on their stroke (15:1). */
+  --sticker-ink: #121318;
 
   /* Stickers: a topic's colour is its declared index mod 8, in this order: the dots in the topic list and on the
      topics chip. Eight hues 45° apart from pink's, at one lightness and chroma (OKLCH L 0.80, C 0.155, gamut-mapped),
@@ -46,12 +50,13 @@
   --s-teal: #00d1ff;
   --s-lime: #90d469;
 
-  /* Type: a marker for the question, a pen for the answer and everything else on the paper (code included: a
-     highlighter marks it), and a grotesque for what is typed rather than written. The arrows neither hand has come
-     from twelve glyphs of Klee One's pen. */
+  /* Type: a marker for the question, a pen for the answer and everything else on the paper (inline code included: a
+     highlighter marks it), a grotesque for what is typed rather than written, and its mono for code blocks, typed on a
+     slip. The arrows neither hand has come from twelve glyphs of Klee One's pen. */
   --font-marker: "Permanent Marker", "Caveat", cursive;
   --font-hand: "Caveat", "Klee One Arrows", system-ui, sans-serif;
   --font-ui: "Geist", system-ui, sans-serif;
+  --font-code: "Geist Mono", ui-monospace, monospace;
 
   /* Flip: a CSS transition (rotateX), so a tap mid-flip reverses from the current angle. It ends as its motion does:
      while it runs, the writing is drawn soft. Under reduced motion the faces cross-fade instead. */

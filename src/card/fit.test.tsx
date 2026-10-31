@@ -42,7 +42,7 @@ describe("chooseStep", () => {
 
 // happy-dom has no document.fonts: stand one in where the named families are in already and the rest arrive when
 // load() resolves.
-const ALL = ["Caveat", "Permanent Marker", "Klee One Arrows"];
+const ALL = ["Caveat", "Permanent Marker", "Klee One Arrows", "Geist Mono"];
 function stubFonts(loaded: string[]) {
   const fonts = {
     check: vi.fn((font: string) => loaded.some((family) => font.includes(family))),
@@ -110,7 +110,7 @@ describe("useFit", () => {
   });
 
   it("waits for the marker too", async () => {
-    const fonts = stubFonts(["Caveat", "Klee One Arrows"]);
+    const fonts = stubFonts(["Caveat", "Klee One Arrows", "Geist Mono"]);
     render(<Face fitKey={key("vacuum")} />);
     const face = screen.getByTestId("face");
     expect(face.dataset.fit).toBeUndefined();

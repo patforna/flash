@@ -87,7 +87,7 @@ test("t opens the topic drawer, in which the card keys do nothing, and Escape cl
   const drawer = page.getByRole("dialog", { name: "Topics" });
   await press(page, "t");
   await expect(drawer).toHaveAttribute("data-open", "");
-  await expect(page.getByRole("button", { name: "All 9 cards", exact: true })).toBeFocused();
+  await expect(page.getByRole("button", { name: "Redis 2 cards", exact: true })).toBeFocused();
 
   await press(page, "l");
   await expect(announcer(page)).toHaveText("Card 1 of 9");

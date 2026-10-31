@@ -19,8 +19,8 @@ import {
 } from "./helpers";
 
 // Choosing topics (docs/plan.md §3 and §5), in the drawer the topics chip (or t) opens: rows toggle, a card is in the
-// pass if it carries any selected topic, All clears, the card on screen survives a change that keeps it, and the
-// selection outlives a reload. The fixture deck: 9 cards; Redis 2, Postgres 3, Queues 3 (one of them also Postgres),
+// pass if it carries any selected topic, All (never ticked, dim until something is selected) clears, the card on
+// screen survives a change that keeps it, and the selection outlives a reload. The fixture deck: 9 cards; Redis 2, Postgres 3, Queues 3 (one of them also Postgres),
 // Consistency 1, Sharding 2, Real-time 2, Case studies 2.
 
 test.beforeEach(async ({ page }) => {
@@ -48,7 +48,7 @@ test("a topic narrows the pass to its cards", async ({ page }) => {
   await row(page, "Postgres 3 cards").tap();
 
   await expect(row(page, "Postgres 3 cards")).toHaveAttribute("aria-pressed", "true");
-  await expect(row(page, "All 9 cards")).toHaveAttribute("aria-pressed", "false");
+  await expect(row(page, "All 9 cards")).toHaveAttribute("aria-disabled", "false");
   await expect(announcer(page)).toHaveText("Card 1 of 3");
   // The chip says what is being read.
   await expect(page.getByRole("button", { name: "Topics: Postgres" })).toHaveCount(1);
@@ -75,7 +75,9 @@ test("All clears the selection; with nothing selected it changes nothing", async
   await settled(page);
   const second = await question(page).textContent();
   await openTopics(page);
-  await row(page, "All 9 cards").tap();
+  // With nothing selected All is dim and takes no tap (Playwright won't tap a disabled control: the tap is forced).
+  await expect(row(page, "All 9 cards")).toHaveAttribute("aria-disabled", "true");
+  await row(page, "All 9 cards").tap({ force: true });
   await expect(announcer(page)).toHaveText("Card 2 of 9");
   await expect(question(page)).toHaveText(second ?? "");
 
@@ -83,7 +85,8 @@ test("All clears the selection; with nothing selected it changes nothing", async
   await expect(announcer(page)).toHaveText("Card 1 of 2");
   await row(page, "All 9 cards").tap();
 
-  await expect(row(page, "All 9 cards")).toHaveAttribute("aria-pressed", "true");
+  await expect(row(page, "All 9 cards")).toHaveAttribute("aria-disabled", "true");
+  await expect(row(page, "All 9 cards")).not.toHaveAttribute("aria-pressed", /.*/);
   await expect(row(page, "Redis 2 cards")).toHaveAttribute("aria-pressed", "false");
   await expect(announcer(page)).toHaveText("Card 1 of 9");
 });
@@ -183,6 +186,6 @@ test("the selection outlives a reload", async ({ page }) => {
 
   await expect(row(page, "Queues 3 cards")).toHaveAttribute("aria-pressed", "true");
   await expect(row(page, "Redis 2 cards")).toHaveAttribute("aria-pressed", "true");
-  await expect(row(page, "All 9 cards")).toHaveAttribute("aria-pressed", "false");
+  await expect(row(page, "All 9 cards")).toHaveAttribute("aria-disabled", "false");
   await expect(announcer(page)).toHaveText("Card 1 of 5");
 });

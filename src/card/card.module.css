@@ -253,18 +253,41 @@
   mix-blend-mode: multiply;
 }
 
-/* Code blocks: a slip as wide as its longest line, at the rule pitch, never wrapped, the blue highlighter rubbed over
-   the whole block. */
+/* Code blocks: a typed slip taped onto the card. Nobody handwrites SQL onto an index card: a block is set in the
+   mono on its own white paper, tilted a touch, a strip of tape at its head. Its lines keep the rule pitch and it takes
+   half a pitch of paper above and below them (its edge is a shadow, not a border, so it adds nothing), so the block
+   stands a whole number of rules tall and the writing after it stays on the rules; the slip hides the rules under
+   it. Its longest line (46 characters, 0.6 em each at 0.68 em) fits the column at the largest step. */
 .answer pre {
-  --m: var(--mark-code);
+  position: relative;
   width: fit-content;
-  padding: 0 calc(14 * var(--u)) 0 calc(10 * var(--u));
-  border-radius: 0.6em 0.25em 0.5em 0.3em / 0.5em 0.35em 0.55em 0.3em;
-  font-family: inherit;
+  margin-left: calc(-6 * var(--u));
+  padding: calc(var(--pitch) / 2 * var(--u)) calc(14 * var(--u)) calc(var(--pitch) / 2 * var(--u)) calc(12 * var(--u));
+  border-radius: calc(2 * var(--u));
+  font-family: var(--font-code);
+  font-size: 0.68em;
+  font-variant-ligatures: none;
   line-height: calc(var(--pitch) * var(--u));
   white-space: pre;
-  background: linear-gradient(100deg, rgb(from var(--m) r g b / 0.3), rgb(from var(--m) r g b / 0.55));
-  mix-blend-mode: multiply;
+  color: var(--ink-marker);
+  background: var(--slip);
+  box-shadow:
+    inset 0 0 0 1px var(--paper-edge),
+    0 calc(1 * var(--u)) calc(2 * var(--u)) rgb(0 0 0 / 18%),
+    0 calc(8 * var(--u)) calc(16 * var(--u)) calc(-10 * var(--u)) rgb(0 0 0 / 45%);
+  transform: rotate(-0.7deg);
+}
+
+/* The tape: a short strip over the slip's head, translucent, a little askew. */
+.answer pre::before {
+  content: "";
+  position: absolute;
+  top: calc(-6 * var(--u));
+  left: 38%;
+  width: calc(44 * var(--u));
+  height: calc(12 * var(--u));
+  background: rgb(from var(--hl) r g b / 0.45);
+  transform: rotate(-3deg);
 }
 
 .answer pre code {

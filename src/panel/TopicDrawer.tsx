@@ -9,7 +9,8 @@ export interface TopicDrawerProps {
 }
 
 // The topics slide over the desk from the left, a scrim over the cards; a tap on the scrim or Escape closes them.
-// Opened, the focus moves to the first selected row (All, with nothing selected); whoever opened it takes it back.
+// Opened, the focus moves to the first selected row (the first topic, with nothing selected: All is dim then); whoever
+// opened it takes it back.
 // Closed, the drawer is inert: nothing in it can be reached or read.
 export function TopicDrawer({ open, onClose, children }: TopicDrawerProps) {
   const aside = useRef<HTMLElement>(null);
@@ -28,7 +29,10 @@ export function TopicDrawer({ open, onClose, children }: TopicDrawerProps) {
   useEffect(() => {
     if (!open) return;
     const el = aside.current;
-    (el?.querySelector<HTMLElement>('[aria-pressed="true"]') ?? el?.querySelector<HTMLElement>("button"))?.focus();
+    (
+      el?.querySelector<HTMLElement>('[aria-pressed="true"]') ??
+      el?.querySelector<HTMLElement>('button:not([aria-disabled="true"])')
+    )?.focus();
   }, [open]);
 
   return (

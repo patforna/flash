@@ -60,6 +60,8 @@ const TEXT: [string, string[]][] = [
   ["--ink-pen", ["--hl"]], // a highlighted word, where the marker's ink is heaviest (95 %: as good as solid)
   ["--ink-pen", ["--mark-code"]], // inline code in the answer, likewise
   ["--ink-marker", ["--mark-code"]], // inline code in the question
+  ["--ink-marker", ["--slip"]], // a code block, typed on its slip
+  ["--sticker-ink", ["--hl"]], // the wordmark, in ink on its stroke
   ["--ink-pencil", ["--paper"]], // the message cards' hints
   ["--pen-pink", ["--paper"]], // the numerals of a numbered list
   ["--chalk", ["--desk"]], // the stage's buttons, the controls' glyphs

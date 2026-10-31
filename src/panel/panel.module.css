@@ -74,7 +74,8 @@
 }
 
 /* A row: the dot in the topic's colour, the name, the count; selected, it is lit, ticked and its dot full. Pressed
-   (data-pressed, from a pointer going down: press.ts), it darkens under the thumb at once. */
+   (data-pressed, from a pointer going down: press.ts), it darkens under the thumb at once. All (data-all) is never
+   ticked: dim while there is nothing to clear, lit as the way back once a topic is selected. */
 .row {
   display: grid;
   flex: none;
@@ -94,9 +95,18 @@
   cursor: pointer;
 }
 
-.row[aria-pressed="true"] {
+.row[aria-pressed="true"],
+.row[data-all]:not([aria-disabled="true"]) {
   color: var(--chalk);
+}
+
+.row[aria-pressed="true"] {
   background: color-mix(in srgb, var(--chalk) 8%, transparent);
+}
+
+.row[aria-disabled="true"] {
+  opacity: 0.5;
+  cursor: default;
 }
 
 .row[data-pressed],

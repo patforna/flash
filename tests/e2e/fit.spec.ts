@@ -57,7 +57,11 @@ function measure(flipper: Element): Report {
   const probes: HTMLElement[] = [];
   const walker = document.createTreeWalker(answer, NodeFilter.SHOW_TEXT);
   const texts: Text[] = [];
-  while (walker.nextNode()) texts.push(walker.currentNode as Text);
+  // A code block is a typed slip taped onto the card: its lines aren't written on the rules.
+  while (walker.nextNode()) {
+    const text = walker.currentNode as Text;
+    if (!text.parentElement?.closest("pre")) texts.push(text);
+  }
   for (const text of texts) {
     const starts = Array.from(text.data.matchAll(/\S+/g), (m) => m.index);
     for (const start of starts.reverse()) {

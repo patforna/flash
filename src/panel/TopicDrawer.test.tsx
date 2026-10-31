@@ -1,7 +1,8 @@
 // To do:
 // [x] a dialog named Topics, modal, holding what it is given and the wordmark at its foot
 // [x] closed: inert, so nothing in it can be reached, and not open
-// [x] open: reachable, and the focus moves to the first selected row (All, with nothing selected)
+// [x] open: reachable, and the focus moves to the first selected row (the first topic, with nothing selected: All
+//     is dim then)
 // [x] Escape closes it while it is open, and does nothing while it is closed
 // [x] a tap on the scrim closes it
 import { configure, fireEvent, render, screen } from "@testing-library/react";
@@ -11,14 +12,17 @@ import { TopicDrawer } from "./TopicDrawer";
 
 configure({ reactStrictMode: true });
 
-function renderDrawer(open: boolean, onClose = vi.fn()) {
+function renderDrawer(open: boolean, onClose = vi.fn(), pressed = "Redis") {
   const view = render(
     <TopicDrawer open={open} onClose={onClose}>
-      <button type="button" aria-pressed="false">
+      <button type="button" aria-disabled={pressed === ""}>
         All
       </button>
-      <button type="button" aria-pressed="true">
+      <button type="button" aria-pressed={pressed === "Redis"}>
         Redis
+      </button>
+      <button type="button" aria-pressed={pressed === "Queues"}>
+        Queues
       </button>
     </TopicDrawer>,
   );
@@ -29,7 +33,7 @@ describe("TopicDrawer", () => {
   it("is a modal dialog named Topics, holding what it is given and the wordmark at its foot", () => {
     const { dialog } = renderDrawer(true);
     expect(dialog.getAttribute("aria-modal")).toBe("true");
-    expect(dialog.querySelectorAll("button")).toHaveLength(2);
+    expect(dialog.querySelectorAll("button")).toHaveLength(3);
     expect(dialog.lastElementChild?.textContent).toBe("flash");
     expect(dialog.lastElementChild?.getAttribute("aria-hidden")).toBe("true");
   });
@@ -44,6 +48,11 @@ describe("TopicDrawer", () => {
     const { dialog } = renderDrawer(true);
     expect(dialog.hasAttribute("inert")).toBe(false);
     expect(dialog.hasAttribute("data-open")).toBe(true);
+    expect(document.activeElement?.textContent).toBe("Redis");
+  });
+
+  it("open with nothing selected, moves the focus past the dim All to the first topic", () => {
+    renderDrawer(true, vi.fn(), "");
     expect(document.activeElement?.textContent).toBe("Redis");
   });
 

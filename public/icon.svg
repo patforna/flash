@@ -1,23 +1,20 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
   <title>flash</title>
-  <!-- flash: an index card on the desk, a line of its writing highlighted. Colours are the app's tokens. The writing
-       stands on its rules; the highlighter is translucent, as on the cards. -->
+  <!-- flash: one index card on the desk, front on, one line of it highlighted. Colours are the app's tokens; the
+       highlighter is translucent, as on the cards. The card keeps inside the centre 80 % of the square, the safe zone
+       of a masked Android icon; scripts/icons.ts renders the PNGs, scaling the card down a little more for the
+       maskable one. -->
   <defs>
     <filter id="shadow" x="-20%" y="-20%" width="140%" height="160%">
       <feGaussianBlur stdDeviation="12" />
     </filter>
   </defs>
   <rect width="512" height="512" rx="112" fill="#11131A" />
-  <g transform="rotate(9 256 256)">
-    <rect x="80" y="168" width="352" height="212" rx="18" fill="#000" opacity=".45" filter="url(#shadow)" />
-    <rect x="80" y="152" width="352" height="212" rx="18" fill="#F1EBDB" />
-  </g>
-  <g transform="rotate(-7 256 256)">
-    <rect x="80" y="166" width="352" height="212" rx="18" fill="#000" opacity=".5" filter="url(#shadow)" />
-    <rect x="80" y="150" width="352" height="212" rx="18" fill="#FFFDF6" />
-    <path d="M104 202H408" stroke="#EE5D6C" stroke-width="8" />
-    <path d="M116 256H396M116 316H396" stroke="#A9CBEA" stroke-width="5" />
-    <path d="M128 226H306L300 266H122Z" fill="#FFF04D" style="mix-blend-mode:multiply" />
-    <path d="M140.0 252.0 C142.2 233.8 154.2 235.8 146.8 247.4 C143.8 253.9 151.2 255.2 155.0 252.0 C157.2 233.8 169.2 235.8 161.8 247.4 C158.8 253.9 166.2 255.2 170.0 252.0 C172.2 233.8 184.2 235.8 176.8 247.4 C173.8 253.9 181.2 255.2 185.0 252.0 M207.0 252.0 C209.2 233.8 221.2 235.8 213.8 247.4 C210.8 253.9 218.2 255.2 222.0 252.0 C224.2 233.8 236.2 235.8 228.8 247.4 C225.8 253.9 233.2 255.2 237.0 252.0 C239.2 233.8 251.2 235.8 243.8 247.4 C240.8 253.9 248.2 255.2 252.0 252.0 C254.2 233.8 266.2 235.8 258.8 247.4 C255.8 253.9 263.2 255.2 267.0 252.0 C269.2 233.8 281.2 235.8 273.8 247.4 C270.8 253.9 278.2 255.2 282.0 252.0 C284.2 233.8 296.2 235.8 288.8 247.4 C285.8 253.9 293.2 255.2 297.0 252.0 M319.0 252.0 C321.2 233.8 333.2 235.8 325.8 247.4 C322.8 253.9 330.2 255.2 334.0 252.0 C336.2 233.8 348.2 235.8 340.8 247.4 C337.8 253.9 345.2 255.2 349.0 252.0 M140.0 312.0 C142.2 293.8 154.2 295.8 146.8 307.4 C143.8 313.9 151.2 315.2 155.0 312.0 C157.2 293.8 169.2 295.8 161.8 307.4 C158.8 313.9 166.2 315.2 170.0 312.0 C172.2 293.8 184.2 295.8 176.8 307.4 C173.8 313.9 181.2 315.2 185.0 312.0 C187.2 293.8 199.2 295.8 191.8 307.4 C188.8 313.9 196.2 315.2 200.0 312.0 C202.2 293.8 214.2 295.8 206.8 307.4 C203.8 313.9 211.2 315.2 215.0 312.0 M237.0 312.0 C239.2 293.8 251.2 295.8 243.8 307.4 C240.8 313.9 248.2 315.2 252.0 312.0 C254.2 293.8 266.2 295.8 258.8 307.4 C255.8 313.9 263.2 315.2 267.0 312.0 C269.2 293.8 281.2 295.8 273.8 307.4 C270.8 313.9 278.2 315.2 282.0 312.0 C284.2 293.8 296.2 295.8 288.8 307.4 C285.8 313.9 293.2 315.2 297.0 312.0" stroke="#1F2D6B" stroke-width="7" stroke-linecap="round" stroke-linejoin="round" fill="none" />
+  <g id="card">
+    <rect x="64" y="150" width="384" height="240" rx="20" fill="#000" opacity=".5" filter="url(#shadow)" />
+    <rect x="64" y="136" width="384" height="240" rx="20" fill="#FFFDF6" />
+    <path d="M90 190H422" stroke="#EE5D6C" stroke-width="9" />
+    <path d="M100 256H412M100 320H412" stroke="#A9CBEA" stroke-width="6" />
+    <path d="M128 236C140 222 300 220 326 228L320 268C290 276 150 278 134 266Z" fill="#FFF04D" opacity=".9" style="mix-blend-mode:multiply" />
   </g>
 </svg>

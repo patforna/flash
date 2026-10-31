@@ -7,7 +7,7 @@
 // [x] only the card on top shows the side it was turned to
 // [x] the topic drawer (the topics chip, or t): closed and inert until opened, Escape closes it; All with the deck's
 //     total, the topics in order with their counts, the wordmark at its foot
-// [x] a row toggles its topic, All clears the selection
+// [x] a row toggles its topic; All, never ticked, is dim until something is selected and then clears the selection
 // [x] colours by the topic's declared index: the rows' dots, and the chip's dots for the selected topics
 // [x] the controls show at launch and stay on the end card
 // [x] the end card closes the pass
@@ -301,8 +301,10 @@ describe("topics", () => {
     expect(row("Queues 1 card").getAttribute("aria-pressed")).toBe("true");
     expect([question(layer("current")), live()]).toEqual(["Why queue work?", "Card 1 of 1"]);
 
+    expect(row("All 3 cards").getAttribute("aria-disabled")).toBe("false");
     fireEvent.click(row("All 3 cards"));
-    expect(row("All 3 cards").getAttribute("aria-pressed")).toBe("true");
+    expect(row("All 3 cards").getAttribute("aria-disabled")).toBe("true");
+    expect(row("All 3 cards").getAttribute("aria-pressed")).toBeNull();
     expect([question(layer("current")), live()]).toEqual(["Why queue work?", "Card 1 of 3"]);
   });
 

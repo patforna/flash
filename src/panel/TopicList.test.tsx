@@ -1,6 +1,6 @@
 // To do:
-// [x] All first, with the deck's count, pressed when nothing is selected
-// [x] All is not pressed while a topic is selected
+// [x] All first, with the deck's count: never ticked, dim (aria-disabled) while nothing is selected, since there is
+//     nothing to clear; the way back once a topic is selected
 // [x] the topics follow All in the given order, each pressed while selected, each with its count on show
 // [x] each row's accessible name is its text, count and unit included ("Consistency 1 card"), the unit out of sight
 // [x] tapping All calls onAll; tapping a topic calls onToggle with its label
@@ -42,16 +42,24 @@ const rows = () => screen.getAllByRole("button");
 const pressed = (row: HTMLElement) => row.getAttribute("aria-pressed");
 
 describe("TopicList", () => {
-  it("puts All first, with the deck's count, pressed while nothing is selected", () => {
-    renderList();
+  it("puts All first, with the deck's count, never ticked and dim while nothing is selected", () => {
+    const onAll = vi.fn();
+    renderList({ onAll });
     const [all] = rows();
     expect(all?.textContent).toBe("All 65 cards");
-    expect(pressed(all as HTMLElement)).toBe("true");
+    expect(pressed(all as HTMLElement)).toBeNull();
+    expect(all?.getAttribute("aria-disabled")).toBe("true");
+    fireEvent.click(all as HTMLElement);
+    fireEvent.pointerDown(all as HTMLElement);
+    expect(onAll).not.toHaveBeenCalled();
+    expect(all?.hasAttribute("data-pressed")).toBe(false);
   });
 
-  it("does not press All while a topic is selected", () => {
+  it("lights All as the way back once a topic is selected, still never ticked", () => {
     renderList({ selected: new Set(["Queues"]) });
-    expect(pressed(rows()[0] as HTMLElement)).toBe("false");
+    const [all] = rows();
+    expect(all?.getAttribute("aria-disabled")).toBe("false");
+    expect(pressed(all as HTMLElement)).toBeNull();
   });
 
   it("lists the topics after All in the given order, pressed while selected, each with its count on show", () => {
@@ -77,7 +85,7 @@ describe("TopicList", () => {
   it("calls onAll from All and onToggle with the topic from a topic's row", async () => {
     const onAll = vi.fn();
     const onToggle = vi.fn();
-    renderList({ onAll, onToggle });
+    renderList({ onAll, onToggle, selected: new Set(["Redis"]) });
     const user = userEvent.setup();
 
     await user.click(screen.getByRole("button", { name: "All 65 cards" }));

@@ -40,3 +40,12 @@
   font-display: swap;
   src: url("../fonts/geist-latin-wght-normal.woff2") format("woff2");
 }
+
+/* Code blocks, typed on a slip taped onto the card (inline code stays in the hand). */
+@font-face {
+  font-family: "Geist Mono";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("../fonts/geist-mono-latin-400-normal.woff2") format("woff2");
+}
