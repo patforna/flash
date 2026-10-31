@@ -91,7 +91,7 @@
 }
 
 /* Buttons for keyboards and screen readers: visually hidden until focused. With a fine pointer, ‹ and › wait at the
-   card's side edges and fade in while it is hovered. */
+   card's side edges and fade in while it is hovered. Opaque, so each reads as one object across the card's edge. */
 .prev,
 .next,
 .flip {
@@ -99,7 +99,7 @@
   height: 44px;
   border: 0;
   border-radius: 22px;
-  background: color-mix(in srgb, var(--desk) 80%, transparent);
+  background: var(--desk);
   box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--chalk) 35%, transparent);
   color: var(--chalk);
   font-family: var(--font-hand);
@@ -107,10 +107,12 @@
   cursor: pointer;
 }
 
+/* Shantell's ascent and descent (1.02 and 0.32 em) sit a chevron low in its line: the padding below centres it. */
 .prev,
 .next {
   top: 50%;
   width: 44px;
+  padding-bottom: 5px;
   font-size: 26px;
   line-height: 1;
 }
@@ -125,13 +127,14 @@
   translate: 50% -50%;
 }
 
+/* Over the card's foot, its lower 40 % below it: its focus ring stays inside the desk's 24 px under the card. */
 .flip {
   bottom: 0;
   left: 50%;
   padding: 0 16px;
   font-size: 15px;
   white-space: nowrap;
-  translate: -50% 50%;
+  translate: -50% 40%;
 }
 
 .prev:not(:focus-visible),
