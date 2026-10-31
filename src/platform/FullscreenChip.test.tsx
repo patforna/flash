@@ -9,6 +9,7 @@ import { FullscreenChip } from "./FullscreenChip";
 // [x] hides once fullscreen and returns when fullscreen ends (fullscreenchange)
 // [x] hides when the display mode stops being a browser tab (the query's change event)
 // [x] pushed in (data-pressed) from a pointer going down on it until it goes up, is cancelled or leaves, as a sticker is
+// [x] the way out (exit): nothing until something is fullscreen, then an "Exit full screen" button that leaves it
 
 // happy-dom has no Fullscreen API: each test defines what it needs, removed afterwards.
 const defined: [object, string][] = [];
@@ -124,5 +125,33 @@ describe("FullscreenChip", () => {
     setBrowser(false);
 
     expect(chip()).toBeNull();
+  });
+});
+
+describe("FullscreenChip as the way out", () => {
+  const exitChip = () => screen.queryByRole("button", { name: "Exit full screen" });
+
+  it("renders nothing while nothing is fullscreen", () => {
+    fullscreenTab();
+
+    const { container } = render(<FullscreenChip exit />, { reactStrictMode: true });
+
+    expect(container.innerHTML).toBe("");
+  });
+
+  it("shows once something is fullscreen, leaves fullscreen when clicked, and goes as fullscreen ends", () => {
+    fullscreenTab();
+    const exit = vi.fn(async () => {});
+    define(document, "exitFullscreen", exit);
+    render(<FullscreenChip exit className="corner" />, { reactStrictMode: true });
+
+    fullscreenChange(document.documentElement);
+    const button = exitChip();
+    expect(button?.className.split(" ")).toContain("corner");
+    fireEvent.click(button as HTMLElement);
+    expect(exit).toHaveBeenCalled();
+
+    fullscreenChange(null);
+    expect(exitChip()).toBeNull();
   });
 });

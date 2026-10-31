@@ -59,11 +59,13 @@ interface DeskProps {
   children: ReactNode;
 }
 
-// The desk (docs/plan.md §2): the panel's column, the wordmark at its foot, and the stage beside it. `announce` is read
-// out through the live region, `live`, as it changes.
+// The desk (docs/plan.md §2): the panel's column, the wordmark at its foot, and the stage beside it. Fullscreen shows
+// the cards alone (the stylesheet drops the panel), with a tab's way back out in the corner where the fullscreen chip
+// was. `announce` is read out through the live region, `live`, as it changes.
 function Desk({ panel, live, announce, children }: DeskProps) {
   return (
     <>
+      <FullscreenChip exit className={styles.exit} />
       <div className={styles.panel}>
         {panel}
         <Wordmark />
@@ -89,9 +91,6 @@ function say(deck: UseQueryResult<Deck, Error>, late: boolean): MessageCardProps
   }
   return { title: late ? "shuffling…" : "" };
 }
-
-// Where each layer's card sits in the pass, from the card on top.
-const OFFSET = { prev: -1, current: 0, next: 1 } as const;
 
 // The first card is dealt onto the stack that was there while the deck was on its way: shuffling, then dealing.
 function Reader({ deck, live }: { deck: Deck; live: HTMLElement | null }) {
@@ -128,14 +127,7 @@ function Reader({ deck, live }: { deck: Deck; live: HTMLElement | null }) {
           card === "end" ? (
             <EndCard key="end" total={view.total} />
           ) : (
-            <CardView
-              key={card.id}
-              card={card}
-              side={role === "current" ? view.side : "front"}
-              position={view.position + OFFSET[role]}
-              total={view.total}
-              colourOf={colourOf}
-            />
+            <CardView key={card.id} card={card} side={role === "current" ? view.side : "front"} />
           )
         }
         onFullscreen={toggleFullscreen}

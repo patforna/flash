@@ -64,17 +64,23 @@ test("s deals a new pass that doesn't start with the card on screen", async ({ p
   await expect(question(page)).not.toHaveText(third ?? "");
 });
 
-test("f goes fullscreen, where the fullscreen chip has no place, and f again comes back", async ({ page }) => {
-  const chip = page.getByRole("button", { name: "Full screen" });
+test("f goes fullscreen, where the exit chip takes the fullscreen chip's place, and f again comes back", async ({
+  page,
+}) => {
+  const chip = page.getByRole("button", { name: "Full screen", exact: true });
+  const exit = page.getByRole("button", { name: "Exit full screen", exact: true });
   await expect(chip).toBeVisible();
+  await expect(exit).toHaveCount(0);
 
   await page.keyboard.press("f");
   await expect.poll(() => isFullscreen(page)).toBe(true);
   await expect(chip).toHaveCount(0);
+  await expect(exit).toBeVisible();
 
   await page.keyboard.press("f");
   await expect.poll(() => isFullscreen(page)).toBe(false);
   await expect(chip).toBeVisible();
+  await expect(exit).toHaveCount(0);
 });
 
 test("nothing fires with Alt, Ctrl or Meta held", async ({ page }) => {

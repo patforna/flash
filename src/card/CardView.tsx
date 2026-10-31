@@ -10,53 +10,28 @@ const STEPS = 3;
 export interface CardViewProps {
   card: Card;
   side: Side;
-  position: number;
-  total: number;
-  colourOf(topic: string): string;
 }
 
-export function CardView({ card, side, position, total, colourOf }: CardViewProps) {
+// An index card: the question alone on the front, the answer alone on the back. Its topics and its place in the pass
+// are nowhere on it (the panel and the live region have them): a card is for reading.
+export function CardView({ card, side }: CardViewProps) {
   const front = useRef<HTMLDivElement>(null);
   const back = useRef<HTMLDivElement>(null);
   useFit(front, STEPS, `${card.id}/front`);
   useFit(back, STEPS, `${card.id}/back`);
-  const colours = card.topics.map(colourOf);
   return (
     <div className={styles.frame}>
       <div className={styles.flipper} data-side={side}>
-        <div ref={front} className={styles.face} {...hiddenUnless(side === "front")}>
-          <div className={styles.band} style={{ backgroundColor: colours[0] }} />
+        <div ref={front} className={`${styles.face} ${styles.front}`} {...hiddenUnless(side === "front")}>
           {/* biome-ignore lint/security/noDangerouslySetInnerHtml: the server renders the deck's Markdown through an allowlist of tags */}
           <h2 className={styles.question} dangerouslySetInnerHTML={{ __html: card.questionHtml }} />
-          <ul className={styles.topics}>
-            {card.topics.map((topic, i) => (
-              <li key={topic}>
-                <span className={styles.dot} style={{ backgroundColor: colours[i] }} />
-                {topic}
-              </li>
-            ))}
-          </ul>
-          <Counter position={position} total={total} />
         </div>
         <div ref={back} className={`${styles.face} ${styles.back}`} {...hiddenUnless(side === "back")}>
           {/* biome-ignore lint/security/noDangerouslySetInnerHtml: the server renders the deck's Markdown through an allowlist of tags */}
-          <h2 className={styles.header} dangerouslySetInnerHTML={{ __html: card.questionHtml }} />
-          {/* biome-ignore lint/security/noDangerouslySetInnerHtml: the server renders the deck's Markdown through an allowlist of tags */}
           <div className={styles.answer} dangerouslySetInnerHTML={{ __html: card.answerHtml }} />
-          <Counter position={position} total={total} />
         </div>
       </div>
     </div>
-  );
-}
-
-// "07 / 16": the position padded to the total's width, so the digits never shift as you read on. Not a live region:
-// the card mounts with it on every move, which a screen reader wouldn't announce; the app has one that does.
-function Counter({ position, total }: { position: number; total: number }) {
-  return (
-    <p className={styles.counter}>
-      {String(position).padStart(String(total).length, "0")} / {total}
-    </p>
   );
 }
 

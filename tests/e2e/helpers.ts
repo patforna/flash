@@ -242,6 +242,11 @@ export async function flick(page: Page, dir: "left" | "right", { by = 300, ms = 
   await swipe(page, { from, to: { x: from.x + (dir === "left" ? -by : by), y: from.y }, ms });
 }
 
-// The card's topics, as its front lists them.
-export const topicsOf = (page: Page): Promise<string[]> =>
-  layer(page).locator("[data-side] > :first-child li").allTextContents();
+// The card's topics: nothing on the card says them, so the question its front asks is looked up in the deck as served.
+export async function topicsOf(page: Page): Promise<string[]> {
+  const deck: Deck = await (await page.request.get("/api/cards")).json();
+  const asked = await question(page).textContent();
+  const card = deck.cards[(await questions(page)).indexOf(asked ?? "")];
+  if (!card) throw new Error(`no card asks "${asked}"`);
+  return card.topics;
+}

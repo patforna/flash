@@ -55,8 +55,9 @@ test("a tap turns the card over to its answer", async ({ page }) => {
   const [front, back] = [flipper(page).locator("> :first-child"), flipper(page).locator("> :nth-child(2)")];
   await expect(front).toHaveAttribute("aria-hidden", "true");
   await expect(back).not.toHaveAttribute("aria-hidden");
-  await expect(back.locator("h2")).toHaveText((await question(page).textContent()) ?? "");
-  await expect(back.locator("h2 + div")).not.toBeEmpty();
+  // The answer, and nothing else: the question is on the front, a tap away.
+  await expect(back.locator("> *")).toHaveCount(1);
+  await expect(back.locator("> div")).not.toBeEmpty();
   await settled(page);
   expect(await writingUnderneath(page)).toBe(true);
 });

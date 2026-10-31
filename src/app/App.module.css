@@ -6,12 +6,15 @@
   --gap: 24px;
   --left: max(12px, calc(env(safe-area-inset-left) + 8px));
   --right: max(48px, calc(env(safe-area-inset-right) + 16px));
-  display: grid;
-  grid-template-columns: var(--panel) minmax(0, 1fr);
+  --room: calc(100dvh - 48px); /* the height inside the padding */
   /* One row, exactly as tall as the card: the largest 5:3 box that fits the stage's width and the screen's height.
      Centred, it keeps the panel beside the card from its top edge to its foot, also when a camera cutout or a wide
      screen narrows the card. (A definite row, too: the stage is a size container, and an auto row would collapse it.) */
-  grid-template-rows: min(100%, (100vw - var(--left) - var(--right) - var(--panel) - var(--gap)) * 3 / 5);
+  --row: min(var(--room), (100vw - var(--left) - var(--right) - var(--panel) - var(--gap)) * 3 / 5);
+  position: relative;
+  display: grid;
+  grid-template-columns: var(--panel) minmax(0, 1fr);
+  grid-template-rows: var(--row);
   align-content: center;
   column-gap: var(--gap);
   height: 100dvh;
@@ -28,9 +31,36 @@
   min-height: 0;
 }
 
-/* Read out, never seen. */
+/* Fullscreen (the installed app, or a tab gone fullscreen): the cards alone on the desk, centred. The panel and the
+   wordmark go; a tab's way back out is the exit chip, top left and level with the card's top edge, where the
+   fullscreen chip that brought it here was. */
+@media (display-mode: fullscreen) {
+  .shell {
+    /* The chip's column, and its mirror on the right, as padding: the card stays centred, and a wide screen, whose
+       card fills the stage's width, never puts it under the chip. */
+    --aside: calc(44px + var(--gap));
+    --row: min(var(--room), (100vw - var(--left) - var(--right) - 2 * var(--aside)) * 3 / 5);
+    grid-template-columns: minmax(0, 1fr);
+    padding-inline: calc(var(--left) + var(--aside)) calc(var(--right) + var(--aside));
+  }
+
+  .panel {
+    display: none;
+  }
+}
+
+/* Above the stage, which spans the desk and takes every touch on it; a card flung off passes under the chip. */
+.exit {
+  position: absolute;
+  z-index: 2;
+  top: calc(24px + (var(--room) - var(--row)) / 2);
+  left: var(--left);
+}
+
+/* Read out, never seen; parked mid-desk, so it never counts as lying under a camera cutout. */
 .announcer {
   position: absolute;
+  inset: 50% auto auto 50%;
   width: 1px;
   height: 1px;
   margin: -1px;
@@ -53,5 +83,11 @@
 
   .panel {
     order: 1;
+  }
+
+  /* Under the card, where the chips were. */
+  .exit {
+    top: calc(32px + (100vw - 32px) * 3 / 5);
+    left: 16px;
   }
 }

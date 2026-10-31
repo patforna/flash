@@ -5,16 +5,15 @@
 // [x] the first card of a pass on the stage, front up; the next card underneath, front up too
 // [x] the first card is dealt onto the stack, after the loading card or within 200 ms
 // [x] only the card on top shows the side it was turned to
-// [x] each layer's card counts its own place in the pass
 // [x] the panel: All with the deck's total, the topics in order with their counts, the wordmark at its foot
 // [x] a chip toggles its topic, All clears the selection
-// [x] colours by the topic's declared index, on the chips and the card
+// [x] colours by the topic's declared index, on the chips
 // [x] the end card closes the pass
 // [x] a live region says where you are: "Card 1 of 3", the end card's text
 // [x] …and, before there is a deck, what the loading and error cards say; the same region once the deck arrives
 // [x] haptics as next or previous is decided, on a reshuffle, the end card's reshuffle and a chip toggle; never on a
 //     flip
-// [x] the fullscreen chip leads the panel; f toggles fullscreen
+// [x] the fullscreen chip leads the panel; f toggles fullscreen; gone fullscreen, the exit chip on the desk comes back
 // [x] the wake lock is asked for on the first input
 // [x] performance mark flash:first-card once the fonts are in and the first card is on screen, once per page load;
 //     also when a font fails to load
@@ -246,13 +245,6 @@ describe("reading", () => {
     expect(side(layer("next"))).toBe("front");
   });
 
-  test("counts each card's place in the pass on both its faces: 1 / 3 on top, 2 / 3 underneath", async () => {
-    await reading();
-
-    expect(within(layer("current")).getAllByText("1 / 3")).toHaveLength(2);
-    expect(within(layer("next")).getAllByText("2 / 3")).toHaveLength(2);
-  });
-
   test("closes the pass with the end card, which counts the cards read", async () => {
     await reading();
 
@@ -279,19 +271,15 @@ describe("topics", () => {
   test("a topic's chip narrows the pass to its cards; All widens it again, keeping the card on top", async () => {
     await reading();
 
+    const live = () => document.querySelector("[aria-live]")?.textContent;
+
     fireEvent.click(chip("Queues, 1 card"));
     expect(chip("Queues, 1 card").getAttribute("aria-pressed")).toBe("true");
-    expect([question(layer("current")), within(layer("current")).getAllByText("1 / 1").length]).toEqual([
-      "Why queue work?",
-      2,
-    ]);
+    expect([question(layer("current")), live()]).toEqual(["Why queue work?", "Card 1 of 1"]);
 
     fireEvent.click(chip("All, 3 cards"));
     expect(chip("All, 3 cards").getAttribute("aria-pressed")).toBe("true");
-    expect([question(layer("current")), within(layer("current")).getAllByText("1 / 3").length]).toEqual([
-      "Why queue work?",
-      2,
-    ]);
+    expect([question(layer("current")), live()]).toEqual(["Why queue work?", "Card 1 of 3"]);
   });
 
   test("the wordmark sits at the foot of the panel, under the topics", async () => {
@@ -300,7 +288,7 @@ describe("topics", () => {
     expect(screen.getByRole("group", { name: "Topics" }).nextElementSibling?.textContent).toBe("flash");
   });
 
-  test("colours each topic by its place in the deck, on its chip and on every card carrying it", async () => {
+  test("colours each topic's chip by its place in the deck", async () => {
     await reading();
 
     expect(["Redis, 2 cards", "Postgres, 1 card", "Queues, 1 card"].map((name) => sticker(chip(name)))).toEqual([
@@ -308,12 +296,6 @@ describe("topics", () => {
       "var(--s-marigold)",
       "var(--s-mint)",
     ]);
-    // The card underneath carries Postgres, then Redis: its band in Postgres's colour, a dot in each.
-    const front = layer("next").querySelector(`.${cardStyles.face}`);
-    expect(front?.querySelector<HTMLElement>(`.${cardStyles.band}`)?.style.backgroundColor).toBe("var(--s-marigold)");
-    expect(
-      Array.from(front?.querySelectorAll<HTMLElement>(`.${cardStyles.dot}`) ?? [], (dot) => dot.style.backgroundColor),
-    ).toEqual(["var(--s-marigold)", "var(--s-pink)"]);
   });
 });
 
@@ -412,6 +394,7 @@ describe("fullscreen", () => {
   afterEach(() => {
     Reflect.deleteProperty(document, "fullscreenEnabled");
     Reflect.deleteProperty(document, "fullscreenElement");
+    Reflect.deleteProperty(document, "exitFullscreen");
     Reflect.deleteProperty(document.documentElement, "requestFullscreen");
   });
 
@@ -424,6 +407,19 @@ describe("fullscreen", () => {
     fireEvent.click(lead as HTMLElement);
 
     expect(request).toHaveBeenCalledWith({ navigationUI: "hide" });
+  });
+
+  test("gone fullscreen, the panel's chip has no place, and the exit chip on the desk comes back out", async () => {
+    fullscreenTab();
+    const exit = vi.fn(async () => {});
+    Object.defineProperty(document, "fullscreenElement", { configurable: true, value: document.documentElement });
+    Object.defineProperty(document, "exitFullscreen", { configurable: true, value: exit });
+    await reading();
+
+    expect(screen.queryByRole("button", { name: "Full screen" })).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Exit full screen" }));
+
+    expect(exit).toHaveBeenCalled();
   });
 
   test("f goes fullscreen too", async () => {

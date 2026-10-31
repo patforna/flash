@@ -93,15 +93,26 @@
   pointer-events: none;
 }
 
-/* Front: a band along the top edge in the first topic's colour; the question in marker, centred a little above the
-   middle, at most four lines; the card's topics and the counter along the foot.
-   Shantell's ascent and descent come to 1.34 em, more than these line heights: boxes that hold it keep room for the
+/* Both faces are ruled: a red rule across the head and blue rules under it, the back's drawn by the answer at the
+   pitch of its type step, the front's at the base pitch (78u to 318u, as the back's at step 0), so the card reads as
+   one index card whichever way up it lies. */
+.front,
+.back {
+  --head-rule:
+    linear-gradient(var(--rule-red), var(--rule-red)) calc(20 * var(--u)) calc(48 * var(--u)) / calc(560 * var(--u))
+    calc(2 * var(--u)) no-repeat;
+  background: var(--head-rule), var(--paper);
+}
+
+/* Front: the question in marker, centred a little above the middle over the rules, at most four lines.
+   Shantell's ascent and descent come to 1.34 em, more than this line height: the box that holds it keeps room for the
    overhang, or it would count as overflow and step the type down. */
-.band {
-  position: absolute;
-  inset: 0 0 auto;
-  height: calc(6 * var(--u));
-  border-radius: calc(6 * var(--u)) calc(6 * var(--u)) 0 0;
+.front {
+  background:
+    var(--head-rule),
+    repeating-linear-gradient(var(--rule-blue) 0 calc(1 * var(--u)), transparent 0 calc(30 * var(--u)))
+    calc(28 * var(--u)) calc(78 * var(--u)) / calc(544 * var(--u)) calc(241 * var(--u)) no-repeat,
+    var(--paper);
 }
 
 .question {
@@ -122,74 +133,10 @@
   text-wrap: balance;
 }
 
-.topics {
-  position: absolute;
-  left: calc(24 * var(--u));
-  bottom: calc(9.2 * var(--u));
-  display: flex;
-  gap: calc(14 * var(--u));
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-/* The foot's line boxes are 18u so the handwriting fits inside them; the two share a baseline at 346u. */
-.topics,
-.counter {
-  font-size: calc(12 * var(--u));
-  line-height: calc(18 * var(--u));
-  color: var(--ink-pencil);
-}
-
-.topics li {
-  display: flex;
-  align-items: baseline;
-  gap: calc(5 * var(--u));
-  font-weight: 500;
-  font-variation-settings: "INFM" 30;
-}
-
-.dot {
-  width: calc(7 * var(--u));
-  height: calc(7 * var(--u));
-  border-radius: 50%;
-}
-
-/* "07 / 16", bottom right on both faces, in Radon so the digits keep still. */
-.counter {
-  position: absolute;
-  right: calc(24 * var(--u));
-  bottom: calc(8.4 * var(--u));
-  margin: 0;
-  font-family: var(--font-code);
-  word-spacing: -0.3em;
-}
-
-/* Back: the question again above the red rule, which overshoots the ruled column by 8u; the answer in pen, each line
-   on a blue rule. The rule pitch follows the fit step, so the writing stays on the lines. */
+/* Back: the answer in pen under the red rule, each line on a blue rule. The rule pitch follows the fit step, so the
+   writing stays on the lines. */
 .back {
   transform: rotateX(180deg);
-  background:
-    linear-gradient(var(--rule-red), var(--rule-red)) calc(20 * var(--u)) calc(48 * var(--u)) / calc(560 * var(--u))
-    calc(2 * var(--u)) no-repeat,
-    var(--paper);
-}
-
-.header {
-  position: absolute;
-  left: calc(48 * var(--u));
-  right: calc(28 * var(--u));
-  top: calc(6 * var(--u));
-  height: calc(42 * var(--u));
-  margin: 0;
-  padding-bottom: calc(2 * var(--u));
-  align-content: end;
-  font-size: calc(15 * var(--u));
-  line-height: calc(18 * var(--u));
-  font-weight: 500;
-  font-variation-settings: "INFM" 40;
-  color: var(--ink-pen-soft);
-  text-wrap: balance;
 }
 
 /* --rule-baseline: where the baseline falls in a line box, so where each rule is drawn. Shantell's ascent and descent
@@ -258,7 +205,6 @@
 /* Inline code adds nothing to its line's height, or the writing would drift off the rules. Its wash reaches 0.12em above
    Radon's ascent, which its capitals all but touch (an inline's padding doesn't change the line either). */
 .question code,
-.header code,
 .answer :not(pre) > code {
   padding: 0.12em calc(3 * var(--u)) 0;
   border-radius: calc(3 * var(--u));
@@ -291,7 +237,6 @@
    Broken over two lines it is sliced, not cloned: in Chromium a cloned inline turns text-wrap: pretty off for its
    whole block, which then ends on a lone word. Inline code likewise. */
 .question strong,
-.header strong,
 .answer strong {
   margin: 0 calc(-2 * var(--u));
   padding: 0 calc(2 * var(--u));

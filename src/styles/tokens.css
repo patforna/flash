@@ -9,15 +9,14 @@
   --paper-shade: #f1ebdb;
   --paper-edge: #e2d9c2;
 
-  /* Ruling on the back: the lines the answer is written on; the line under the header. */
+  /* Ruling: the blue lines the answer is written on; the red rule across the head of both faces. */
   --rule-blue: #a9cbea;
   --rule-red: #ee5d6c;
 
-  /* Inks, contrast on --paper: marker for the question (17.6:1); pen for the answer (12.5:1); soft pen for the
-     back's header (7.0:1); pencil for the counter and the on-card topics (5.8:1). */
+  /* Inks, contrast on --paper: marker for the question (17.6:1); pen for the answer (12.5:1); pencil for the message
+     cards' hints (5.8:1). */
   --ink-marker: #15171f;
   --ink-pen: #1f2d6b;
-  --ink-pen-soft: #4a5585;
   --ink-pencil: #5f6475;
   /* A pink pen for the list markers in the answer's margin: a numbered list's numerals are text (4.9:1 on --paper,
      where the sticker pink is 2.4:1). */

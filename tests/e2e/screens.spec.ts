@@ -13,9 +13,9 @@ import {
 } from "./helpers";
 
 // The screenshot baselines (docs/plan.md §12), in tests/screenshots/<project>/. On the Pixel 11 the page is
-// fullscreen first, as the installed app is, except for the fullscreen chip in a browser tab. Loading and error come
-// before there is a stage to take the f key (and their panel has no chip). The seeded shuffle puts the same cards in
-// the same places every run.
+// fullscreen first, as the installed app is, except for the panel, which only a browser tab shows. Loading and error
+// come before there is a stage to take the f key. The seeded shuffle puts the same cards in the same places every
+// run.
 
 const project = () => test.info().project.name;
 
@@ -101,8 +101,8 @@ test.describe("the Pixel 11", () => {
     await expect(page).toHaveScreenshot("error.png");
   });
 
-  test("three topics selected", async ({ page }) => {
-    await open(page);
+  test("a browser tab, three topics selected", async ({ page }) => {
+    await open(page, { fullscreen: false });
     for (const chip of ["Redis, 2 cards", "Postgres, 3 cards", "Real-time, 2 cards"]) {
       await page.getByRole("button", { name: chip, exact: true }).tap();
     }
@@ -114,15 +114,10 @@ test.describe("the Pixel 11", () => {
   test("a 40 px camera cutout on the left", async ({ page }) => {
     await open(page);
     await insets(page, { left: 40 });
-    await expect.poll(() => page.locator("main").evaluate((el) => getComputedStyle(el).paddingLeft)).toBe("48px");
+    // 48 px past the cutout, and fullscreen's room for the exit chip's column (44 px and the 24 px gap).
+    await expect.poll(() => page.locator("main").evaluate((el) => getComputedStyle(el).paddingLeft)).toBe("116px");
     await settled(page);
     await expect(page).toHaveScreenshot("camera-cutout.png");
-  });
-
-  test("the fullscreen chip in a browser tab", async ({ page }) => {
-    await open(page, { fullscreen: false });
-    await expect(page.getByRole("button", { name: "Full screen" })).toBeVisible();
-    await expect(page).toHaveScreenshot("chip-in-tab.png");
   });
 });
 

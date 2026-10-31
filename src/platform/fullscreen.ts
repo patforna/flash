@@ -6,6 +6,12 @@ export function canFullscreen(): boolean {
   );
 }
 
+// Something is fullscreen through the API: a tab that went fullscreen, with a way back out. The installed app is
+// fullscreen by its manifest, with nothing to leave: fullscreenElement is null there.
+export function isFullscreen(): boolean {
+  return document.fullscreenElement != null;
+}
+
 // Android locks the orientation only in fullscreen, so the lock waits for the request.
 export async function toggleFullscreen(): Promise<void> {
   try {

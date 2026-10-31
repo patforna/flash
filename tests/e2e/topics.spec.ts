@@ -47,12 +47,6 @@ test("a topic narrows the pass to its cards", async ({ page }) => {
   await expect(chip(page, "Postgres, 3 cards")).toHaveAttribute("aria-pressed", "true");
   await expect(chip(page, "All, 9 cards")).toHaveAttribute("aria-pressed", "false");
   await expect(announcer(page)).toHaveText("Card 1 of 3");
-  // The card's own counter, too.
-  await expect(
-    flipper(page)
-      .locator("> :first-child")
-      .getByText(/^1 \/ 3$/),
-  ).toBeVisible();
   for (const topics of await walk(page, 3)) expect(topics).toContain("Postgres");
 });
 

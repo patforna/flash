@@ -101,8 +101,7 @@ const TEXT: [string, string[]][] = [
   ["--ink-pen", ["--paper"]], // the answer
   ["--ink-pen", ["--hl"]], // a highlighted word
   ["--ink-pen", ["--code-wash", "--paper"]], // inline code
-  ["--ink-pen-soft", ["--paper"]], // the back's header
-  ["--ink-pencil", ["--paper"]], // the counter, the card's topics, the message cards' hints
+  ["--ink-pencil", ["--paper"]], // the message cards' hints
   ["--pen-pink", ["--paper"]], // the numerals of a numbered list
   ["--chalk", ["--desk"]], // a chip's label
   ["--chalk", ["--desk-glow"]],
