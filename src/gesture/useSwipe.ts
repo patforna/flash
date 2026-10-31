@@ -405,7 +405,7 @@ function swipe(stage: RefObject<HTMLElement | null>, options: RefObject<SwipeOpt
   const end = (g: Gesture) => {
     gesture = null;
     g.layers.current.removeAttribute("data-pressed");
-    mark("idle");
+    mark(running ? "animating" : "idle");
   };
 
   const move = (e: PointerEvent) => {
@@ -421,17 +421,27 @@ function swipe(stage: RefObject<HTMLElement | null>, options: RefObject<SwipeOpt
         mark("dragging");
         finishFlip(g.layers.current);
       }
+      // Not a sideways drag after all: whatever followed the finger goes back.
+      if (g.axis === "vertical") return putBack(g);
     }
-    if (g.axis === "horizontal") follow(g, g.from + e.clientX - g.start.x);
+    const dx = g.from + e.clientX - g.start.x;
+    if (g.axis === "horizontal" || (g.axis === "pending" && early(g, e, dx))) follow(g, dx);
   };
+
+  // While a touch may still be a tap, the card follows a finger moving more sideways than not from its first pixel; a
+  // tap's jitter never brings out the card before, unless the touch caught the cards on the move.
+  const early = (g: Gesture, e: PointerEvent, dx: number) =>
+    Math.abs(e.clientX - g.start.x) >= Math.abs(e.clientY - g.start.y) && (dx <= 0 || !g.layers.prev || g.from !== 0);
 
   const up = (e: PointerEvent) => {
     const g = own(e);
     if (!g) return;
     end(g);
-    if (g.axis !== "horizontal") {
+    // A vertical drag was put back as it turned out vertical.
+    if (g.axis === "vertical") return;
+    if (g.axis === "pending") {
       putBack(g);
-      if (g.axis === "pending" && isTap(g.start, sample(e))) options.current.onTap();
+      if (isTap(g.start, sample(e))) options.current.onTap();
       return;
     }
     g.samples.push(sample(e));
@@ -450,10 +460,11 @@ function swipe(stage: RefObject<HTMLElement | null>, options: RefObject<SwipeOpt
     if (!g) return;
     end(g);
     if (g.axis === "horizontal") springBack(g);
-    else putBack(g);
+    if (g.axis === "pending") putBack(g);
   };
 
-  // A touch let go without a move: what it caught goes back from where it was caught.
+  // A touch let go without a drag: a tap's jitter goes at once (a tap's flip starts as it does), and what the touch
+  // caught on the move springs back from where it was caught.
   const putBack = (g: Gesture) => (g.from === 0 ? clear() : springBack(g));
 
   function listen() {

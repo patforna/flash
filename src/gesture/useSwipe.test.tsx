@@ -1,6 +1,7 @@
 // To do:
 // [x] a tap calls onTap; a long hold doesn't; never after a drag
-// [x] a horizontal drag writes translate and rotate on the current layer
+// [x] a horizontal drag writes translate and rotate on the current layer, from the first pixel: while a touch may still
+//     be a tap it follows (never bringing out the card before), and is put back if it was one, a hold, vertical or taken
 // [x] the card underneath scales and rises with progress
 // [x] a right drag shows the previous layer, following from −cardRect.right; changing direction hands over
 // [x] a right drag without a previous card rubber-bands the current one
@@ -32,7 +33,7 @@
 //     settling from the top card's place to its own
 // [x] a horizontal drag finishes a running flip
 // [x] no getCoalescedEvents (an insecure context): the move's own sample
-import { act, render } from "@testing-library/react";
+import { act, cleanup, render } from "@testing-library/react";
 import { Profiler, useRef, useState } from "react";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import { animatedAt, FakeAnimation, inline, press } from "./testing";
@@ -207,6 +208,58 @@ describe("following the finger", () => {
     finger.move(480, 200);
     expect(layer("current").style.transform).toBe("translateX(28.3871px) rotate(0.8516deg)");
     expect(layer("next").style.transform).toBe("");
+  });
+
+  test("from the first pixel, while the touch could still be a tap; let go as one, it is put back", () => {
+    const { stage, layer, onTap } = setup();
+    const finger = press(stage, layer("current"), 700, 200);
+    finger.move(694, 201);
+    expect(layer("current").style.transform).toBe("translateX(-6px) rotate(-0.18deg)");
+    finger.up(60);
+    expect(onTap).toHaveBeenCalledOnce();
+    expect(inline(layer("current"))).toEqual({ transform: "", visibility: "" });
+    expect(inline(layer("next"))).toEqual({ transform: "", visibility: "" });
+  });
+
+  test("…but a tap's jitter to the right never brings out the card before; with none, the card gives", () => {
+    const withPrevious = setup();
+    press(withPrevious.stage, withPrevious.layer("current"), 700, 200).move(706, 200);
+    expect(inline(withPrevious.layer("prev"))).toEqual({ transform: "", visibility: "" });
+    expect(withPrevious.layer("current").style.transform).toBe("");
+    cleanup();
+    const first = setup({}, { prev: false });
+    press(first.stage, first.layer("current"), 700, 200).move(706, 200);
+    expect(first.layer("current").style.transform).toMatch(/^translateX\(3\.\d+px\)/);
+  });
+
+  test("…nor does a move more up or down than sideways, and a drag that turns out vertical puts the card back", () => {
+    const { stage, layer, animations } = setup();
+    const finger = press(stage, layer("current"), 700, 200);
+    finger.move(697, 204);
+    expect(layer("current").style.transform).toBe("");
+    finger.move(694, 201);
+    expect(layer("current").style.transform).toBe("translateX(-6px) rotate(-0.18deg)");
+    finger.move(692, 220);
+    expect(inline(layer("current"))).toEqual({ transform: "", visibility: "" });
+    expect(animations).toEqual([]);
+    // Vertical it stays, however it moves on.
+    finger.move(640, 225);
+    expect(layer("current").style.transform).toBe("");
+  });
+
+  test("…and so does a hold too long for a tap, or the browser taking the pointer", () => {
+    const held = setup();
+    const finger = press(held.stage, held.layer("current"), 700, 200);
+    finger.move(694, 200);
+    finger.up(400);
+    expect(held.onTap).not.toHaveBeenCalled();
+    expect(held.layer("current").style.transform).toBe("");
+    cleanup();
+    const taken = setup();
+    const other = press(taken.stage, taken.layer("current"), 700, 200);
+    other.move(694, 200);
+    other.cancel();
+    expect(taken.layer("current").style.transform).toBe("");
   });
 });
 
