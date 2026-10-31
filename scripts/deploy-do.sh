@@ -59,12 +59,15 @@ started() {
     { remote "journalctl -u flash -n 30 --no-pager"; return 1; }
 }
 
-# From here, through DNS, Caddy and TLS: /healthz must report the deck just shipped. Retried for up to 2 minutes: a new
-# droplet waits for its DNS record and its certificate; a running one answers at once.
+# From here, through Caddy and TLS for $DOMAIN: /healthz must report the deck just shipped. Retried for up to 2 minutes:
+# a new droplet waits for its certificate; a running one answers at once. The name is pinned to the droplet's address:
+# a new name looked up before its record had spread is cached as missing by the laptop's resolver for the zone's
+# negative TTL (30 minutes), which would outlast the retries.
 serving() {
-  local want got deadline=$((SECONDS + 120))
+  local want got addr deadline=$((SECONDS + 120))
   want=$(cd "$root" && bun scripts/check-cards.ts --version cards/cards.toml)
-  until got=$(curl -fs --max-time 10 "https://$DOMAIN/healthz" | sed -n 's/.*"version":"\([^"]*\)".*/\1/p') && [[ $got == "$want" ]]; do
+  addr=$(ip)
+  until got=$(curl -fs --max-time 10 --resolve "$DOMAIN:443:$addr" "https://$DOMAIN/healthz" | sed -n 's/.*"version":"\([^"]*\)".*/\1/p') && [[ $got == "$want" ]]; do
     if ((SECONDS >= deadline)); then
       echo "https://$DOMAIN/healthz reports ${got:-no version}, not $want" >&2
       exit 1
