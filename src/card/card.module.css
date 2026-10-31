@@ -341,25 +341,30 @@ button.message:focus-visible {
   mix-blend-mode: multiply;
 }
 
-/* The tick draws itself as the end card lands on top, ticking off the pass: the short stroke from its top, then the
-   long one from the bottom, each grown along its own direction from the middle of its first end (in viewBox units).
-   Under the last card it waits unseen; the copy flying off keeps it drawn (it has no role); reduced motion shows it
-   drawn. */
+/* The tick draws itself as the move to the end card is decided (the stage's data-closing), ticking off the pass as the
+   last card leaves it: the short stroke from its top, then the long one from the bottom, each grown along its own
+   direction from the middle of its first end (in viewBox units). Drawn in 300 ms, before the move lands (320 ms), it
+   stays drawn on the card on top. Under the last card otherwise it waits unseen; the copy flying off keeps it drawn
+   (it has no role); reduced motion shows it drawn. */
 [data-role="next"] .tick {
   visibility: hidden;
 }
 
+[data-closing] [data-role="next"] .tick {
+  visibility: visible;
+}
+
 @media (prefers-reduced-motion: no-preference) {
-  [data-role="current"] .tick path {
+  [data-closing] [data-role="next"] .tick path {
     transform-box: view-box;
   }
 
-  [data-role="current"] .tick path:first-child {
+  [data-closing] [data-role="next"] .tick path:first-child {
     transform-origin: 18px 52px;
     animation: tick-short 110ms cubic-bezier(0.4, 0, 1, 1) backwards;
   }
 
-  [data-role="current"] .tick path:last-child {
+  [data-closing] [data-role="next"] .tick path:last-child {
     transform-origin: 40px 80px;
     animation: tick-long 200ms cubic-bezier(0.2, 0.6, 0.3, 1) 100ms backwards;
   }

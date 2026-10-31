@@ -322,6 +322,26 @@ test("a reshuffle while a card flies out deals the new pass under it: it flies o
   await expect(announcer(page)).toHaveText("Card 1 of 9");
 });
 
+test("the end card's tick draws itself as the last card leaves it, not once the move lands", async ({ page }) => {
+  for (let i = 1; i < 9; i++) {
+    await page.keyboard.press("l");
+    await settled(page);
+  }
+  await page.keyboard.press("l");
+  // Which layers hold a stroke drawing itself.
+  const drawing = () =>
+    page.evaluate(() =>
+      document
+        .getAnimations()
+        .filter((a) => a instanceof CSSAnimation && a.animationName.includes("tick"))
+        .map((a) => (a.effect as KeyframeEffect | null)?.target?.closest("[data-role]")?.getAttribute("data-role")),
+    );
+
+  expect(await drawing(), "as the move is decided").toEqual(["next", "next"]);
+  await expect(announcer(page)).toHaveText(/^That's all/);
+  expect(await drawing(), "once it has landed").toEqual([]);
+});
+
 test("a swipe on the end card deals the next pass at once, under the end card flying off", async ({ page }) => {
   for (let i = 0; i < 9; i++) {
     await page.keyboard.press("l");
