@@ -42,8 +42,9 @@
   --s-teal: #34d1c1;
   --s-lime: #d7f25a;
 
-  /* Type: the handwriting falls back to Radon, which carries the → and ← that Shantell lacks (typeset from -> and <-). */
-  --font-hand: "Shantell Sans", "Monaspace Radon", system-ui, sans-serif;
+  /* Type: the handwriting falls back to Radon at its own size, which carries the → and ← that Shantell lacks (typeset
+     from -> and <-). */
+  --font-hand: "Shantell Sans", "Radon hand", system-ui, sans-serif;
   --font-code: "Monaspace Radon", ui-monospace, monospace;
 
   /* Flip: a CSS transition (rotateX), so a tap mid-flip reverses from the current angle. Under reduced motion the

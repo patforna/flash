@@ -5,6 +5,7 @@
 // [x] useFit: with the fonts in, measures before paint (a later layout effect sees data-fit)
 // [x] useFit: content hidden (no data-fit) until the fonts load; then measured
 // [x] useFit: waits for the code font too (code blocks and the counter are set in it)
+// [x] useFit: and for the handwriting's arrows, Radon at the writing's size
 // [x] useFit: walks the steps while a part overflows down
 // [x] useFit: a part overflowing across (a code line wider than its column) also steps down
 // [x] useFit: a highlight's 2u of end padding hanging past the column is no overflow
@@ -42,7 +43,7 @@ describe("chooseStep", () => {
 
 // happy-dom has no document.fonts: stand one in where the named families are in already and the rest arrive when
 // load() resolves.
-const BOTH = ["Shantell Sans", "Monaspace Radon"];
+const ALL = ["Shantell Sans", "Monaspace Radon", "Radon hand"];
 function stubFonts(loaded: string[]) {
   const fonts = {
     check: vi.fn((font: string) => loaded.some((family) => font.includes(family))),
@@ -87,7 +88,7 @@ function Face({ fitKey, overflow, onLayout }: FaceProps) {
 
 describe("useFit", () => {
   beforeEach(() => {
-    stubFonts(BOTH);
+    stubFonts(ALL);
   });
 
   afterEach(() => {
@@ -118,6 +119,15 @@ describe("useFit", () => {
     await waitFor(() => expect(face.dataset.fit).toBe("0"));
   });
 
+  it("and for the handwriting's arrows, Radon at the writing's size", async () => {
+    const fonts = stubFonts(["Shantell Sans", "Monaspace Radon"]);
+    render(<Face fitKey={key("vacuum")} />);
+    const face = screen.getByTestId("face");
+    expect(face.dataset.fit).toBeUndefined();
+    expect(fonts.load).toHaveBeenCalledWith(expect.stringContaining("Radon hand"));
+    await waitFor(() => expect(face.dataset.fit).toBe("0"));
+  });
+
   it("steps the type down while a part overflows its box", () => {
     render(<Face fitKey={key("shard")} overflow={{ until: 2, axis: "down" }} />);
     const face = screen.getByTestId("face");
@@ -143,7 +153,7 @@ describe("useFit", () => {
   });
 
   it("measures once per key, not on every render", () => {
-    const fonts = stubFonts(BOTH);
+    const fonts = stubFonts(ALL);
     const { rerender } = render(<Face fitKey={key("vacuum")} />);
     const checks = fonts.check.mock.calls.length;
     rerender(<Face fitKey={key("vacuum")} />);

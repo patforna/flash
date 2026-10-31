@@ -20,3 +20,14 @@
   font-display: swap;
   src: url("../fonts/monaspace-radon-latin-400-normal.woff2") format("woff2");
 }
+
+/* The same file at the handwriting's size, for what Shantell lacks (→ ← ↔): at 1em its arrow is lighter and smaller
+   than the pen around it, a fallback glyph. At 125 % its stroke and height are the handwriting's. */
+@font-face {
+  font-family: "Radon hand";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  size-adjust: 125%;
+  src: url("../fonts/monaspace-radon-latin-400-normal.woff2") format("woff2");
+}
