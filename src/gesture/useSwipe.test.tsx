@@ -16,6 +16,9 @@
 // [x] a pointerdown during a commit finishes it, completing the commit (flushSync) before reading layers() again
 // [x] …while a copy of the flying card flies on from where it was, out of the stage's way, and goes when it lands
 // [x] the end card (no card under it) is let go of at once: the move lands while a copy flies off
+// [x] a pointerdown, a key or a button that lands a slide in early lets the card coming back carry on into its place
+//     from where it was, out of the next touch's way; a drag the other way or a key going on takes hold of it where it
+//     is; the next landing and a deal end it
 // [x] a pointerdown on the card during a cancel catches the cards where they are, the drag going on from there (a rubber
 //     band from where it gives); a tap after it springs them back from there; off the card it finishes the cancel
 // [x] a pointerdown during a deal finishes it
@@ -214,6 +217,13 @@ function flick(stage: HTMLElement, layer: (role: string) => HTMLElement) {
   finger.up();
 }
 
+// The same flick to the right, bringing back the previous card: it has 720 px to go.
+function flickRight(stage: HTMLElement, layer: (role: string) => HTMLElement) {
+  const finger = press(stage, layer("current"), 400, 200);
+  for (let i = 1; i <= 8; i++) finger.move(400 + 20 * i, 200);
+  finger.up();
+}
+
 describe("releasing", () => {
   test("past the threshold flings the card off at its release speed, the card underneath rising with it", () => {
     const { stage, layer, animations } = setup();
@@ -302,9 +312,7 @@ describe("committing", () => {
 
   test("a flick right slides the previous card in to its place, then commits", async () => {
     const { stage, layer, animations, onCommit } = setup();
-    const finger = press(stage, layer("current"), 400, 200);
-    for (let i = 1; i <= 8; i++) finger.move(400 + 20 * i, 200);
-    finger.up();
+    flickRight(stage, layer);
     const [slide] = animations;
     expect(slide?.el).toBe(layer("prev"));
     expect(slide?.keyframes).toEqual([{ transform: "translateX(-720px)" }, { transform: "translateX(0px)" }]);
@@ -465,6 +473,111 @@ describe("input during an animation", () => {
     expect(animations.filter((a) => a.el !== flying && !a.el.hasAttribute("data-role"))).toHaveLength(1);
   });
 
+  test("a pointerdown mid-slide lands the move, the card coming back carrying on into its place from where it was", () => {
+    const { stage, layer, animations, onCommit } = setup();
+    flickRight(stage, layer);
+    const [slide] = animations;
+    if (slide) slide.currentTime = 80;
+    press(stage, layer("current"), 700, 200, 200);
+    expect(onCommit).toHaveBeenCalledExactlyOnceWith("prev");
+    const carry = animations.find((a) => a.el === layer("current"));
+    // Its own curve, to its resting style, so nothing is left filling.
+    expect([carry?.keyframes, carry?.options, carry?.currentTime]).toEqual([
+      slide?.keyframes,
+      { duration: 320, easing: "cubic-bezier(0.2, 0.222, 0.3, 1)" },
+      80,
+    ]);
+  });
+
+  test("…over the card it covers, which settles from the place on top into its own in the time left", () => {
+    const { stage, layer, animations } = setup();
+    flickRight(stage, layer);
+    const [slide] = animations;
+    if (slide) slide.currentTime = 80;
+    press(stage, layer("current"), 700, 200, 200);
+    const settles = animations.filter((a) => a.el === layer("next"));
+    expect(settles.map((a) => [a.keyframes, a.options])).toEqual([
+      [
+        [{ transform: "scale(1) translateY(0px)" }, { transform: "scale(0.965) translateY(8px)" }],
+        { duration: 240, easing: "cubic-bezier(0.2, 0.8, 0.2, 1)" },
+      ],
+    ]);
+  });
+
+  test("…which a drag bringing back the card before leaves be, until that move lands", async () => {
+    const { stage, layer, animations } = setup();
+    flickRight(stage, layer);
+    const before = animations.length;
+    const again = press(stage, layer("current"), 400, 200, 200);
+    const arriving = animations.slice(before);
+    for (let i = 1; i <= 8; i++) again.move(400 + 20 * i, 200);
+    again.up();
+    expect(arriving.map((a) => a.playState)).toEqual(["running", "running"]);
+    expect(layer("current").style.transform).toBe("");
+    await act(async () => animations.at(-1)?.finish());
+    expect(arriving.map((a) => a.playState)).toEqual(["idle", "idle"]);
+  });
+
+  test("…which a drag the other way takes hold of where it is, with the card it covers", () => {
+    const { stage, layer, animations } = setup();
+    flickRight(stage, layer);
+    const before = animations.length;
+    const again = press(stage, layer("current"), 700, 200, 200);
+    const arriving = animations.slice(before);
+    // Some way in, the card it covers half settled.
+    animatedAt([
+      [layer("current"), "translateX(-300px)"],
+      [layer("next"), "scale(0.9825) translateY(4px)"],
+    ]);
+    again.move(680, 200);
+    expect(arriving.map((a) => a.playState)).toEqual(["idle", "idle"]);
+    expect(layer("current").style.transform).toBe("translateX(-300px) rotate(0deg)");
+    expect(layer("next").style.transform).toBe("scale(0.9825) translateY(4px)");
+    // It tilts, and the card underneath rises, from there: 33.6 px further is a fifth of the way to a commit.
+    again.move(646.4, 200);
+    expect(layer("current").style.transform).toBe("translateX(-333.6px) rotate(-1.008deg)");
+    expect(layer("next").style.transform).toBe("scale(0.9895) translateY(2.4px)");
+  });
+
+  test("…as a key going on does, flinging it from there", () => {
+    const { stage, layer, animations, swipe } = setup();
+    flickRight(stage, layer);
+    const before = animations.length;
+    press(stage, layer("current"), 700, 200, 200).up(400);
+    const arriving = animations.slice(before);
+    animatedAt([
+      [layer("current"), "translateX(-300px)"],
+      [layer("next"), "scale(0.9825) translateY(4px)"],
+    ]);
+    act(() => swipe().commit("next"));
+    expect(arriving.map((a) => a.playState)).toEqual(["idle", "idle"]);
+    expect(animations.slice(-2).map((a) => a.keyframes[0])).toEqual([
+      { transform: "translateX(-300px)" },
+      { transform: "scale(0.9825) translateY(4px)" },
+    ]);
+  });
+
+  test("…and a deal ends", () => {
+    const { stage, layer, animations, swipe } = setup();
+    flickRight(stage, layer);
+    const before = animations.length;
+    press(stage, layer("current"), 700, 200, 200).up(400);
+    const arriving = animations.slice(before);
+    act(() => swipe().deal());
+    expect(arriving.map((a) => a.playState)).toEqual(["idle", "idle"]);
+  });
+
+  test("under reduced motion the card coming back fades in on, in its place", () => {
+    const { stage, layer, animations } = setup({ reducedMotion: () => true });
+    flickRight(stage, layer);
+    const [fade] = animations;
+    if (fade) fade.currentTime = 70;
+    press(stage, layer("current"), 700, 200, 200);
+    expect(animations.slice(1).map((a) => [a.el, a.keyframes, a.options, a.currentTime])).toEqual([
+      [layer("current"), [{ opacity: 0 }, { opacity: 1 }], { duration: 140 }, 70],
+    ]);
+  });
+
   test("a pointerdown mid-cancel catches the cards where they are, and the drag goes on from there", () => {
     const { stage, layer, animations } = setup();
     const finger = press(stage, layer("current"), 700, 200);
@@ -613,9 +726,7 @@ describe("reduced motion", () => {
   });
   test("a commit to the previous card fades it in, in place", () => {
     const { stage, layer, animations } = setup({ reducedMotion });
-    const finger = press(stage, layer("current"), 400, 200);
-    for (let i = 1; i <= 8; i++) finger.move(400 + 20 * i, 200);
-    finger.up();
+    flickRight(stage, layer);
     expect(animations.map((a) => [a.el, a.keyframes, a.options])).toEqual([
       [layer("prev"), [{ opacity: 0 }, { opacity: 1 }], { duration: 140, fill: "forwards" }],
     ]);

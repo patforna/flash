@@ -24,22 +24,31 @@ interface Gesture {
   layers: Layers;
   rect: DOMRect; // the card's place, in viewport px
   from: number; // where the touch caught the cards, as the drag that has them there: 0 when they were at rest
+  // Where the drag took hold of a card still coming back, untilted, and how far the card it covered had risen: the card
+  // tilts, and the card underneath rises, from there. In its place and at rest otherwise.
+  held: { x: number; risen: number };
 }
 
-// Animations in flight; a commit's carries its direction, a fling the flight of the card leaving, and a spring back
-// the cards it moves, which the next touch catches where they are.
+// Animations in flight. A commit's carries its direction; input that lands it early lets a fling's card fly on as a
+// copy and a slide's card carry on into its place. A spring back carries the cards it moves, which the next touch
+// catches where they are.
 interface Run {
   animations: Animation[];
   dir: Dir | null;
   flight?: Flight;
+  arrival?: Motion;
   spring?: HTMLElement[];
 }
 
-interface Flight {
-  card: HTMLElement;
+// A card's motion: its keyframes, its timing, and the animation playing them.
+interface Motion {
   keyframes: Keyframe[];
   timing: KeyframeAnimationOptions;
   animation: Animation;
+}
+
+interface Flight extends Motion {
+  card: HTMLElement;
 }
 
 const FLING_TILT = 10; // degrees, as a flung card leaves
@@ -56,20 +65,26 @@ const rest = (el: HTMLElement) => {
 // The card's place on screen, in viewport px: the box its layers lie over (plan §11), which never moves, so it is
 // where the card rests even while one is on its way there or back.
 const place = (layer: HTMLElement) => (layer.parentElement ?? layer).getBoundingClientRect();
+const matrix = (transform: string) => new DOMMatrixReadOnly(transform === "none" ? undefined : transform);
 // How far along the x axis a transform puts a layer, in px.
-const across = (transform: string) => new DOMMatrixReadOnly(transform === "none" ? undefined : transform).m41;
+const across = (transform: string) => matrix(transform).m41;
 // Where a card rests once it has gone, 80 px past the screen's left edge.
 const gone = (card: DOMRect) => -(card.right + 80);
 // Where the previous card waits to come back: its right edge on the screen's left edge, so the first pixel of a right
 // drag shows its first pixel.
 const waiting = (card: DOMRect) => -card.right;
-// The card underneath, from resting (p = 0) to in place (p = 1).
-const underneath = (p: number) => `scale(${fixed(0.965 + 0.035 * p)}) translateY(${fixed(8 * (1 - p))}px)`;
+// The card underneath, from resting (p = 0) to in place (p = 1), and how far a transform has it risen.
+const LOW = 0.965;
+const underneath = (p: number) => `scale(${fixed(LOW + (1 - LOW) * p)}) translateY(${fixed(8 * (1 - p))}px)`;
+const risen = (transform: string) => (matrix(transform).m11 - LOW) / (1 - LOW);
 
 function swipe(stage: RefObject<HTMLElement | null>, options: RefObject<SwipeOptions>) {
   let gesture: Gesture | null = null;
   let running: Run | null = null;
   let settling: Run | null = null;
+  // The card coming back when its move landed early, still on its way into its place, and the card it covers settling
+  // into its own; no run of their own, so the next touch leaves them be.
+  let arriving: Animation[] = [];
   const touched = new Set<HTMLElement>();
 
   const write = (el: HTMLElement, transform: string) => {
@@ -112,8 +127,48 @@ function swipe(stage: RefObject<HTMLElement | null>, options: RefObject<SwipeOpt
     const run = running;
     if (!run) return;
     if (run.flight) flyOn(run.flight);
+    const at = Number(run.arrival?.animation.currentTime);
     for (const animation of run.animations) animation.finish();
-    complete(run);
+    if (complete(run) && run.arrival) arrive(run.arrival, at);
+  }
+
+  // The card coming back as its move lands early carries on into its place, from where it is on its curve, in the layer
+  // it now has; the card it covers came from the place on top, and settles into its own in the time left. Both end at
+  // their layers' resting styles, so nothing is left filling.
+  function arrive({ keyframes, timing }: Motion, at: number) {
+    const layers = options.current.layers();
+    if (!layers) return;
+    const carry = carryOn(layers.current, keyframes, timing);
+    carry.currentTime = at;
+    const now = [carry];
+    if (layers.next && !options.current.reducedMotion()) {
+      const left = { duration: Number(timing.duration) - at, easing: MOTION.dealEase };
+      now.push(carryOn(layers.next, [{ transform: underneath(1) }, { transform: underneath(0) }], left));
+    }
+    arriving = now;
+    Promise.all(now.map((a) => a.finished)).then(
+      () => {
+        if (arriving === now) arriving = [];
+      },
+      () => {},
+    );
+  }
+
+  // The card coming back is in its place now: its layer is about to take another card, or it is being taken hold of.
+  function arrived() {
+    for (const animation of arriving) animation.cancel();
+    arriving = [];
+  }
+
+  // Takes hold of the card still coming back and the card it covers, where they are: written inline, their motion let
+  // go. Returns where they were held.
+  function holdArriving({ current, next }: Layers): Gesture["held"] {
+    const card = getComputedStyle(current).transform;
+    const under = next && getComputedStyle(next).transform;
+    arrived();
+    write(current, card);
+    if (next && under) write(next, under);
+    return { x: across(card), risen: under ? risen(under) : 0 };
   }
 
   // A card still flying out as the move lands carries on as a copy, from where it is on its curve, over the stack and
@@ -152,6 +207,7 @@ function swipe(stage: RefObject<HTMLElement | null>, options: RefObject<SwipeOpt
   // A new card came from elsewhere (a reshuffle, a topic change): what was in flight belongs to the old one.
   function abort() {
     for (const animation of running?.animations ?? []) animation.cancel();
+    arrived();
     stop();
     clear();
   }
@@ -163,16 +219,23 @@ function swipe(stage: RefObject<HTMLElement | null>, options: RefObject<SwipeOpt
     stage.current?.removeAttribute("data-dealing");
   }
 
-  function complete(run: Run) {
-    if (running !== run) return;
+  // Whether the cards moved on.
+  function complete(run: Run): boolean {
+    if (running !== run) return false;
     stop();
     const { dir } = run;
-    if (!dir) return clear();
+    if (!dir) {
+      clear();
+      return false;
+    }
+    arrived();
     settling = run;
     flushSync(() => options.current.onCommit(dir));
     // A commit that changed nothing (a topic change put the card first while the previous one came back) renders
     // nothing, so no layout effect lets go of the run: let go of it here.
+    const moved = settling === null;
     settle();
+    return moved;
   }
 
   // After the commit has rendered, before paint: let go of the fling and clear every inline style written.
@@ -202,17 +265,26 @@ function swipe(stage: RefObject<HTMLElement | null>, options: RefObject<SwipeOpt
       write(layers.prev, `translateX(${waiting(rect) + dx}px)`);
       return;
     }
+    // The card on top moves: one still coming back is taken hold of where it is, and moves on from there.
+    if (arriving.length) {
+      g.held = holdArriving(layers);
+      g.from += g.held.x - dx;
+      return follow(g, g.held.x);
+    }
     if (layers.prev) rest(layers.prev);
+    const { held } = g;
     const x = dx > 0 ? rubberBand(dx) : dx;
-    const deg = options.current.reducedMotion() ? 0 : tilt(x);
+    const deg = options.current.reducedMotion() ? 0 : tilt(x - held.x);
     write(layers.current, `translateX(${fixed(x)}px) rotate(${fixed(deg)}deg)`);
-    if (layers.next && dx < 0) write(layers.next, underneath(Math.min(-dx / rect.width / GESTURE.commitFraction, 1)));
+    const rise = held.risen + Math.max(held.x - dx, 0) / rect.width / GESTURE.commitFraction;
+    if (layers.next && dx < 0) write(layers.next, underneath(Math.min(rise, 1)));
   }
 
   // A commit's motion, from a release at dx and vx, or from rest for a key or a button (easing given). A released card
   // flies half its width further than gone: its curve slows it to a stop, which then happens off screen.
   function fling(layers: Layers, rect: DOMRect, dx: number, vx: number, easing?: string) {
     const { current, next } = layers;
+    if (arriving.length) holdArriving(layers);
     const reduced = options.current.reducedMotion();
     const to = easing ? gone(rect) : gone(rect) - rect.width / 2;
     const timing = reduced
@@ -241,21 +313,19 @@ function swipe(stage: RefObject<HTMLElement | null>, options: RefObject<SwipeOpt
   function slideIn(layers: Layers, rect: DOMRect, dx: number, vx: number, easing?: string) {
     const { prev } = layers;
     if (!prev) return;
-    show(prev);
-    if (options.current.reducedMotion()) {
-      write(prev, "translateX(0px)");
-      const fade = carryOn(prev, [{ opacity: 0 }, { opacity: 1 }], { duration: MOTION.fadeMs, fill: "forwards" });
-      return play({ animations: [fade], dir: "prev" });
-    }
+    const reduced = options.current.reducedMotion();
     const from = waiting(rect) + dx;
-    const timing = { duration: flingDuration(-from, vx), easing: easing ?? flingEasing(-from, vx) };
-    const at = prev.style.transform || `translateX(${from}px)`;
-    play({
-      animations: [
-        carryOn(prev, [{ transform: at }, { transform: "translateX(0px)" }], { ...timing, fill: "forwards" }),
-      ],
-      dir: "prev",
-    });
+    const timing = reduced
+      ? { duration: MOTION.fadeMs }
+      : { duration: flingDuration(-from, vx), easing: easing ?? flingEasing(-from, vx) };
+    const keyframes = reduced
+      ? [{ opacity: 0 }, { opacity: 1 }]
+      : [{ transform: prev.style.transform || `translateX(${from}px)` }, { transform: "translateX(0px)" }];
+    show(prev);
+    // Under reduced motion it fades in, in place.
+    if (reduced) write(prev, "translateX(0px)");
+    const animation = carryOn(prev, keyframes, { ...timing, fill: "forwards" });
+    play({ animations: [animation], dir: "prev", arrival: { keyframes, timing, animation } });
   }
 
   function commit(dir: Dir) {
@@ -312,7 +382,16 @@ function swipe(stage: RefObject<HTMLElement | null>, options: RefObject<SwipeOpt
     finishRunning();
     const layers = options.current.layers();
     if (!layers) return;
-    gesture = { pointer: e.pointerId, start, samples: [start], axis: "pending", layers, rect, from };
+    gesture = {
+      pointer: e.pointerId,
+      start,
+      samples: [start],
+      axis: "pending",
+      layers,
+      rect,
+      from,
+      held: { x: 0, risen: 0 },
+    };
     stage.current?.setPointerCapture(e.pointerId);
     // The card is picked up: its lift rises (the stylesheets key off data-pressed), never the layer that drags.
     layers.current.setAttribute("data-pressed", "");

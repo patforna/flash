@@ -132,6 +132,49 @@ test("a short, slow drag follows the thumb, then cancels and settles back", asyn
   expect(await layer(page).boundingBox()).toEqual(box);
 });
 
+// Frame by frame from the second touch on, for 30 frames: how far the card with this question moved since the frame
+// before (its layer's x, in px), whichever layer it is in.
+const steps = (page: Page, writing: string) =>
+  page.evaluate(
+    (writing) =>
+      new Promise<number[]>((resolve) => {
+        let touches = 0;
+        addEventListener("pointerdown", () => touches++, { capture: true });
+        const moved: number[] = [];
+        let last: number | null = null;
+        const look = () => {
+          const card = [...document.querySelectorAll("[data-role]")].find(
+            (layer) => layer.querySelector("h2")?.textContent === writing,
+          );
+          const x = card ? new DOMMatrix(getComputedStyle(card).transform).m41 : null;
+          if (touches >= 2 && last !== null && x !== null) moved.push(Math.abs(x - last));
+          last = x;
+          if (moved.length === 30) return resolve(moved);
+          requestAnimationFrame(look);
+        };
+        requestAnimationFrame(look);
+      }),
+    writing,
+  );
+
+test("a card coming back when the next touch lands its move carries on into its place: it never jumps", async ({
+  page,
+}) => {
+  for (let i = 0; i < 2; i++) {
+    await page.keyboard.press("l");
+    await settled(page);
+  }
+  const back = (await question(page, "prev").textContent()) ?? "";
+  const travelled = steps(page, back);
+
+  await flick(page, "right");
+  await new Promise((resolve) => setTimeout(resolve, 80));
+  await flick(page, "right");
+
+  expect(Math.max(...(await travelled)), "the largest step from one frame to the next, in px").toBeLessThanOrEqual(100);
+  await expect(announcer(page)).toHaveText("Card 1 of 9");
+});
+
 // Where the card on top is (its layer's x, in px) in the last frame before the next touch, and in the three after it.
 const aroundTouch = (page: Page) =>
   page.evaluate(

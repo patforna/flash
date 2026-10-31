@@ -401,6 +401,16 @@ describe("dealing", () => {
     expect(inline(layer("prev"))).toEqual({ transform: "", visibility: "" });
   });
 
+  test("…and a touch landing that slide early carries no card in: the card on screen stays where it is", () => {
+    const { stage, layer, deck } = setup({ start: 1 });
+    fireEvent.keyDown(document.body, { key: "ArrowLeft" });
+    act(() => deck().toggleTopic("Redis"));
+    const before = animations.length;
+    press(stage, layer("current"), 700, 200);
+    expect(layer("current").textContent).toBe("b?");
+    expect(animations.slice(before)).toEqual([]);
+  });
+
   test("swiping on from the end card deals the new pass at once, under the end card flying off", () => {
     const { stage, layer, calls } = setup({ start: 4 });
     flick(stage, layer);
