@@ -338,7 +338,7 @@ test("the end card's tick draws itself as the last card leaves it, not once the 
     );
 
   expect(await drawing(), "as the move is decided").toEqual(["next", "next"]);
-  await expect(announcer(page)).toHaveText(/^That's all/);
+  await expect(announcer(page)).toHaveText(/^That’s all/);
   expect(await drawing(), "once it has landed").toEqual([]);
 });
 
@@ -347,14 +347,14 @@ test("a swipe on the end card deals the next pass at once, under the end card fl
     await page.keyboard.press("l");
     await settled(page);
   }
-  await expect(announcer(page)).toHaveText("That's all 9. Tap or swipe to shuffle again.");
+  await expect(announcer(page)).toHaveText("That’s all 9. Tap or swipe to shuffle again.");
 
   await flick(page, "left");
   const flight = await flyingOn(page);
 
   await expect(announcer(page)).toHaveText("Card 1 of 9");
   expect(flight.length, "frames of the end card flying off").toBeGreaterThan(0);
-  expect(flight[0]?.text).toContain("That's all 9.");
+  expect(flight[0]?.text).toContain("That’s all 9.");
 });
 
 test("past the last card comes the end card; a tap on it deals a new pass that doesn't start with the card just seen", async ({
@@ -368,15 +368,15 @@ test("past the last card comes the end card; a tap on it deals a new pass that d
   const last = await question(page).textContent();
 
   await flick(page, "left");
-  await expect(announcer(page)).toHaveText("That's all 9. Tap or swipe to shuffle again.");
-  await expect(layer(page).getByText("That's all 9.")).toBeVisible();
+  await expect(announcer(page)).toHaveText("That’s all 9. Tap or swipe to shuffle again.");
+  await expect(layer(page).getByText("That’s all 9.")).toBeVisible();
   await settled(page);
   // A swipe right from the end card goes back to the last card, and a swipe left returns to the end card.
   await flick(page, "right");
   await expect(question(page)).toHaveText(last ?? "");
   await settled(page);
   await flick(page, "left");
-  await expect(announcer(page)).toHaveText("That's all 9. Tap or swipe to shuffle again.");
+  await expect(announcer(page)).toHaveText("That’s all 9. Tap or swipe to shuffle again.");
   await settled(page);
 
   await tap(page, await centre(page));

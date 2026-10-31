@@ -79,7 +79,7 @@ test.describe("the Pixel 11", () => {
       await page.keyboard.press("l");
       await settled(page);
     }
-    await expect(announcer(page)).toHaveText("That's all 9. Tap or swipe to shuffle again.");
+    await expect(announcer(page)).toHaveText("That’s all 9. Tap or swipe to shuffle again.");
     await expect(page).toHaveScreenshot("end.png");
   });
 
@@ -94,7 +94,7 @@ test.describe("the Pixel 11", () => {
   test("error", async ({ page }) => {
     await page.route("**/api/cards", (route) => route.abort());
     await page.goto("/");
-    await expect(page.getByRole("button", { name: "Can't reach the deck. Tap to try again" })).toBeVisible({
+    await expect(page.getByRole("button", { name: "Can’t reach the deck. Tap to try again" })).toBeVisible({
       timeout: 15_000,
     });
     await page.evaluate(() => document.fonts.load('1em "Shantell Sans"'));

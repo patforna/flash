@@ -19,8 +19,8 @@ describe("MessageCard", () => {
   });
 
   it("shows the hint under the title", () => {
-    render(<MessageCard title="Can't reach the deck." hint="Tap to try again" />);
-    expect(screen.getByText("Can't reach the deck.")).toBeTruthy();
+    render(<MessageCard title="Can’t reach the deck." hint="Tap to try again" />);
+    expect(screen.getByText("Can’t reach the deck.")).toBeTruthy();
     expect(screen.getByText("Tap to try again")).toBeTruthy();
   });
 
@@ -35,8 +35,8 @@ describe("MessageCard", () => {
 
   it("is one button, named by its words, when it can be tapped", async () => {
     const onTap = vi.fn();
-    render(<MessageCard title="Can't reach the deck." hint="Tap to try again" tone="error" onTap={onTap} />);
-    await userEvent.setup().click(screen.getByRole("button", { name: "Can't reach the deck. Tap to try again" }));
+    render(<MessageCard title="Can’t reach the deck." hint="Tap to try again" tone="error" onTap={onTap} />);
+    await userEvent.setup().click(screen.getByRole("button", { name: "Can’t reach the deck. Tap to try again" }));
     expect(onTap).toHaveBeenCalledOnce();
   });
 
@@ -49,7 +49,7 @@ describe("MessageCard", () => {
     ["a line of writing", {}],
     ["a button", { onTap: () => {} }],
   ])("as %s sits on the same frame and face as a card", (_, props) => {
-    const { container } = render(<MessageCard title="Can't reach the deck." {...props} />);
+    const { container } = render(<MessageCard title="Can’t reach the deck." {...props} />);
     const frame = container.firstElementChild as HTMLElement;
     expect(frame.matches(`.${styles.frame}`)).toBe(true);
     expect(frame.firstElementChild?.matches(`.${styles.face}`)).toBe(true);

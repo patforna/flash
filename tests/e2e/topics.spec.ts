@@ -36,7 +36,7 @@ async function walk(page: Page, total: number): Promise<string[][]> {
     seen.push(await topicsOf(page));
     await flick(page, "left");
   }
-  await expect(announcer(page)).toHaveText(`That's all ${total}. Tap or swipe to shuffle again.`);
+  await expect(announcer(page)).toHaveText(`That’s all ${total}. Tap or swipe to shuffle again.`);
   return seen;
 }
 

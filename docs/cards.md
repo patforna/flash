@@ -67,6 +67,7 @@ Answers use a small part of Markdown; questions only `code` and `**bold**`.
 | `` `code` ``                                  | code, inline                                                             |
 | three backticks on the lines before and after | a block of code, exactly as typed                                        |
 | `->`, `<-` and `<->`                          | →, ← and ↔ (`-->` and `<--` too), except inside code                     |
+| `'`                                           | ’ after a letter or digit (don’t, clients’), else ‘, except inside code  |
 
 ```markdown
 Sets a key **only if it doesn't exist**: 1 if it set it, 0 if not.
@@ -81,6 +82,7 @@ Release it with a script that checks the value first.
 - A line straight after a list, with no blank line in between, joins the list's last item.
 - Code blocks are never wrapped or scrolled, which is why their lines are at most 46 characters. A language after the opening fence (` ```sql `) is allowed and changes nothing: there is no highlighting.
 - Where a long line wraps is up to the app: never inside a hyphenated word (`staff-level`, `allkeys-lfu`) or a range (2–4), never between a number and the word it counts (7 days, 1.5M requests), never after an arrow (→ stays with what it points at), and inline code holds together where a break would split it (a span of up to 20 characters, a word of one or two at either end of a longer one, a quoted value of up to 18).
+- An apostrophe that starts a word (’90s) would come out as an opening quote: type ’ there yourself.
 - Long answers are written smaller, in two steps. One that still doesn't fit fails the fit test, which runs when you ship.
 
 These fail, naming the card and the reason:

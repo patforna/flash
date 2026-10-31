@@ -81,7 +81,7 @@ function say(deck: UseQueryResult<Deck, Error>, late: boolean): MessageCardProps
   // Tapping the error card asks again (nothing else does: no refetch on focus or reconnect); it shuffles meanwhile.
   if (deck.isError && !deck.isFetching) {
     return {
-      title: "Can't reach the deck.",
+      title: "Can’t reach the deck.",
       hint: "Tap to try again",
       tone: "error",
       onTap: () => void deck.refetch(),

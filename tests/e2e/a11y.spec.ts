@@ -60,7 +60,7 @@ test.describe("axe", () => {
       await page.keyboard.press("l");
       await settled(page);
     }
-    await expect(layer(page).getByText("That's all 9.")).toBeVisible();
+    await expect(layer(page).getByText("That’s all 9.")).toBeVisible();
     expect(await axe(page)).toEqual([]);
   });
 
@@ -85,7 +85,7 @@ test.describe("axe", () => {
     await page.route("**/api/cards", (route) => route.abort());
     await page.goto("/");
     // Three tries with TanStack Query's backoff (1 s, then 2 s) before the error card.
-    await expect(page.getByRole("button", { name: "Can't reach the deck. Tap to try again" })).toBeVisible({
+    await expect(page.getByRole("button", { name: "Can’t reach the deck. Tap to try again" })).toBeVisible({
       timeout: 15_000,
     });
     expect(await axe(page)).toEqual([]);
@@ -180,7 +180,7 @@ test("the keys alone read the deck, the focus always in sight", async ({ page })
     await page.keyboard.press("ArrowRight");
     await settled(page);
   }
-  await expect(announcer(page)).toHaveText("That's all 9. Tap or swipe to shuffle again.");
+  await expect(announcer(page)).toHaveText("That’s all 9. Tap or swipe to shuffle again.");
   await expect(await focusRing(page)).toMatchObject({ name: "Shuffle again", shown: true });
   await page.keyboard.press("Enter");
   await expect(announcer(page)).toHaveText("Card 1 of 9");
@@ -213,6 +213,6 @@ test("under reduced motion only opacity animates: the flip, a move and a deal fa
   }
   await page.keyboard.press("l");
   expect((await animated(page)).filter((property) => property !== "opacity")).toEqual([]);
-  await expect(announcer(page)).toHaveText(/^That's all/);
+  await expect(announcer(page)).toHaveText(/^That’s all/);
   expect((await animated(page)).filter((property) => property !== "opacity")).toEqual([]);
 });

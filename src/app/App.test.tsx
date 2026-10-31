@@ -169,8 +169,8 @@ describe("the live region while there is nothing to read", () => {
     serve(async () => new Response("down", { status: 503 }));
     renderApp();
 
-    await screen.findByRole("button", { name: "Can't reach the deck. Tap to try again" });
-    expect([...live()].map((region) => region.textContent)).toEqual(["Can't reach the deck. Tap to try again"]);
+    await screen.findByRole("button", { name: "Can’t reach the deck. Tap to try again" });
+    expect([...live()].map((region) => region.textContent)).toEqual(["Can’t reach the deck. Tap to try again"]);
   });
 });
 
@@ -202,20 +202,20 @@ describe("an unreachable deck", () => {
     const fetchMock = serve(async () => new Response("down", { status: 503 }));
     renderApp();
 
-    expect(await screen.findByRole("button", { name: "Can't reach the deck. Tap to try again" })).toBeTruthy();
+    expect(await screen.findByRole("button", { name: "Can’t reach the deck. Tap to try again" })).toBeTruthy();
     expect(fetchMock).toHaveBeenCalledTimes(3);
   });
 
   test("tapping the error card fetches again, the loading card showing meanwhile", async () => {
     const fetchMock = serve(async () => new Response("down", { status: 503 }));
     renderApp();
-    const retry = await screen.findByRole("button", { name: "Can't reach the deck. Tap to try again" });
+    const retry = await screen.findByRole("button", { name: "Can’t reach the deck. Tap to try again" });
     fetchMock.mockImplementation(() => new Promise(() => {}));
 
     fireEvent.click(retry);
 
     expect(await screen.findByText("shuffling…", onCard)).toBeTruthy();
-    expect(screen.queryByRole("button", { name: "Can't reach the deck. Tap to try again" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Can’t reach the deck. Tap to try again" })).toBeNull();
     expect(fetchMock).toHaveBeenCalledTimes(4);
   });
 });
@@ -258,7 +258,7 @@ describe("reading", () => {
 
     for (let i = 0; i < 3; i++) await goNext();
 
-    expect(within(layer("current")).getByText("That's all 3.")).toBeTruthy();
+    expect(within(layer("current")).getByText("That’s all 3.")).toBeTruthy();
   });
 });
 
@@ -338,7 +338,7 @@ describe("announcements", () => {
 
     for (let i = 0; i < 3; i++) await goNext();
 
-    expect(live()?.textContent).toBe("That's all 3. Tap or swipe to shuffle again.");
+    expect(live()?.textContent).toBe("That’s all 3. Tap or swipe to shuffle again.");
   });
 });
 

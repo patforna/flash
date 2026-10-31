@@ -7,7 +7,7 @@ export interface EndCardProps {
 // What the end card says: how many were read and how to go again (tap or swipe left reshuffles). The app reads it
 // out too.
 export function endCardText(total: number) {
-  return { title: `That's all ${total}.`, hint: "Tap or swipe to shuffle again." };
+  return { title: `That’s all ${total}.`, hint: "Tap or swipe to shuffle again." };
 }
 
 // Closes a pass: a highlighter tick under the end card's text.

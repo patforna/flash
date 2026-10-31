@@ -126,6 +126,10 @@ function render(src: string, allowed: ReadonlySet<string>) {
             // 100k writes), unless it is part of a word or a version (s3, v1.2).
             .replace(/([\p{L}\p{N}])–(?=[\p{L}\p{N}])/gu, `$1–${JOIN}`)
             .replace(/(?<![\p{L}\p{N}_.,])(\d+(?:[.,]\d+)*[kM%+]?) (?=\p{L})/gu, `$1${HOLD}`)
+            // Apostrophes and single quotes as a hand writes them: after a letter or digit an apostrophe or a closing
+            // quote (don’t, clients’), any other an opening quote. Shantell draws ' as an upright tick.
+            .replace(/(?<=[\p{L}\p{N}])'/gu, "’")
+            .replace(/'/g, "‘")
         );
       }
       if (slash) {

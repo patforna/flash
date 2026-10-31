@@ -99,7 +99,7 @@ async function walk(page: Page): Promise<{ problems: string[]; fits: [string, st
     offsets.push(report.offsets);
     await page.keyboard.press("l");
   }
-  await expect(announcer(page)).toHaveText(`That's all ${total}. Tap or swipe to shuffle again.`);
+  await expect(announcer(page)).toHaveText(`That’s all ${total}. Tap or swipe to shuffle again.`);
   return { problems, fits, offsets };
 }
 

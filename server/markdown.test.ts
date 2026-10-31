@@ -9,6 +9,7 @@
 // [x] an arrow holds on to what it points at (U+00A0 after it)
 // [x] a word joiner after a hyphen inside a word, and after every hyphen in inline code; none in code blocks
 // [x] a range never breaks at its en dash (U+2060), a number never from the word after it (U+00A0)
+// [x] an apostrophe or closing quote after a letter or digit is typeset ’, any other ‘, outside code
 // [x] inline code holds together (U+00A0) where a break would split it: a span of up to 20 characters, a word of one or
 //     two characters at either end, a quoted value of up to 18
 // [x] raw HTML is escaped text, not an error; tables, strikethrough, task lists and autolinks stay text
@@ -66,6 +67,15 @@ describe("renderAnswer", () => {
   test("typesets both-way and long arrows too: <-> as ↔, --> as →, <-- as ←", () => {
     expect(renderAnswer("Client <-> server, a --> b <-- c, x <--> y; `a <-> b`")).toEqual({
       html: "<p>Client ↔\u00a0server, a →\u00a0b ←\u00a0c, x ↔\u00a0y; <code>a\u00a0&lt;-\u2060&gt;\u00a0b</code></p>",
+    });
+  });
+
+  test("typesets apostrophes and single quotes as the hand writes them, outside code", () => {
+    expect(renderAnswer("Don't block: the clients' calls, it's 'queued' 2's\n```\nstatus = 'queued'\n```")).toEqual({
+      html: "<p>Don’t block: the clients’ calls, it’s ‘queued’ 2’s</p><pre><code>status = 'queued'\n</code></pre>",
+    });
+    expect(renderQuestion("Why doesn't `SET x 'y'` return 'OK'?")).toEqual({
+      html: "Why doesn’t <code>SET\u00a0x\u00a0'y'</code> return ‘OK’?",
     });
   });
 
