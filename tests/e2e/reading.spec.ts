@@ -132,24 +132,25 @@ test("a short, slow drag follows the thumb, then cancels and settles back", asyn
   expect(await layer(page).boundingBox()).toEqual(box);
 });
 
-// Frame by frame from the second touch on, for 30 frames: how far the card with this question moved since the frame
-// before (its layer's x, in px), whichever layer it is in.
-const steps = (page: Page, writing: string) =>
+// Frame by frame from the second touch on, for 30 frames: how fast the card with this question moved since the frame
+// before (its layer's x, in px per ms), whichever layer it is in. A dropped frame doesn't make a card faster; a jump
+// is a frame's worth of its way in no time.
+const speeds = (page: Page, writing: string) =>
   page.evaluate(
     (writing) =>
       new Promise<number[]>((resolve) => {
         let touches = 0;
         addEventListener("pointerdown", () => touches++, { capture: true });
-        const moved: number[] = [];
-        let last: number | null = null;
-        const look = () => {
+        const seen: number[] = [];
+        let last: { t: number; x: number } | null = null;
+        const look = (t: number) => {
           const card = [...document.querySelectorAll("[data-role]")].find(
             (layer) => layer.querySelector("h2")?.textContent === writing,
           );
           const x = card ? new DOMMatrix(getComputedStyle(card).transform).m41 : null;
-          if (touches >= 2 && last !== null && x !== null) moved.push(Math.abs(x - last));
-          last = x;
-          if (moved.length === 30) return resolve(moved);
+          if (touches >= 2 && last !== null && x !== null && t > last.t) seen.push(Math.abs(x - last.x) / (t - last.t));
+          last = x === null ? null : { t, x };
+          if (seen.length === 30) return resolve(seen);
           requestAnimationFrame(look);
         };
         requestAnimationFrame(look);
@@ -165,13 +166,14 @@ test("a card coming back when the next touch lands its move carries on into its 
     await settled(page);
   }
   const back = (await question(page, "prev").textContent()) ?? "";
-  const travelled = steps(page, back);
+  const moving = speeds(page, back);
 
   await flick(page, "right");
   await new Promise((resolve) => setTimeout(resolve, 80));
   await flick(page, "right");
 
-  expect(Math.max(...(await travelled)), "the largest step from one frame to the next, in px").toBeLessThanOrEqual(100);
+  // On its way in it is never faster than 3 px/ms by then; a jump home in one frame was 14.
+  expect(Math.max(...(await moving)), "its fastest from one frame to the next, in px/ms").toBeLessThanOrEqual(6);
   await expect(announcer(page)).toHaveText("Card 1 of 9");
 });
 
