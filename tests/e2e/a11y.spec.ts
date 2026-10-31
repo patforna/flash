@@ -187,7 +187,9 @@ test("the keys alone read the deck, the focus always in sight", async ({ page })
   await expect(await focusRing(page)).toMatchObject({ name: "Show answer", shown: true });
 });
 
-test("under reduced motion only opacity animates: the flip, a move and a deal fade", async ({ page }) => {
+test("under reduced motion only opacity animates: the flip, a move and a deal fade, and the end card's tick is drawn", async ({
+  page,
+}) => {
   test.skip(project() !== "pixel11", "the Pixel 11");
   await page.emulateMedia({ reducedMotion: "reduce" });
   await page.goto("/");
@@ -203,4 +205,14 @@ test("under reduced motion only opacity animates: the flip, a move and a deal fa
   await page.keyboard.press("s");
   expect(await animated(page)).toEqual(["opacity"]);
   await settled(page);
+
+  // Onto the end card, as the move to it is decided and as it lands.
+  for (let i = 1; i < 9; i++) {
+    await page.keyboard.press("l");
+    await settled(page);
+  }
+  await page.keyboard.press("l");
+  expect((await animated(page)).filter((property) => property !== "opacity")).toEqual([]);
+  await expect(announcer(page)).toHaveText(/^That's all/);
+  expect((await animated(page)).filter((property) => property !== "opacity")).toEqual([]);
 });
