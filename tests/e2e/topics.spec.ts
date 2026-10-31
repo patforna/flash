@@ -3,6 +3,7 @@ import {
   announcer,
   centre,
   expect,
+  finger,
   firstCard,
   flick,
   flipper,
@@ -115,6 +116,52 @@ test("a change that drops the card on screen deals a fresh pass, front up", asyn
   await expect(question(page)).not.toHaveText(first ?? "");
   await expect(flipper(page)).toHaveAttribute("data-side", "front");
   expect(await topicsOf(page)).toContain(other);
+});
+
+// How far a chip is pushed in (its transform's x offset, in px: a press pushes it 2 px into its shadow).
+const pushed = (el: Element) => new DOMMatrix(getComputedStyle(el).transform).m41;
+
+// A touch screen sets :active only once a quick tap has lifted, and holds it 150 ms: the push came after the thumb.
+test("a chip pushes in under the thumb as it touches, and comes back out as it lifts", async ({ page }) => {
+  const redis = chip(page, "Redis, 2 cards");
+  const box = await redis.boundingBox();
+  if (!box) throw new Error("no chip");
+  const thumb = await finger(page, { x: box.x + box.width / 2, y: box.y + box.height / 2 });
+  await expect.poll(() => redis.evaluate(pushed), { timeout: 1000 }).toBe(2);
+
+  // Frame by frame for 300 ms from the lift (as the page sees it: the finger stamps its events with the time it is
+  // given): how long after it, and how far the chip is pushed in.
+  type Frame = { t: number; x: number };
+  await redis.evaluate((el) => {
+    const lift = new Promise<Frame[]>((resolve) => {
+      const frames: Frame[] = [];
+      addEventListener(
+        "pointerup",
+        () => {
+          const lifted = performance.now();
+          const look = () => {
+            const t = performance.now() - lifted;
+            frames.push({ t, x: new DOMMatrix(getComputedStyle(el).transform).m41 });
+            if (t >= 300) return resolve(frames);
+            requestAnimationFrame(look);
+          };
+          requestAnimationFrame(look);
+        },
+        { capture: true, once: true },
+      );
+    });
+    Object.assign(window, { lift });
+  });
+  await thumb.up();
+  const frames = await page.evaluate(() => (window as unknown as { lift: Promise<Frame[]> }).lift);
+
+  const xs = frames.map(({ x }) => x);
+  expect(xs, "only ever coming back out").toEqual([...xs].sort((a, b) => b - a));
+  expect(
+    frames.filter(({ t }) => t >= 200).map(({ x }) => x),
+    "out well within its 90 ms of the lift",
+  ).toEqual(frames.filter(({ t }) => t >= 200).map(() => 0));
+  await expect(redis).toHaveAttribute("aria-pressed", "true");
 });
 
 test("the selection outlives a reload", async ({ page }) => {

@@ -1,5 +1,6 @@
 import type { CSSProperties, ReactNode } from "react";
 import styles from "./panel.module.css";
+import { press } from "./press";
 
 export interface TopicPanelProps {
   topics: readonly string[];
@@ -62,6 +63,7 @@ function Chip({ label, name, colour, place, pressed, onClick }: ChipProps) {
       aria-pressed={pressed}
       aria-label={name}
       onClick={onClick}
+      {...press}
     >
       {label}
     </button>

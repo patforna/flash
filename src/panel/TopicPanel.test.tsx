@@ -7,7 +7,8 @@
 // [x] the lead comes first
 // [x] tapping All calls onAll; tapping a topic calls onToggle with its label
 // [x] each chip carries its colour, and a fixed tilt within ±1.5° that differs from its neighbours'
-import { configure, render, screen } from "@testing-library/react";
+// [x] a chip is pushed in (data-pressed) from a pointer going down on it until it goes up, is cancelled or leaves
+import { configure, fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import { colourFor } from "./colours";
@@ -97,6 +98,17 @@ describe("TopicPanel", () => {
       "var(--s-mint)",
       "var(--s-sky)",
     ]);
+  });
+
+  it("pushes a chip in from a pointer going down on it until it goes up, is cancelled or leaves", () => {
+    renderPanel();
+    const redis = screen.getByRole("button", { name: /^Redis/ });
+    for (const end of ["pointerUp", "pointerCancel", "pointerLeave"] as const) {
+      fireEvent.pointerDown(redis);
+      expect(redis.hasAttribute("data-pressed"), `down, then ${end}`).toBe(true);
+      fireEvent[end](redis);
+      expect(redis.hasAttribute("data-pressed"), `after ${end}`).toBe(false);
+    }
   });
 
   it("tilts each chip by a fixed angle within ±1.5°, unlike its neighbours", () => {

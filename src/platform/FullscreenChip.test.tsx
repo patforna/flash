@@ -8,6 +8,7 @@ import { FullscreenChip } from "./FullscreenChip";
 // [x] goes fullscreen when clicked
 // [x] hides once fullscreen and returns when fullscreen ends (fullscreenchange)
 // [x] hides when the display mode stops being a browser tab (the query's change event)
+// [x] pushed in (data-pressed) from a pointer going down on it until it goes up, is cancelled or leaves, as a sticker is
 
 // happy-dom has no Fullscreen API: each test defines what it needs, removed afterwards.
 const defined: [object, string][] = [];
@@ -81,6 +82,18 @@ describe("FullscreenChip", () => {
     renderChip();
 
     expect(screen.getByRole("button", { name: "Full screen" }).textContent).toBe("");
+  });
+
+  it("is pushed in from a pointer going down on it until it goes up, is cancelled or leaves, as a sticker is", () => {
+    fullscreenTab();
+    renderChip();
+    const button = screen.getByRole("button", { name: "Full screen" });
+    for (const end of ["pointerUp", "pointerCancel", "pointerLeave"] as const) {
+      fireEvent.pointerDown(button);
+      expect(button.hasAttribute("data-pressed"), `down, then ${end}`).toBe(true);
+      fireEvent[end](button);
+      expect(button.hasAttribute("data-pressed"), `after ${end}`).toBe(false);
+    }
   });
 
   it("goes fullscreen when clicked", () => {

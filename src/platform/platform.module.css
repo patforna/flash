@@ -15,7 +15,8 @@
   transition: transform 90ms ease-out;
 }
 
-.chip:active {
+.chip[data-pressed],
+.chip:active:focus-visible {
   transform: translate(2px, 2px);
 }
 
