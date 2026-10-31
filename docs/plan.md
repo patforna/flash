@@ -1,6 +1,6 @@
 # flash v0: the plan
 
-The synthesis of three independent plans (panel of 30 Oct 2026: Codex at `xhigh`, Claude Opus 5.5 and Claude Fable 5.1 at `max`; raw answers in `/tmp/panel-20261030-151331-{codex,claude,fable}.md`, brief in `/tmp/panel-20261030-151331-prompt.md`), merged with `/at:synthesize`, plus Patric's later direction: **TypeScript 7 and whatever is state of the art; don't get hung up on openapi-fetch**. Part 1 records how it was merged. Part 2 is the spec the build follows. `docs/original-request.md` wins over both.
+The synthesis of three independent plans (panel of 30 Oct 2026: Codex at `xhigh`, Claude Opus 5.5 and Claude Fable 5.1 at `max`; raw answers and brief archived in `an archive outside the repositorypanel/`), merged with `/at:synthesize`, plus Patric's later direction: **TypeScript 7 and whatever is state of the art; don't get hung up on openapi-fetch**. Part 1 records how it was merged. Part 2 is the spec the build follows. `docs/original-request.md` wins over both.
 
 ---
 
@@ -68,7 +68,7 @@ The synthesis of three independent plans (panel of 30 Oct 2026: Codex at `xhigh`
 
 ## Review of this plan (an independent critic, 30 Oct)
 
-Twenty findings, all verified by experiment and folded into Part 2 in place: flings measured from the viewport, not the stage; chips resized so all 13 seed topics fit; Markdown line breaks, structure checks and escaped arrows; the flip's perspective and 3D context; animation lifecycle traps (`finish()` notifies late, filled animations linger); the next card hidden while a flip runs; a frozen DOM contract between the stage and the card; inline code kept on the ruling; glyph coverage; interface fixes (`clearTopics`, the stage owns the shortcuts); Playwright realities (the fullscreen chip, the safe-area override, the service worker's first load); TypeScript 7 specifics; `@hono/bun`; designed loading and error cards. Raw findings: `scratchpad/critic/` of the build session.
+Twenty findings, all verified by experiment and folded into Part 2 in place: flings measured from the viewport, not the stage; chips resized so all 13 seed topics fit; Markdown line breaks, structure checks and escaped arrows; the flip's perspective and 3D context; animation lifecycle traps (`finish()` notifies late, filled animations linger); the next card hidden while a flip runs; a frozen DOM contract between the stage and the card; inline code kept on the ruling; glyph coverage; interface fixes (`clearTopics`, the stage owns the shortcuts); Playwright realities (the fullscreen chip, the safe-area override, the service worker's first load); TypeScript 7 specifics; `@hono/bun`; designed loading and error cards. Raw findings: `an archive outside the repositoryplan-critic.md`.
 - **A typed client without OpenAPI.** Moot until Patric's direction; Hono RPC with Zod checked under TypeScript 7.0.2 (`@ts-expect-error` on a wrong type is consumed, so the types are real).
 - **Only Opus caught** the Android back-gesture conflict and Bun's TOML non-compliance.
 - **Nobody can verify on the real Pixel** what emulation cannot show: 120 Hz feel, haptics, the back gesture, wake lock. The hand-off lists a two-minute on-phone check.
