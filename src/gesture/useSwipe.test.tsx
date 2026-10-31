@@ -23,7 +23,8 @@
 //     is; the next landing and a deal end it, the landing settling it from where it is into its place underneath, over
 //     a copy of the card it was covering, which leaves the layers then
 // [x] …while the next touch may still be a tap it is left be, whichever way the touch goes; taken hold of, it leans
-//     only as it is dragged on past where it was held, and back in its place it is upright, the card it covers in its own
+//     only as it is dragged on past where it was held, and back in its place it is upright, the card it covers in its own;
+//     arrived while the touch waited, it is taken from its place, the drift not made up in a frame
 // [x] a pointerdown on the card during a cancel catches the cards where they are, the drag going on from there (a rubber
 //     band from where it gives); a tap after it springs them back from there; off the card it finishes the cancel
 // [x] a pointerdown during a deal finishes it
@@ -632,6 +633,38 @@ describe("input during an animation", () => {
     again.up(40);
     expect(onTap).toHaveBeenCalledOnce();
     expect(arriving.map((a) => a.playState)).toEqual(["running", "running"]);
+  });
+
+  test("…and, once it has arrived, the next move doesn't make up the drift in a frame: it takes the card from its place", async () => {
+    const { stage, layer, animations } = setup();
+    flickRight(stage, layer);
+    const before = animations.length;
+    const again = press(stage, layer("current"), 700, 200, 200);
+    const arriving = animations.slice(before);
+    for (let x = 699; x >= 692; x--) again.move(x, 200);
+    await act(async () => {
+      for (const animation of arriving) animation.finish();
+    });
+    again.move(691, 200);
+    expect(layer("current").style.transform).toBe("translateX(0px) rotate(0deg)");
+    again.move(690, 200);
+    expect(layer("current").style.transform).toBe("translateX(-1px) rotate(-0.03deg)");
+  });
+
+  test("…nor does a drag past the slop once it has arrived", async () => {
+    const { stage, layer, animations } = setup();
+    flickRight(stage, layer);
+    const before = animations.length;
+    const again = press(stage, layer("current"), 700, 200, 200);
+    const arriving = animations.slice(before);
+    for (let x = 699; x >= 692; x--) again.move(x, 200);
+    await act(async () => {
+      for (const animation of arriving) animation.finish();
+    });
+    again.move(685, 200);
+    expect(layer("current").style.transform).toBe("translateX(0px) rotate(0deg)");
+    again.move(684, 200);
+    expect(layer("current").style.transform).toBe("translateX(-1px) rotate(-0.03deg)");
   });
 
   test("…which a drag the other way takes hold of where it is, with the card it covers", () => {

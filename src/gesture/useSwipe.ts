@@ -28,6 +28,9 @@ interface Gesture {
   // Where the drag took hold of a card still coming back, untilted, and how far the card it covered had risen: the card
   // tilts, and the card underneath rises, from there. In its place and at rest otherwise.
   held: { x: number; risen: number };
+  // The touch landed on a card still coming back, which it leaves be until it moves it; arrived meanwhile, the card is
+  // taken from its place then, the touch's drift not made up in a frame.
+  waited: boolean;
 }
 
 // Animations in flight. A commit's carries its direction; input that lands it early lets a fling's card fly on as a
@@ -303,9 +306,11 @@ function swipe(stage: RefObject<HTMLElement | null>, options: RefObject<SwipeOpt
       write(layers.prev, `translateX(${waiting(rect) + dx}px)`);
       return;
     }
-    // The card on top moves: one still coming back is taken hold of where it is, and moves on from there.
-    if (arriving.length) {
-      g.held = holdArriving(layers);
+    // The card on top moves: one still coming back is taken hold of where it is, and moves on from there; one that
+    // arrived while the touch waited, from its place.
+    if (arriving.length || g.waited) {
+      g.held = arriving.length ? holdArriving(layers) : { x: 0, risen: 0 };
+      g.waited = false;
       g.from += g.held.x - dx;
       return follow(g, g.held.x);
     }
@@ -435,6 +440,7 @@ function swipe(stage: RefObject<HTMLElement | null>, options: RefObject<SwipeOpt
       rect,
       from,
       held: { x: 0, risen: 0 },
+      waited: arriving.length > 0,
     };
     stage.current?.setPointerCapture(e.pointerId);
     // The card is picked up: its lift rises (the stylesheets key off data-pressed), never the layer that drags.
