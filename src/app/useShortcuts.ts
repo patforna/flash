@@ -2,6 +2,8 @@ import { useEffect } from "react";
 
 interface Handlers {
   flip(): void;
+  down(): void; // down a page of the back, or a flip where there is none
+  up(): void; // up a page, or a flip
   next(): void;
   prev(): void;
   reshuffle(): void;
@@ -9,14 +11,15 @@ interface Handlers {
   topics(): void;
 }
 
-// Arrows plus h j k l, as in plant-selection (docs/plan.md §4).
+// Arrows plus h j k l, as in plant-selection (docs/plan.md §4); the vertical keys turn the pages of a back that has
+// them, and flip otherwise.
 const KEYS: Record<string, keyof Handlers> = {
   " ": "flip",
   Enter: "flip",
-  ArrowUp: "flip",
-  ArrowDown: "flip",
-  j: "flip",
-  k: "flip",
+  ArrowUp: "up",
+  ArrowDown: "down",
+  j: "down",
+  k: "up",
   ArrowRight: "next",
   l: "next",
   PageDown: "next",

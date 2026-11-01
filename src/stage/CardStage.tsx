@@ -52,6 +52,18 @@ export function CardStage({ view, renderCard, onFullscreen, onTopics, onMove, de
       return current && { current, next: view.next && next, prev: view.prev && prev };
     },
     can: () => ({ prev: view.prev !== null, next: view.next !== null || view.current === "end" }),
+    // The sheets of the back (the card's [data-pos] elements, docs/plan.md §11), while the card on top shows a back
+    // with more than one page: a vertical drag then turns them.
+    pages: () => {
+      const current = layers.current.current;
+      if (!current || view.current === "end" || view.side !== "back" || view.pages < 2) return null;
+      const find = (pos: string) => current.querySelector<HTMLElement>(`[data-pos="${pos}"]`);
+      const shown = find("current");
+      return shown && { current: shown, next: find("next"), prev: find("prev") };
+    },
+    // A page turn buzzes as it is decided, as a move does; the page changes once the sheets have flown.
+    onPage: () => onMove(),
+    onPageCommit: (dir) => (dir === "next" ? view.nextPage() : view.prevPage()),
     // The end card has no back: a tap (a key, its button) flies it off as a swipe does, the next pass dealt under it.
     onTap: () => (view.current === "end" ? swipe.commit("next") : view.flip()),
     // On the end card, a reshuffle (s) is its move on.
@@ -76,8 +88,13 @@ export function CardStage({ view, renderCard, onFullscreen, onTopics, onMove, de
     if (dealtFirst.current) swipe.deal();
   }, [swipe.deal]);
 
+  // The vertical keys turn the pages of a back that has them, and flip otherwise.
+  const canPage = (dir: "next" | "prev") =>
+    view.current !== "end" && view.side === "back" && (dir === "next" ? view.page + 1 < view.pages : view.page > 0);
   useShortcuts({
     flip: swipe.tap,
+    down: () => (canPage("next") ? swipe.page("next") : swipe.tap()),
+    up: () => (canPage("prev") ? swipe.page("prev") : swipe.tap()),
     next: () => swipe.commit("next"),
     prev: () => swipe.commit("prev"),
     reshuffle: swipe.reshuffle,

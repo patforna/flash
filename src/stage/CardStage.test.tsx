@@ -16,6 +16,9 @@
 //     card the third reads "Shuffle again"
 // [x] shortcuts: → and ← go as a swipe does, Space flips, s reshuffles, f calls onFullscreen; s goes by the card a move
 //     in flight lands on; neither Space nor s touches a card under a thumb
+// [x] pages: on the back of a card with pages the stage hands the gesture the sheets (by data-pos); a drag up turns the
+//     page through the view once the sheets have flown, onMove as it is decided; ↓ and j turn the page, ↑ and k turn
+//     back, and all four flip where there is no page that way; a one-page back takes a vertical drag as before
 // (Styles aren't computed here: happy-dom gets no CSS modules. The feel check covers them in Chromium.)
 import { act, fireEvent, render, screen } from "@testing-library/react";
 import { StrictMode, useState } from "react";
@@ -43,7 +46,16 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
-const card = (id: string): Card => ({ id, topics: ["Redis"], questionHtml: `${id}?`, answerPages: [`${id}.`] });
+// Card b has three pages.
+const card = (id: string): Card => ({
+  id,
+  topics: ["Redis"],
+  questionHtml: `${id}?`,
+  answerPages: id === "b" ? ["b1.", "b2.", "b3."] : [`${id}.`],
+});
+// Where a sheet lies against the page shown, as CardView lays them out.
+const posOf = (n: number, page: number) =>
+  n === page ? "current" : n === page + 1 ? "next" : n === page - 1 ? "prev" : "away";
 
 interface Pass {
   order: Card[];
@@ -114,6 +126,14 @@ function Reader({ calls, onFullscreen, onMove, start, held }: ReaderProps) {
       renderCard={(c, role) => (
         <div key={c === "end" ? "end" : c.id} data-side={role === "current" ? side : "front"}>
           {c === "end" ? "That's all" : c.questionHtml}
+          {c !== "end" &&
+            role === "current" &&
+            side === "back" &&
+            c.answerPages.map((html, n) => (
+              <div key={html} data-pos={posOf(n, page)}>
+                {html}
+              </div>
+            ))}
         </div>
       )}
       onFullscreen={onFullscreen}
@@ -537,5 +557,67 @@ describe("shortcuts", () => {
     expect(layer("current").textContent).toBe("a?");
     expect(layer("current").querySelector("[data-side]")?.getAttribute("data-side")).toBe("front");
     finger.up();
+  });
+});
+
+describe("pages", () => {
+  // Card b (three pages), turned to its back.
+  async function onBack() {
+    const t = setup({ start: 1 });
+    fireEvent.keyDown(document.body, { key: " " });
+    await act(async () => {});
+    expect(t.deck().side).toBe("back");
+    return t;
+  }
+  const sheet = (stage: HTMLElement, pos: string) => stage.querySelector<HTMLElement>(`[data-pos="${pos}"]`);
+
+  test("a drag up turns the page through the view once the sheets have flown, onMove as it is decided", async () => {
+    const { stage, layer, calls, deck } = await onBack();
+    const finger = press(stage, layer("current"), 580, 200);
+    finger.move(580, 60);
+    expect(sheet(stage, "current")?.style.transform).toBe("translateY(-140px)");
+    finger.up();
+    expect(calls.at(-1)).toBe("move");
+    expect(deck().page).toBe(0);
+    await act(async () => {
+      for (const a of animations) a.finish();
+    });
+    expect(calls.at(-1)).toBe("nextPage");
+    expect(deck().page).toBe(1);
+  });
+
+  test("↓ and j turn the page, ↑ and k turn back; where there is no page that way they flip", async () => {
+    const { calls, deck } = await onBack();
+    fireEvent.keyDown(document.body, { key: "ArrowUp" });
+    expect(calls.at(-1)).toBe("flip");
+    expect(deck().side).toBe("front");
+    fireEvent.keyDown(document.body, { key: "ArrowDown" });
+    expect(deck().side).toBe("back");
+
+    fireEvent.keyDown(document.body, { key: "j" });
+    expect(calls.at(-1)).toBe("move");
+    await act(async () => {
+      for (const a of animations) a.finish();
+    });
+    expect([calls.at(-1), deck().page]).toEqual(["nextPage", 1]);
+
+    fireEvent.keyDown(document.body, { key: "k" });
+    await act(async () => {
+      for (const a of animations) a.finish();
+    });
+    expect([calls.at(-1), deck().page]).toEqual(["prevPage", 0]);
+  });
+
+  test("a one-page back takes a vertical drag as before: nothing turns", async () => {
+    const t = setup({ start: 0 });
+    fireEvent.keyDown(document.body, { key: " " });
+    await act(async () => {});
+    const { stage, layer, calls } = t;
+    const before = calls.length;
+    const finger = press(stage, layer("current"), 580, 200);
+    finger.move(580, 60);
+    finger.up();
+    expect(calls.length).toBe(before);
+    expect(animations.filter((a) => a.playState === "running")).toEqual([]);
   });
 });

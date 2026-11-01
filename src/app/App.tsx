@@ -193,11 +193,15 @@ function ticked<A extends unknown[]>(change: (...args: A) => void): (...args: A)
   };
 }
 
-// "Card 7 of 16", or what the end card says. The cards remount on every move, so they can't announce it themselves.
+// "Card 7 of 16", and the page while a later page of the back is up, or what the end card says. The cards remount on
+// every move, so they can't announce it themselves.
 function whereYouAre(view: DeckView): string {
-  if (view.current !== "end") return `Card ${view.position} of ${view.total}`;
-  const { title, hint } = endCardText(view.total);
-  return `${title} ${hint}`;
+  if (view.current === "end") {
+    const { title, hint } = endCardText(view.total);
+    return `${title} ${hint}`;
+  }
+  const where = `Card ${view.position} of ${view.total}`;
+  return view.side === "back" && view.page > 0 ? `${where}, page ${view.page + 1} of ${view.pages}` : where;
 }
 
 // How many cards carry each topic: the list shows each row's count and names it.

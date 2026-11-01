@@ -1,6 +1,6 @@
 // To do:
-// [x] Space, Enter, ↑, ↓, j and k flip; →, l and PageDown next; ←, h and PageUp previous; s reshuffles; f fullscreen;
-//     t topics
+// [x] Space and Enter flip; ↓ and j go down a page (or flip), ↑ and k up a page (or flip); →, l and PageDown next;
+//     ←, h and PageUp previous; s reshuffles; f fullscreen; t topics
 // [x] in the topic drawer (a dialog) only t fires
 // [x] a handled key doesn't scroll
 // [x] nothing fires with Alt, Ctrl or Meta, while typing (input, textarea, contenteditable), or on auto-repeat
@@ -11,7 +11,16 @@ import { describe, expect, test, vi } from "vitest";
 import { useShortcuts } from "./useShortcuts";
 
 function setup() {
-  const h = { flip: vi.fn(), next: vi.fn(), prev: vi.fn(), reshuffle: vi.fn(), fullscreen: vi.fn(), topics: vi.fn() };
+  const h = {
+    flip: vi.fn(),
+    down: vi.fn(),
+    up: vi.fn(),
+    next: vi.fn(),
+    prev: vi.fn(),
+    reshuffle: vi.fn(),
+    fullscreen: vi.fn(),
+    topics: vi.fn(),
+  };
   const view = renderHook(() => useShortcuts(h));
   return { h, ...view };
 }
@@ -22,10 +31,10 @@ describe("useShortcuts", () => {
   test.each<[string, Action]>([
     [" ", "flip"],
     ["Enter", "flip"],
-    ["ArrowUp", "flip"],
-    ["ArrowDown", "flip"],
-    ["j", "flip"],
-    ["k", "flip"],
+    ["ArrowUp", "up"],
+    ["ArrowDown", "down"],
+    ["j", "down"],
+    ["k", "up"],
     ["ArrowRight", "next"],
     ["l", "next"],
     ["PageDown", "next"],
@@ -111,6 +120,8 @@ describe("useShortcuts", () => {
   test("calls the latest render's handlers and stops listening on unmount", () => {
     const handlers = () => ({
       flip: vi.fn(),
+      down: vi.fn(),
+      up: vi.fn(),
       next: vi.fn(),
       prev: vi.fn(),
       reshuffle: vi.fn(),

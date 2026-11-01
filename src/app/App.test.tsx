@@ -11,7 +11,7 @@
 // [x] colours by the topic's declared index: the rows' dots, and the chip's dots for the selected topics
 // [x] the controls show at launch and stay on the end card
 // [x] the end card closes the pass
-// [x] a live region says where you are: "Card 1 of 3", the end card's text
+// [x] a live region says where you are: "Card 1 of 3", the end card's text, "Card 1 of 3, page 2 of 2" on a later page
 // [x] …and, before there is a deck, what the loading and error cards say; the same region once the deck arrives
 // [x] haptics as next or previous is decided, on a reshuffle, the end card's reshuffle and a row toggle; never on a
 //     flip
@@ -32,7 +32,12 @@ const deck: Deck = {
   version: "abcdefghijkl",
   topics: ["Redis", "Postgres", "Queues"],
   cards: [
-    { id: "what-is-redis", topics: ["Redis"], questionHtml: "What is Redis?", answerPages: ["<p>A cache.</p>"] },
+    {
+      id: "what-is-redis",
+      topics: ["Redis"],
+      questionHtml: "What is Redis?",
+      answerPages: ["<p>A cache.</p>", "<p>And a store.</p>"],
+    },
     {
       id: "why-cache-postgres",
       topics: ["Postgres", "Redis"],
@@ -360,6 +365,19 @@ describe("announcements", () => {
 
     expect(live()).toBe(region);
     expect(region?.textContent).toBe("Card 2 of 3");
+  });
+
+  test("on a later page of the back it says the page too", async () => {
+    await reading();
+    fireEvent.click(screen.getByRole("button", { name: "Show answer" }));
+    expect(live()?.textContent).toBe("Card 1 of 3");
+
+    fireEvent.keyDown(document.body, { key: "ArrowDown" });
+    await act(async () => {
+      for (const animation of animations) animation.finish();
+    });
+
+    expect(live()?.textContent).toBe("Card 1 of 3, page 2 of 2");
   });
 
   test("on the end card it reads out the end card", async () => {
