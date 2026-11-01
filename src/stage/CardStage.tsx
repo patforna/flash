@@ -3,6 +3,7 @@ import type { Card } from "../../shared/types";
 import { useShortcuts } from "../app/useShortcuts";
 import type { DeckView } from "../deck/types";
 import { useSwipe } from "../gesture/useSwipe";
+import { scrollBy } from "./scroll";
 import styles from "./stage.module.css";
 
 type Role = "prev" | "current" | "next";
@@ -76,8 +77,16 @@ export function CardStage({ view, renderCard, onFullscreen, onTopics, onMove, de
     if (dealtFirst.current) swipe.deal();
   }, [swipe.deal]);
 
+  // ↓ and ↑ scroll a long back (its answer carries data-scroll) by 60 % of the card while they can, and flip otherwise.
+  const scroll = (dir: 1 | -1) => {
+    const current = layers.current.current;
+    const scroller = view.side === "back" ? current?.querySelector<HTMLElement>("[data-scroll]") : null;
+    if (!current || !scroller || !scrollBy(scroller, dir, 0.6 * current.clientHeight, !reducedMotion())) swipe.tap();
+  };
   useShortcuts({
     flip: swipe.tap,
+    down: () => scroll(1),
+    up: () => scroll(-1),
     next: () => swipe.commit("next"),
     prev: () => swipe.commit("prev"),
     reshuffle: swipe.reshuffle,

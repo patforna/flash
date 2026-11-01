@@ -14,6 +14,7 @@
 // [x] buttons: "Show answer" / "Show question", "Previous" and "Next", which go as a swipe does
 // [x] the buttons stay put, so focus never falls to the page: "Previous" is aria-disabled on a first card; on the end
 //     card the third reads "Shuffle again"
+// [x] shortcuts: ↓ scrolls the back's scroller while it can and flips once it can't; ↑ likewise; a front has none
 // [x] shortcuts: → and ← go as a swipe does, Space flips, s reshuffles, f calls onFullscreen; s goes by the card a move
 //     in flight lands on; neither Space nor s touches a card under a thumb
 // (Styles aren't computed here: happy-dom gets no CSS modules. The feel check covers them in Chromium.)
@@ -43,7 +44,12 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
-const card = (id: string): Card => ({ id, topics: ["Redis"], questionHtml: `${id}?`, answerPages: [`${id}.`] });
+const card = (id: string): Card => ({
+  id,
+  topics: ["Redis"],
+  questionHtml: `${id}?`,
+  answerPages: id === "a" ? [`${id}.`, "more", "and more"] : [`${id}.`],
+});
 
 interface Pass {
   order: Card[];
@@ -99,6 +105,7 @@ function Reader({ calls, onFullscreen, onMove, start, held }: ReaderProps) {
       renderCard={(c, role) => (
         <div key={c === "end" ? "end" : c.id} data-side={role === "current" ? side : "front"}>
           {c === "end" ? "That's all" : c.questionHtml}
+          {c !== "end" && c.answerPages.length > 1 && <div data-scroll="" data-testid={`scroller-${c.id}`} />}
         </div>
       )}
       onFullscreen={onFullscreen}
@@ -488,6 +495,35 @@ describe("shortcuts", () => {
     fireEvent.keyDown(document.body, { key: "s" });
     expect(calls).toEqual(["move", "goNext"]);
     expect(endCardFlyingOff()).toBe(true);
+  });
+
+  test("↓ scrolls a long back while it can, 60 % of the card at a time, and flips once it can't; ↑ likewise", () => {
+    const { layer, calls } = setup();
+    // Card a has three pages; the stage finds the scroller in the card on top once it shows its back.
+    fireEvent.keyDown(document.body, { key: " " });
+    expect(calls).toEqual(["flip"]);
+    const scroller = layer("current").querySelector<HTMLElement>("[data-scroll]") as HTMLElement;
+    Object.defineProperty(layer("current"), "clientHeight", { configurable: true, value: 300 });
+    Object.defineProperty(scroller, "clientHeight", { configurable: true, value: 200 });
+    Object.defineProperty(scroller, "scrollHeight", { configurable: true, value: 500 });
+    const scrollBy = vi.fn();
+    scroller.scrollBy = scrollBy;
+
+    fireEvent.keyDown(document.body, { key: "ArrowDown" });
+    expect(scrollBy).toHaveBeenCalledWith({ top: 180, behavior: "smooth" });
+    expect(calls).toEqual(["flip"]);
+
+    scroller.scrollTop = 300; // at the end
+    fireEvent.keyDown(document.body, { key: "ArrowDown" });
+    expect(scrollBy).toHaveBeenCalledTimes(1);
+    expect(calls).toEqual(["flip", "flip"]);
+  });
+
+  test("↓ and ↑ flip a card with one page, as Space does", () => {
+    const { calls } = setup({ start: 1 });
+    fireEvent.keyDown(document.body, { key: "ArrowDown" });
+    fireEvent.keyDown(document.body, { key: "ArrowUp" });
+    expect(calls).toEqual(["flip", "flip"]);
   });
 
   test("Space flips, s reshuffles, f asks for fullscreen", () => {

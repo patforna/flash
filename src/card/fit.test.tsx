@@ -9,6 +9,7 @@
 // [x] useFit: a part overflowing across (a code line wider than its column) also steps down
 // [x] useFit: a highlight's 2u of end padding hanging past the column is no overflow
 // [x] useFit: "scroll" when no step fits
+// [x] useFit: a pinned face takes the largest step without measuring, overflow or not (a back with pages scrolls)
 // [x] useFit: measures once per key, not on every render (a flip re-renders the card; measuring forces layout)
 // [x] useFit: measures again when its key changes
 // [x] useFit: a key measured before takes its step at once, with no measuring (a card remounts on every move)
@@ -70,11 +71,16 @@ function overflowing({ until, axis, by = 1 }: Overflow) {
   };
 }
 
-type FaceProps = { fitKey: string; overflow?: Overflow; onLayout?: (fit: string | undefined) => void };
+type FaceProps = {
+  fitKey: string;
+  overflow?: Overflow;
+  pinned?: boolean;
+  onLayout?: (fit: string | undefined) => void;
+};
 
-function Face({ fitKey, overflow, onLayout }: FaceProps) {
+function Face({ fitKey, overflow, pinned, onLayout }: FaceProps) {
   const ref = useRef<HTMLDivElement>(null);
-  useFit(ref, 3, fitKey);
+  useFit(ref, 3, fitKey, pinned);
   useLayoutEffect(() => {
     onLayout?.(ref.current?.dataset.fit);
   });
@@ -92,6 +98,11 @@ describe("useFit", () => {
 
   afterEach(() => {
     Reflect.deleteProperty(document, "fonts");
+  });
+
+  it("pins a face to the largest step without measuring it, however far its parts overflow", () => {
+    render(<Face fitKey={key("pinned")} overflow={{ until: 9, axis: "down", by: 400 }} pinned />);
+    expect(screen.getByTestId("face").dataset.fit).toBe("0");
   });
 
   it("measures before paint once the fonts are in", () => {

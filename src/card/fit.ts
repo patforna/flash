@@ -27,8 +27,9 @@ const measured = new Map<string, number | "scroll">();
 
 // Sets data-fit on the face to the largest type step at which nothing overflows ("scroll" if none fits), measured
 // before paint once the fonts are in; the CSS sizes the type from data-fit and hides the content until it is set.
-// Measures again only when the key changes, and not at all for a key measured before.
-export function useFit(ref: RefObject<HTMLElement | null>, steps: number, key: string): void {
+// Measures again only when the key changes, and not at all for a key measured before. A pinned face (a back with
+// pages, which scrolls) takes the largest step without a measurement: its parts are meant to overflow.
+export function useFit(ref: RefObject<HTMLElement | null>, steps: number, key: string, pinned = false): void {
   useLayoutEffect(() => {
     const el = ref.current;
     if (!el) return;
@@ -40,10 +41,12 @@ export function useFit(ref: RefObject<HTMLElement | null>, steps: number, key: s
     let live = true;
     const measure = () => {
       if (!live) return;
-      const step = chooseStep((s) => {
-        el.dataset.fit = String(s);
-        return !overflows(el);
-      }, steps);
+      const step = pinned
+        ? 0
+        : chooseStep((s) => {
+            el.dataset.fit = String(s);
+            return !overflows(el);
+          }, steps);
       el.dataset.fit = String(step);
       measured.set(key, step);
     };
@@ -52,5 +55,5 @@ export function useFit(ref: RefObject<HTMLElement | null>, steps: number, key: s
     return () => {
       live = false;
     };
-  }, [ref, steps, key]);
+  }, [ref, steps, key, pinned]);
 }

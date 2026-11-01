@@ -2,6 +2,9 @@ import { useEffect } from "react";
 
 interface Handlers {
   flip(): void;
+  // ↓ and ↑: the stage scrolls a long back by them while it can, and flips otherwise.
+  down(): void;
+  up(): void;
   next(): void;
   prev(): void;
   reshuffle(): void;
@@ -13,8 +16,8 @@ interface Handlers {
 const KEYS: Record<string, keyof Handlers> = {
   " ": "flip",
   Enter: "flip",
-  ArrowUp: "flip",
-  ArrowDown: "flip",
+  ArrowUp: "up",
+  ArrowDown: "down",
   j: "flip",
   k: "flip",
   ArrowRight: "next",
