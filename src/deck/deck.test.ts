@@ -13,7 +13,11 @@
 // - [x] deal: avoidFirst keeps a lone card
 // - [x] next: one forward, front up; past the last card the end card; a no-op on the end card
 // - [x] prev: one back, front up; a no-op at 0; from the end card the last card
-// - [x] flip toggles the side; a no-op on the end card (it has no back)
+// - [x] flip toggles the side; a no-op on the end card (it has no back); from any page of the back it turns to the
+//       front on page 1
+// - [x] nextPage and prevPage move between the pages of the back, within the card's pages; no-ops on the front, on the
+//       end card and past either end
+// - [x] a move to another card, a deal, a reshuffle and a reselect start on page 1
 // - [x] reshuffle: a new pass of the pool that never starts with the current card
 // - [x] reshuffle: on the end card, never starts with the last card
 // - [x] reselect: the current card, if still in the pool, first and on the same side
@@ -21,13 +25,13 @@
 
 import { describe, expect, it } from "vitest";
 import type { Card } from "../../shared/types";
-import { deal, flip, next, poolFor, prev, reselect, reshuffle, shuffle } from "./deck";
+import { deal, flip, next, nextPage, poolFor, prev, prevPage, reselect, reshuffle, shuffle } from "./deck";
 import type { Pass, Rng, Side } from "./types";
 
 const card = (id: string, ...topics: string[]): Card => ({ id, topics, questionHtml: id, answerPages: [id] });
 const cards = [card("a", "Redis"), card("b", "Postgres"), card("c", "Redis", "Queues"), card("d", "Queues")];
 // A pass of three cards; index 3 is the end card.
-const at = (index: number, side: Side = "front"): Pass => ({ order: ["a", "b", "c"], index, side });
+const at = (index: number, side: Side = "front", page = 0): Pass => ({ order: ["a", "b", "c"], index, side, page });
 
 // A seeded generator, so every run shuffles the same way.
 function mulberry32(seed: number): Rng {
@@ -85,7 +89,12 @@ describe("poolFor", () => {
 describe("deal", () => {
   it("deals a shuffled pass of the pool at index 0, front up", () => {
     const pool = ["a", "b", "c", "d", "e"];
-    expect(deal(pool, mulberry32(4))).toEqual({ order: shuffle(pool, mulberry32(4)), index: 0, side: "front" });
+    expect(deal(pool, mulberry32(4))).toEqual({
+      order: shuffle(pool, mulberry32(4)),
+      index: 0,
+      side: "front",
+      page: 0,
+    });
   });
 
   it("puts keep first and shuffles the rest", () => {
@@ -196,5 +205,41 @@ describe("reselect", () => {
 
   it("deals afresh from the end card", () => {
     expect(reselect(at(3), ["a", "b", "c"], mulberry32(15))).toEqual(deal(["a", "b", "c"], mulberry32(15)));
+  });
+});
+
+describe("pages", () => {
+  it("nextPage turns to the next page of the back, up to the card's last page", () => {
+    expect(nextPage(at(1, "back"), 3)).toEqual(at(1, "back", 1));
+    expect(nextPage(at(1, "back", 1), 3)).toEqual(at(1, "back", 2));
+    const last = at(1, "back", 2);
+    expect(nextPage(last, 3)).toBe(last);
+  });
+
+  it("prevPage turns back a page, not past the first", () => {
+    expect(prevPage(at(1, "back", 2))).toEqual(at(1, "back", 1));
+    const first = at(1, "back");
+    expect(prevPage(first)).toBe(first);
+  });
+
+  it("neither turns a page on the front or on the end card", () => {
+    const front = at(1);
+    expect(nextPage(front, 3)).toBe(front);
+    expect(prevPage(front)).toBe(front);
+    const end = at(3);
+    expect(nextPage(end, 3)).toBe(end);
+  });
+
+  it("flip turns to the front from any page, and the next flip opens the back on page 1", () => {
+    expect(flip(at(1, "back", 2))).toEqual(at(1));
+    expect(flip(at(1))).toEqual(at(1, "back"));
+  });
+
+  it("next, prev, a deal, a reshuffle and a reselect start on page 1", () => {
+    expect(next(at(1, "back", 2)).page).toBe(0);
+    expect(prev(at(1, "back", 2)).page).toBe(0);
+    expect(deal(["a", "b"], mulberry32(1)).page).toBe(0);
+    expect(reshuffle(at(1, "back", 2), ["a", "b", "c"], mulberry32(1)).page).toBe(0);
+    expect(reselect(at(1, "back", 2), ["a", "b", "c"], mulberry32(1))).toMatchObject({ side: "back", page: 0 });
   });
 });

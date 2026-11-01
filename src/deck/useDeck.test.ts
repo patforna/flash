@@ -4,6 +4,8 @@
 // - [x] next is the card after this one, "end" after the last card and null on the end card; prev the card before
 // - [x] goPrev goes back a card; from the end card to the last card
 // - [x] flip turns the card over; landing on any card shows its front
+// - [x] pages: the card's page count and the page shown; nextPage and prevPage turn them on the back; flip turns to the
+//       front from any page; landing on another card shows page 1; the end card has one page
 // - [x] goNext on the end card reshuffles, never starting with the last card seen
 // - [x] reshuffle deals a new pass, never starting with the card on screen
 // - [x] the first render deals a pass of the stored selection
@@ -22,13 +24,15 @@ import type { DeckView, Rng } from "./types";
 import { useDeck } from "./useDeck";
 
 const card = (id: string, ...topics: string[]): Card => ({ id, topics, questionHtml: id, answerPages: [id] });
+// Card c runs over three pages.
+const paged = (c: Card): Card => (c.id === "c" ? { ...c, answerPages: ["c1", "c2", "c3"] } : c);
 const deck: Deck = {
   version: "v1",
   topics: ["Redis", "Postgres", "Queues"],
   cards: [
     card("a", "Redis"),
     card("b", "Postgres"),
-    card("c", "Redis", "Queues"),
+    paged(card("c", "Redis", "Queues")),
     card("d", "Queues"),
     card("e", "Postgres"),
   ],
@@ -238,5 +242,53 @@ describe("useDeck without an injected storage", () => {
     expect(result.current).toMatchObject({ position: 1, total: 5 });
     act(() => result.current.toggleTopic("Redis"));
     expect(result.current.selected).toEqual(new Set(["Redis"]));
+  });
+});
+
+describe("pages", () => {
+  // Walks to card c, which has three pages.
+  function onC(result: { current: DeckView }) {
+    for (let n = 0; n < 6 && (result.current.current === "end" || result.current.current.id !== "c"); n++) {
+      act(() => result.current.goNext());
+    }
+    expect(result.current.current).toMatchObject({ id: "c" });
+  }
+
+  it("counts the card's pages and shows page 1, the front up", () => {
+    const { result } = setup();
+    onC(result);
+    expect([result.current.pages, result.current.page, result.current.side]).toEqual([3, 0, "front"]);
+  });
+
+  it("turns the pages of the back with nextPage and prevPage, within the card", () => {
+    const { result } = setup();
+    onC(result);
+    act(() => result.current.flip());
+    act(() => result.current.nextPage());
+    expect([result.current.side, result.current.page]).toEqual(["back", 1]);
+    act(() => result.current.nextPage());
+    act(() => result.current.nextPage());
+    expect(result.current.page).toBe(2);
+    act(() => result.current.prevPage());
+    expect(result.current.page).toBe(1);
+  });
+
+  it("flips to the front from any page, and lands on another card's page 1", () => {
+    const { result } = setup();
+    onC(result);
+    act(() => result.current.flip());
+    act(() => result.current.nextPage());
+    act(() => result.current.flip());
+    expect([result.current.side, result.current.page]).toEqual(["front", 0]);
+    act(() => result.current.flip());
+    act(() => result.current.nextPage());
+    act(() => result.current.goNext());
+    expect([result.current.page, result.current.pages, result.current.side]).toEqual([0, 1, "front"]);
+  });
+
+  it("gives the end card one page", () => {
+    const { result } = setup();
+    for (let n = 0; n < 5; n++) act(() => result.current.goNext());
+    expect([result.current.current, result.current.pages, result.current.page]).toEqual(["end", 1, 0]);
   });
 });

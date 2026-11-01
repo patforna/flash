@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import type { Deck } from "../../shared/types";
-import { atEnd, deal, flip, next, poolFor, prev, reselect, reshuffle } from "./deck";
+import { atEnd, deal, flip, next, nextPage, poolFor, prev, prevPage, reselect, reshuffle } from "./deck";
 import { loadSelection, saveSelection, toggle } from "./selection";
 import type { DeckView, Pass, Rng } from "./types";
 
@@ -46,8 +46,13 @@ export function useDeck(
       selected,
       pass: reselect(s.pass, poolFor(s.deck.cards, selected), rng),
     });
+    // How many pages the card on top has: one for the end card.
+    const pagesOf = (s: State) =>
+      s.deck.cards.find((c) => c.id === s.pass.order[s.pass.index])?.answerPages.length ?? 1;
     return {
       flip: () => move((s) => flip(s.pass)),
+      nextPage: () => move((s) => nextPage(s.pass, pagesOf(s))),
+      prevPage: () => move((s) => prevPage(s.pass)),
       goNext: () => move((s) => (atEnd(s.pass) ? again(s) : next(s.pass))),
       goPrev: () => move((s) => prev(s.pass)),
       reshuffle: () => move(again),
@@ -56,11 +61,14 @@ export function useDeck(
     };
   }, [rng]);
   const at = (i: number) => state.deck.cards.find((c) => c.id === pass.order[i]) ?? null;
+  const current = at(pass.index);
   return {
     prev: at(pass.index - 1),
-    current: at(pass.index) ?? "end",
+    current: current ?? "end",
     next: atEnd(pass) ? null : (at(pass.index + 1) ?? "end"),
     side: pass.side,
+    page: pass.page,
+    pages: current?.answerPages.length ?? 1,
     position: pass.index + 1,
     total: pass.order.length,
     selected,

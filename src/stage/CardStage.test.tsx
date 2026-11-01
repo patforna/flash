@@ -49,6 +49,7 @@ interface Pass {
   order: Card[];
   index: number;
   side: Side;
+  page: number;
 }
 
 // A pass as useDeck gives it: every move lands front up; past the last card, the end card, whose next reshuffles.
@@ -61,8 +62,13 @@ interface ReaderProps {
 }
 
 function Reader({ calls, onFullscreen, onMove, start, held }: ReaderProps) {
-  const [pass, setPass] = useState<Pass>({ order: ["a", "b", "c", "d"].map(card), index: start, side: "front" });
-  const { order, index, side } = pass;
+  const [pass, setPass] = useState<Pass>({
+    order: ["a", "b", "c", "d"].map(card),
+    index: start,
+    side: "front",
+    page: 0,
+  });
+  const { order, index, side, page } = pass;
   const n = order.length;
   const move = (name: string, to: (p: Pass) => Pass) => () => {
     calls.push(name);
@@ -74,21 +80,30 @@ function Reader({ calls, onFullscreen, onMove, start, held }: ReaderProps) {
     current: order[index] ?? "end",
     next: order[index + 1] ?? (index === n - 1 ? "end" : null),
     side,
+    page,
+    pages: order[index]?.answerPages.length ?? 1,
     position: index + 1,
     total: n,
     selected: new Set(),
-    flip: move("flip", (p) => ({ ...p, side: p.side === "front" ? "back" : "front" })),
+    flip: move("flip", (p) => ({ ...p, side: p.side === "front" ? "back" : "front", page: 0 })),
+    nextPage: move("nextPage", (p) =>
+      p.side === "back" && p.page + 1 < (p.order[p.index]?.answerPages.length ?? 1) ? { ...p, page: p.page + 1 } : p,
+    ),
+    prevPage: move("prevPage", (p) => (p.side === "back" && p.page > 0 ? { ...p, page: p.page - 1 } : p)),
     goNext: move("goNext", (p) =>
-      p.index === n ? { order: rotate(p.order), index: 0, side: "front" } : { ...p, index: p.index + 1, side: "front" },
+      p.index === n
+        ? { order: rotate(p.order), index: 0, side: "front", page: 0 }
+        : { ...p, index: p.index + 1, side: "front", page: 0 },
     ),
     // On a pass's first card it changes nothing, and keeps the state, so React skips the render.
-    goPrev: move("goPrev", (p) => (p.index > 0 ? { ...p, index: p.index - 1, side: "front" } : p)),
-    reshuffle: move("reshuffle", (p) => ({ order: rotate(p.order), index: 0, side: "front" })),
+    goPrev: move("goPrev", (p) => (p.index > 0 ? { ...p, index: p.index - 1, side: "front", page: 0 } : p)),
+    reshuffle: move("reshuffle", (p) => ({ order: rotate(p.order), index: 0, side: "front", page: 0 })),
     // A topic change that keeps the card on screen: a new pass with it first, on the same side.
     toggleTopic: move("toggleTopic", (p) => ({
       order: [p.order[p.index] ?? card("x"), card("y"), card("z")],
       index: 0,
       side: p.side,
+      page: 0,
     })),
     clearTopics: move("clearTopics", (p) => p),
   };
@@ -363,10 +378,14 @@ describe("dealing", () => {
           current: card("a"),
           next: card("b"),
           side: "front",
+          page: 0,
+          pages: 1,
           position: 1,
           total: 2,
           selected: new Set(),
           flip: () => {},
+          nextPage: () => {},
+          prevPage: () => {},
           goNext: () => {},
           goPrev: () => {},
           reshuffle: () => {},
