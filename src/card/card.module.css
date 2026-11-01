@@ -32,8 +32,9 @@
 }
 
 /* A face is a sheet of paper: radius, grain and its own shadow, so the shadow turns with the card. The type steps
-   are set here; useFit picks one per face (data-fit). */
-.face {
+   are set here; useFit picks one per front, and one per page of the back (data-fit on the page). */
+.face,
+.page {
   --q-size: 30;
   --q-line: 36;
   --size: 26;
@@ -49,15 +50,15 @@
   font-family: var(--font-hand);
 }
 
-.face[data-fit="1"] {
+[data-fit="1"] {
   --q-size: 27;
   --q-line: 32;
   --size: 23;
   --pitch: 27;
 }
 
-.face[data-fit="2"],
-.face[data-fit="scroll"] {
+[data-fit="2"],
+[data-fit="scroll"] {
   --q-size: 24;
   --q-line: 29;
   --size: 21;
@@ -132,9 +133,34 @@
 }
 
 /* Back: the answer in pen under the red rule, each line on a blue rule. The rule pitch follows the fit step, so the
-   writing stays on the lines. */
+   writing stays on the lines. The answer's pages lie on top of one another; only the one on show is seen, and a
+   change of page is a short cross-fade (opacity alone), never the card's turn. */
 .back {
   transform: rotateX(180deg);
+}
+
+.page {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transition: opacity 120ms ease-out;
+}
+
+.page[data-current] {
+  opacity: 1;
+}
+
+/* The pages' count, "2/3", in pencil in the foot's corner: only a card with pages has it, and it keeps clear of the
+   answer, whose box ends 30 units up. */
+.count {
+  position: absolute;
+  right: calc(22 * var(--u));
+  bottom: calc(8 * var(--u));
+  font-size: calc(17 * var(--u));
+  line-height: 1;
+  font-weight: 500;
+  color: var(--ink-pencil);
+  opacity: 0.8;
 }
 
 /* --rule-baseline: where the baseline falls in a line box, so where each rule is drawn. Caveat's ascent and descent
@@ -293,7 +319,7 @@
 
 /* The last resort (a real card never gets here: the fit test fails the build): the answer scrolls, fading out over
    its last line and a half; the end padding lets the final line scroll clear of the fade. */
-.face[data-fit="scroll"] .answer {
+[data-fit="scroll"] .answer {
   padding-bottom: calc(1.5 * var(--pitch) * var(--u));
   overflow-y: auto;
   overscroll-behavior: contain;
@@ -418,9 +444,10 @@ button.message:focus-visible {
   color: var(--rule-red);
 }
 
-/* Blank paper until the face is fitted, and while the card on top turns over or is dealt: near 90° a turning card is
-   almost edge-on, and a dealt card fades in, so the next card's writing would show through. */
-.flipper > :not([data-fit]) > *,
+/* Blank paper until the front, or a page, is fitted, and while the card on top turns over or is dealt: near 90° a
+   turning card is almost edge-on, and a dealt card fades in, so the next card's writing would show through. */
+.front:not([data-fit]) > *,
+.page:not([data-fit]) > *,
 :is([data-flipping], [data-dealing]) [data-role="next"] .face > * {
   visibility: hidden;
 }
@@ -441,5 +468,9 @@ button.message:focus-visible {
 
   .flipper[data-side="front"] > .back {
     opacity: 0;
+  }
+
+  .page {
+    transition: none;
   }
 }

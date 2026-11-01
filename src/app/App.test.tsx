@@ -11,7 +11,8 @@
 // [x] colours by the topic's declared index: the rows' dots, and the chip's dots for the selected topics
 // [x] the controls show at launch and stay on the end card
 // [x] the end card closes the pass
-// [x] a live region says where you are: "Card 1 of 3", the end card's text
+// [x] a live region says where you are: "Card 1 of 3", "Card 2 of 3, page 2 of 2" on a later page, the end card's text
+// [x] a card with pages: the turn button reads "Next page", a tap turns the page, the last page's tap shows the front
 // [x] …and, before there is a deck, what the loading and error cards say; the same region once the deck arrives
 // [x] haptics as next or previous is decided, on a reshuffle, the end card's reshuffle and a row toggle; never on a
 //     flip
@@ -37,7 +38,7 @@ const deck: Deck = {
       id: "why-cache-postgres",
       topics: ["Postgres", "Redis"],
       questionHtml: "Why cache Postgres?",
-      answerPages: ["<p>Fewer reads.</p>"],
+      answerPages: ["<p>Fewer reads.</p>", "<p>And fewer writes to the primary.</p>"],
     },
     { id: "why-queue", topics: ["Queues"], questionHtml: "Why queue work?", answerPages: ["<p>To smooth peaks.</p>"] },
   ],
@@ -236,6 +237,26 @@ describe("reading", () => {
 
     expect([question(layer("current")), side(layer("current"))]).toEqual(["What is Redis?", "front"]);
     expect([question(layer("next")), side(layer("next"))]).toEqual(["Why cache Postgres?", "front"]);
+  });
+
+  test("on a card with pages a tap turns the page, the last page's tap turns to the front, the live region counting", async () => {
+    await reading();
+    await goNext();
+    const live = () => document.querySelector("[aria-live]")?.textContent;
+    expect(question(layer("current"))).toBe("Why cache Postgres?");
+
+    fireEvent.click(screen.getByRole("button", { name: "Show answer" }));
+    expect(side(layer("current"))).toBe("back");
+    expect(layer("current").querySelector("[data-current]")?.textContent).toBe("Fewer reads.");
+    expect(live()).toBe("Card 2 of 3");
+
+    fireEvent.click(screen.getByRole("button", { name: "Next page" }));
+    expect(layer("current").querySelector("[data-current]")?.textContent).toBe("And fewer writes to the primary.");
+    expect(live()).toBe("Card 2 of 3, page 2 of 2");
+
+    fireEvent.click(screen.getByRole("button", { name: "Show question" }));
+    expect(side(layer("current"))).toBe("front");
+    expect(live()).toBe("Card 2 of 3");
   });
 
   test("turning the card over shows its back; the card underneath stays front up", async () => {

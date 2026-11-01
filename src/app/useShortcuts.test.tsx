@@ -1,6 +1,6 @@
 // To do:
-// [x] Space, Enter, ↑, ↓, j and k flip; →, l and PageDown next; ←, h and PageUp previous; s reshuffles; f fullscreen;
-//     t topics
+// [x] Space, Enter, ↓ and j flip; ↑ and k go back a page; →, l and PageDown next; ←, h and PageUp previous;
+//     s reshuffles; f fullscreen; t topics
 // [x] in the topic drawer (a dialog) only t fires
 // [x] a handled key doesn't scroll
 // [x] nothing fires with Alt, Ctrl or Meta, while typing (input, textarea, contenteditable), or on auto-repeat
@@ -11,7 +11,15 @@ import { describe, expect, test, vi } from "vitest";
 import { useShortcuts } from "./useShortcuts";
 
 function setup() {
-  const h = { flip: vi.fn(), next: vi.fn(), prev: vi.fn(), reshuffle: vi.fn(), fullscreen: vi.fn(), topics: vi.fn() };
+  const h = {
+    flip: vi.fn(),
+    pageBack: vi.fn(),
+    next: vi.fn(),
+    prev: vi.fn(),
+    reshuffle: vi.fn(),
+    fullscreen: vi.fn(),
+    topics: vi.fn(),
+  };
   const view = renderHook(() => useShortcuts(h));
   return { h, ...view };
 }
@@ -22,10 +30,10 @@ describe("useShortcuts", () => {
   test.each<[string, Action]>([
     [" ", "flip"],
     ["Enter", "flip"],
-    ["ArrowUp", "flip"],
+    ["ArrowUp", "pageBack"],
     ["ArrowDown", "flip"],
     ["j", "flip"],
-    ["k", "flip"],
+    ["k", "pageBack"],
     ["ArrowRight", "next"],
     ["l", "next"],
     ["PageDown", "next"],
@@ -116,6 +124,7 @@ describe("useShortcuts", () => {
       reshuffle: vi.fn(),
       fullscreen: vi.fn(),
       topics: vi.fn(),
+      pageBack: vi.fn(),
     });
     const first = handlers();
     const second = handlers();

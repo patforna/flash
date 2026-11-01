@@ -2,6 +2,7 @@ import { useEffect } from "react";
 
 interface Handlers {
   flip(): void;
+  pageBack(): void; // ↑ and k: the page before on a paged back, else a flip (the stage decides)
   next(): void;
   prev(): void;
   reshuffle(): void;
@@ -13,10 +14,10 @@ interface Handlers {
 const KEYS: Record<string, keyof Handlers> = {
   " ": "flip",
   Enter: "flip",
-  ArrowUp: "flip",
+  ArrowUp: "pageBack",
   ArrowDown: "flip",
   j: "flip",
-  k: "flip",
+  k: "pageBack",
   ArrowRight: "next",
   l: "next",
   PageDown: "next",

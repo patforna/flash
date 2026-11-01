@@ -23,9 +23,13 @@ export interface CardStageProps {
 const ROLES = ["next", "current", "prev"] as const;
 
 const keyOf = (card: Card | "end") => (card === "end" ? "end" : card.id);
-// What a tap does, for the button that does it: the end card has no back, and a tap deals the next pass.
-const turnLabel = (view: DeckView) =>
-  view.current === "end" ? "Shuffle again" : view.side === "front" ? "Show answer" : "Show question";
+// What a tap does, for the button that does it: the end card has no back, and a tap deals the next pass; a back with
+// pages left turns the page.
+const turnLabel = (view: DeckView) => {
+  if (view.current === "end") return "Shuffle again";
+  if (view.side === "front") return "Show answer";
+  return view.page < view.pages ? "Next page" : "Show question";
+};
 const reducedMotion = () => matchMedia("(prefers-reduced-motion: reduce)").matches;
 // A CSS time in ms, whichever unit it is written in: the build's minifier turns 260ms into .26s.
 const ms = (time: string) => Number.parseFloat(time) * (/ms\s*$/.test(time) ? 1 : 1000) || 0;
@@ -78,6 +82,8 @@ export function CardStage({ view, renderCard, onFullscreen, onTopics, onMove, de
 
   useShortcuts({
     flip: swipe.tap,
+    // On the back, a step back: the page before, or from page 1 the question; on the front, the turn to the answer.
+    pageBack: () => (view.side === "back" ? view.pageBack() : swipe.tap()),
     next: () => swipe.commit("next"),
     prev: () => swipe.commit("prev"),
     reshuffle: swipe.reshuffle,

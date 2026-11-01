@@ -168,7 +168,12 @@ function Reader({ deck, live }: { deck: Deck; live: HTMLElement | null }) {
           card === "end" ? (
             <EndCard key="end" total={view.total} />
           ) : (
-            <CardView key={card.id} card={card} side={role === "current" ? view.side : "front"} />
+            <CardView
+              key={card.id}
+              card={card}
+              side={role === "current" ? view.side : "front"}
+              page={role === "current" ? view.page - 1 : 0}
+            />
           )
         }
         onFullscreen={toggleFullscreen}
@@ -188,9 +193,13 @@ function ticked<A extends unknown[]>(change: (...args: A) => void): (...args: A)
   };
 }
 
-// "Card 7 of 16", or what the end card says. The cards remount on every move, so they can't announce it themselves.
+// "Card 7 of 16", with ", page 2 of 3" from the second page of a paged answer on, or what the end card says. The cards
+// remount on every move, so they can't announce it themselves.
 function whereYouAre(view: DeckView): string {
-  if (view.current !== "end") return `Card ${view.position} of ${view.total}`;
+  if (view.current !== "end") {
+    const page = view.side === "back" && view.page > 1 ? `, page ${view.page} of ${view.pages}` : "";
+    return `Card ${view.position} of ${view.total}${page}`;
+  }
   const { title, hint } = endCardText(view.total);
   return `${title} ${hint}`;
 }

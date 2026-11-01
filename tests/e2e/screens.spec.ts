@@ -77,7 +77,7 @@ test.describe("the Pixel 11", () => {
     await open(page);
     await goTo(page, /shard key/);
     await turnOver(page);
-    await expect(flipper(page).locator("> :nth-child(2)")).toHaveAttribute("data-fit", "2");
+    await expect(flipper(page).locator("> :nth-child(2) > [data-current]")).toHaveAttribute("data-fit", "2");
     await expect(page).toHaveScreenshot("back-step-2.png");
   });
 

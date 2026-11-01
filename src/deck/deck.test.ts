@@ -14,6 +14,9 @@
 // - [x] next: one forward, front up; past the last card the end card; a no-op on the end card
 // - [x] prev: one back, front up; a no-op at 0; from the end card the last card
 // - [x] flip toggles the side; a no-op on the end card (it has no back)
+// - [x] flip on the back of a card with pages turns to the next page, and from the last page to the front, page 1
+// - [x] pageBack goes back a page, and from page 1 to the front; a no-op on the front
+// - [x] next, prev and a deal land on page 1
 // - [x] reshuffle: a new pass of the pool that never starts with the current card
 // - [x] reshuffle: on the end card, never starts with the last card
 // - [x] reselect: the current card, if still in the pool, first and on the same side
@@ -21,13 +24,13 @@
 
 import { describe, expect, it } from "vitest";
 import type { Card } from "../../shared/types";
-import { deal, flip, next, poolFor, prev, reselect, reshuffle, shuffle } from "./deck";
+import { deal, flip, next, pageBack, poolFor, prev, reselect, reshuffle, shuffle } from "./deck";
 import type { Pass, Rng, Side } from "./types";
 
 const card = (id: string, ...topics: string[]): Card => ({ id, topics, questionHtml: id, answerPages: [id] });
 const cards = [card("a", "Redis"), card("b", "Postgres"), card("c", "Redis", "Queues"), card("d", "Queues")];
 // A pass of three cards; index 3 is the end card.
-const at = (index: number, side: Side = "front"): Pass => ({ order: ["a", "b", "c"], index, side });
+const at = (index: number, side: Side = "front", page = 0): Pass => ({ order: ["a", "b", "c"], index, side, page });
 
 // A seeded generator, so every run shuffles the same way.
 function mulberry32(seed: number): Rng {
@@ -85,7 +88,12 @@ describe("poolFor", () => {
 describe("deal", () => {
   it("deals a shuffled pass of the pool at index 0, front up", () => {
     const pool = ["a", "b", "c", "d", "e"];
-    expect(deal(pool, mulberry32(4))).toEqual({ order: shuffle(pool, mulberry32(4)), index: 0, side: "front" });
+    expect(deal(pool, mulberry32(4))).toEqual({
+      order: shuffle(pool, mulberry32(4)),
+      index: 0,
+      side: "front",
+      page: 0,
+    });
   });
 
   it("puts keep first and shuffles the rest", () => {
@@ -151,14 +159,37 @@ describe("prev", () => {
 });
 
 describe("flip", () => {
-  it("turns the card over and back", () => {
-    expect(flip(at(1))).toEqual(at(1, "back"));
-    expect(flip(at(1, "back"))).toEqual(at(1));
+  it("toggles the side of a card with one page", () => {
+    expect(flip(at(1), 1)).toEqual(at(1, "back"));
+    expect(flip(at(1, "back"), 1)).toEqual(at(1));
   });
 
-  it("does nothing on the end card, which has no back", () => {
+  it("on a card with pages turns to the next page, and from the last page to the front, page 1", () => {
+    expect(flip(at(1), 3)).toEqual(at(1, "back", 0));
+    expect(flip(at(1, "back", 0), 3)).toEqual(at(1, "back", 1));
+    expect(flip(at(1, "back", 1), 3)).toEqual(at(1, "back", 2));
+    expect(flip(at(1, "back", 2), 3)).toEqual(at(1, "front", 0));
+  });
+
+  it("is a no-op on the end card", () => {
     const end = at(3);
-    expect(flip(end)).toBe(end);
+    expect(flip(end, 1)).toBe(end);
+  });
+});
+
+describe("pageBack", () => {
+  it("goes back a page on the back, from page 1 to the front, and is a no-op on the front", () => {
+    expect(pageBack(at(1, "back", 2))).toEqual(at(1, "back", 1));
+    expect(pageBack(at(1, "back", 0))).toEqual(at(1));
+    const front = at(1);
+    expect(pageBack(front)).toBe(front);
+  });
+});
+
+describe("next and prev land on page 1", () => {
+  it("resets the page with the side", () => {
+    expect(next(at(1, "back", 2))).toEqual(at(2));
+    expect(prev(at(1, "back", 2))).toEqual(at(0));
   });
 });
 

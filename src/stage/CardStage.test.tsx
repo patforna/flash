@@ -14,10 +14,12 @@
 // [x] buttons: "Show answer" / "Show question", "Previous" and "Next", which go as a swipe does
 // [x] the buttons stay put, so focus never falls to the page: "Previous" is aria-disabled on a first card; on the end
 //     card the third reads "Shuffle again"
+// [x] pages: the button reads "Next page" with pages left and "Show question" on the last; ↑ steps back on the back
+//     (the engine turns page 1 to the front) and flips on the front; a page change never sets data-flipping
 // [x] shortcuts: → and ← go as a swipe does, Space flips, s reshuffles, f calls onFullscreen; s goes by the card a move
 //     in flight lands on; neither Space nor s touches a card under a thumb
 // (Styles aren't computed here: happy-dom gets no CSS modules. The feel check covers them in Chromium.)
-import { act, fireEvent, render, screen } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { StrictMode, useState } from "react";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import type { Card } from "../../shared/types";
@@ -49,6 +51,7 @@ interface Pass {
   order: Card[];
   index: number;
   side: Side;
+  page: number;
 }
 
 // A pass as useDeck gives it: every move lands front up; past the last card, the end card, whose next reshuffles.
@@ -61,7 +64,12 @@ interface ReaderProps {
 }
 
 function Reader({ calls, onFullscreen, onMove, start, held }: ReaderProps) {
-  const [pass, setPass] = useState<Pass>({ order: ["a", "b", "c", "d"].map(card), index: start, side: "front" });
+  const [pass, setPass] = useState<Pass>({
+    order: ["a", "b", "c", "d"].map(card),
+    index: start,
+    side: "front",
+    page: 0,
+  });
   const { order, index, side } = pass;
   const n = order.length;
   const move = (name: string, to: (p: Pass) => Pass) => () => {
@@ -74,21 +82,27 @@ function Reader({ calls, onFullscreen, onMove, start, held }: ReaderProps) {
     current: order[index] ?? "end",
     next: order[index + 1] ?? (index === n - 1 ? "end" : null),
     side,
+    page: 1,
+    pages: 1,
     position: index + 1,
     total: n,
     selected: new Set(),
     flip: move("flip", (p) => ({ ...p, side: p.side === "front" ? "back" : "front" })),
+    pageBack: move("pageBack", (p) => p),
     goNext: move("goNext", (p) =>
-      p.index === n ? { order: rotate(p.order), index: 0, side: "front" } : { ...p, index: p.index + 1, side: "front" },
+      p.index === n
+        ? { order: rotate(p.order), index: 0, side: "front", page: 0 }
+        : { ...p, index: p.index + 1, side: "front", page: 0 },
     ),
     // On a pass's first card it changes nothing, and keeps the state, so React skips the render.
-    goPrev: move("goPrev", (p) => (p.index > 0 ? { ...p, index: p.index - 1, side: "front" } : p)),
-    reshuffle: move("reshuffle", (p) => ({ order: rotate(p.order), index: 0, side: "front" })),
+    goPrev: move("goPrev", (p) => (p.index > 0 ? { ...p, index: p.index - 1, side: "front", page: 0 } : p)),
+    reshuffle: move("reshuffle", (p) => ({ order: rotate(p.order), index: 0, side: "front", page: 0 })),
     // A topic change that keeps the card on screen: a new pass with it first, on the same side.
     toggleTopic: move("toggleTopic", (p) => ({
       order: [p.order[p.index] ?? card("x"), card("y"), card("z")],
       index: 0,
       side: p.side,
+      page: 0,
     })),
     clearTopics: move("clearTopics", (p) => p),
   };
@@ -363,10 +377,13 @@ describe("dealing", () => {
           current: card("a"),
           next: card("b"),
           side: "front",
+          page: 1,
+          pages: 1,
           position: 1,
           total: 2,
           selected: new Set(),
           flip: () => {},
+          pageBack: () => {},
           goNext: () => {},
           goPrev: () => {},
           reshuffle: () => {},
@@ -518,5 +535,73 @@ describe("shortcuts", () => {
     expect(layer("current").textContent).toBe("a?");
     expect(layer("current").querySelector("[data-side]")?.getAttribute("data-side")).toBe("front");
     finger.up();
+  });
+});
+
+describe("pages", () => {
+  // A card on its back, on page `page` of 3.
+  function paged(page: number, side: "front" | "back" = "back") {
+    const flip = vi.fn();
+    const pageBack = vi.fn();
+    const view: DeckView = {
+      prev: null,
+      current: card("a"),
+      next: card("b"),
+      side,
+      page,
+      pages: 3,
+      position: 1,
+      total: 2,
+      selected: new Set(),
+      flip,
+      pageBack,
+      goNext: () => {},
+      goPrev: () => {},
+      reshuffle: () => {},
+      toggleTopic: () => {},
+      clearTopics: () => {},
+    };
+    const render_ = (v: DeckView) => (
+      <CardStage
+        view={v}
+        renderCard={(c) => <div key={c === "end" ? "end" : c.id} data-side={v.side} />}
+        onFullscreen={() => {}}
+        onTopics={() => {}}
+        onMove={() => {}}
+      />
+    );
+    const utils = render(render_(view));
+    return { flip, pageBack, view, rerender: (v: Partial<DeckView>) => utils.rerender(render_({ ...view, ...v })) };
+  }
+
+  test('the turn button reads "Next page" with pages left, "Show question" on the last page', () => {
+    paged(1);
+    expect(screen.getByRole("button", { name: "Next page" })).toBeTruthy();
+    cleanup();
+    paged(3);
+    expect(screen.getByRole("button", { name: "Show question" })).toBeTruthy();
+  });
+
+  test("↑ and k step back on the back, and turn the card over on the front", () => {
+    const { flip, pageBack } = paged(2);
+    fireEvent.keyDown(document.body, { key: "ArrowUp" });
+    expect(pageBack).toHaveBeenCalledTimes(1);
+    expect(flip).not.toHaveBeenCalled();
+    cleanup();
+    const first = paged(1);
+    fireEvent.keyDown(document.body, { key: "k" });
+    expect(first.pageBack).toHaveBeenCalledTimes(1);
+    expect(first.flip).not.toHaveBeenCalled();
+    cleanup();
+    const front = paged(1, "front");
+    fireEvent.keyDown(document.body, { key: "ArrowUp" });
+    expect(front.flip).toHaveBeenCalledTimes(1);
+    expect(front.pageBack).not.toHaveBeenCalled();
+  });
+
+  test("a page change never sets data-flipping: it is a cross-fade, not the turn", () => {
+    const { rerender } = paged(1);
+    rerender({ page: 2 });
+    expect(document.querySelector("[data-flipping]")).toBeNull();
   });
 });

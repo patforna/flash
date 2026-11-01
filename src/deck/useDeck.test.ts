@@ -4,6 +4,8 @@
 // - [x] next is the card after this one, "end" after the last card and null on the end card; prev the card before
 // - [x] goPrev goes back a card; from the end card to the last card
 // - [x] flip turns the card over; landing on any card shows its front
+// - [x] on a card with pages, flip walks the pages and then turns to the front; pageBack goes back one; the view
+//       says the page and how many there are
 // - [x] goNext on the end card reshuffles, never starting with the last card seen
 // - [x] reshuffle deals a new pass, never starting with the card on screen
 // - [x] the first render deals a pass of the stored selection
@@ -21,7 +23,12 @@ import type { Card, Deck } from "../../shared/types";
 import type { DeckView, Rng } from "./types";
 import { useDeck } from "./useDeck";
 
-const card = (id: string, ...topics: string[]): Card => ({ id, topics, questionHtml: id, answerPages: [id] });
+const card = (id: string, ...topics: string[]): Card => ({
+  id,
+  topics,
+  questionHtml: id,
+  answerPages: id === "c" ? [`${id} 1`, `${id} 2`, `${id} 3`] : [id],
+});
 const deck: Deck = {
   version: "v1",
   topics: ["Redis", "Postgres", "Queues"],
@@ -72,6 +79,29 @@ describe("useDeck", () => {
     expect(result.current).toMatchObject({ prev: null, side: "front", position: 1, total: 5 });
     expect(result.current.selected).toEqual(new Set());
     expect(deck.cards).toContain(result.current.current);
+  });
+
+  it("walks a card's pages with flip, then turns to the front; pageBack goes back one; the view counts them", () => {
+    const { result } = setup();
+    // c is the card with three pages: walk to it.
+    while (result.current.current === "end" || result.current.current.id !== "c") act(() => result.current.goNext());
+    expect(result.current).toMatchObject({ side: "front", page: 1, pages: 3 });
+
+    act(() => result.current.flip());
+    expect(result.current).toMatchObject({ side: "back", page: 1, pages: 3 });
+    act(() => result.current.flip());
+    expect(result.current).toMatchObject({ side: "back", page: 2 });
+    act(() => result.current.pageBack());
+    expect(result.current).toMatchObject({ side: "back", page: 1 });
+    act(() => result.current.flip());
+    act(() => result.current.flip());
+    expect(result.current).toMatchObject({ side: "back", page: 3 });
+    act(() => result.current.flip());
+    expect(result.current).toMatchObject({ side: "front", page: 1 });
+
+    // A card with one page: flip is the plain turn, and pages is 1.
+    act(() => result.current.goNext());
+    expect(result.current.pages).toBe(1);
   });
 
   it("walks the pass with goNext, every card once, then the end card", () => {
