@@ -14,7 +14,7 @@ export function MessageCard({ title, hint, tone = "pencil", onTap }: MessageCard
     <div className={styles.frame}>
       <Face
         type={onTap ? "button" : undefined}
-        className={`${styles.face} ${styles.message}`}
+        className={`${styles.face} ${styles.paper} ${styles.message}`}
         data-tone={tone}
         onClick={onTap}
       >

@@ -15,7 +15,7 @@ export function EndCard({ total }: EndCardProps) {
   const { title, hint } = endCardText(total);
   return (
     <div className={styles.frame}>
-      <div className={`${styles.face} ${styles.end}`}>
+      <div className={`${styles.face} ${styles.paper} ${styles.end}`}>
         {/* Two strokes of a chisel-tipped highlighter: the nib is held at one angle, so the short stroke runs
             thinner than the long one, and the ink darkens where they cross. */}
         <svg className={styles.tick} viewBox="0 0 122 96" aria-hidden="true">

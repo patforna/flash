@@ -11,6 +11,12 @@
   --u: calc(100cqh / 360);
 }
 
+/* The back of a card with more than one page: a vertical drag turns the pages, so the browser gets no pan to claim
+   (it would take the pointer from the gesture). */
+.frame[data-paged] {
+  touch-action: none;
+}
+
 /* The flip turns the card top over bottom; nothing here may flatten the 3D context: no overflow, opacity, filter, clip
    or mask. Its perspective is the frame's, its direct parent (one on the stage would reach only the stage's children),
    and only while it turns: at rest a perspective has Chromium draw the card through a projection, which at the Pixel's
@@ -31,33 +37,38 @@
   perspective: 1400px;
 }
 
-/* A face is a sheet of paper: radius, grain and its own shadow, so the shadow turns with the card. The type steps
-   are set here; useFit picks one per face (data-fit). */
+/* A face is one side of the card in the flip's 3D context. The front is a sheet of paper itself; the back holds one
+   sheet per page of the answer. */
 .face {
+  position: absolute;
+  inset: 0;
+  isolation: isolate;
+  backface-visibility: hidden;
+}
+
+/* Paper: radius, grain and its own shadow, so the shadow turns with the card. The type steps are set here; useFit
+   picks one per sheet (data-fit). */
+.paper {
   --q-size: 30;
   --q-line: 36;
   --size: 26;
   --pitch: 30;
-  position: absolute;
-  inset: 0;
-  isolation: isolate;
   border-radius: calc(6 * var(--u));
   background: var(--paper);
   box-shadow: inset 0 0 0 1px var(--paper-edge);
-  backface-visibility: hidden;
   color: var(--ink-marker);
   font-family: var(--font-hand);
 }
 
-.face[data-fit="1"] {
+.paper[data-fit="1"] {
   --q-size: 27;
   --q-line: 32;
   --size: 23;
   --pitch: 27;
 }
 
-.face[data-fit="2"],
-.face[data-fit="scroll"] {
+.paper[data-fit="2"],
+.paper[data-fit="scroll"] {
   --q-size: 24;
   --q-line: 29;
   --size: 21;
@@ -65,7 +76,7 @@
 }
 
 /* A long soft shadow under the card; pressing it (the stage's lift carries data-pressed) darkens it. */
-.face::before {
+.paper::before {
   content: "";
   position: absolute;
   inset: 0;
@@ -79,12 +90,12 @@
   transition: opacity 120ms ease-out;
 }
 
-[data-pressed] .face::before {
+[data-pressed] .paper::before {
   opacity: 1;
 }
 
 /* The grain lies over the writing too, so ink and paper share one texture. */
-.face::after {
+.paper::after {
   content: "";
   position: absolute;
   inset: 0;
@@ -97,7 +108,7 @@
    pitch of its type step, the front's at the base pitch (78u to 318u, as the back's at step 0), so the card reads as
    one index card whichever way up it lies. */
 .front,
-.back {
+.sheet {
   --head-rule:
     linear-gradient(var(--rule-red), var(--rule-red)) calc(20 * var(--u)) calc(48 * var(--u)) / calc(560 * var(--u))
     calc(2 * var(--u)) no-repeat;
@@ -132,9 +143,37 @@
 }
 
 /* Back: the answer in pen under the red rule, each line on a blue rule. The rule pitch follows the fit step, so the
-   writing stays on the lines. */
+   writing stays on the lines. The back itself is no paper: its sheets are. */
 .back {
   transform: rotateX(180deg);
+}
+
+/* The pages of the back are sheets clipped behind one another: the page shown in place, the next 12 units lower, so
+   a strip of it peeks out under the foot (the whole sign that there is more), the page before 12 units higher,
+   peeking at the head, further pages hidden. A vertical drag moves them (the gesture writes their transforms
+   inline, and clears them). */
+.sheet {
+  --peek: calc(12 * var(--u));
+  position: absolute;
+  inset: 0;
+}
+
+.sheet[data-pos="current"] {
+  z-index: 2;
+}
+
+.sheet[data-pos="next"] {
+  z-index: 1;
+  transform: translateY(var(--peek));
+}
+
+.sheet[data-pos="prev"] {
+  z-index: 1;
+  transform: translateY(calc(-1 * var(--peek)));
+}
+
+.sheet[data-pos="away"] {
+  visibility: hidden;
 }
 
 /* --rule-baseline: where the baseline falls in a line box, so where each rule is drawn. Caveat's ascent and descent
@@ -293,7 +332,7 @@
 
 /* The last resort (a real card never gets here: the fit test fails the build): the answer scrolls, fading out over
    its last line and a half; the end padding lets the final line scroll clear of the fade. */
-.face[data-fit="scroll"] .answer {
+.paper[data-fit="scroll"] .answer {
   padding-bottom: calc(1.5 * var(--pitch) * var(--u));
   overflow-y: auto;
   overscroll-behavior: contain;
@@ -418,10 +457,11 @@ button.message:focus-visible {
   color: var(--rule-red);
 }
 
-/* Blank paper until the face is fitted, and while the card on top turns over or is dealt: near 90° a turning card is
-   almost edge-on, and a dealt card fades in, so the next card's writing would show through. */
-.flipper > :not([data-fit]) > *,
-:is([data-flipping], [data-dealing]) [data-role="next"] .face > * {
+/* Blank paper until a face or a sheet is fitted, and while the card on top turns over or is dealt: near 90° a turning
+   card is almost edge-on, and a dealt card fades in, so the next card's writing would show through. */
+.front:not([data-fit]) > *,
+.sheet:not([data-fit]) > *,
+:is([data-flipping], [data-dealing]) [data-role="next"] :is(.front, .sheet) > * {
   visibility: hidden;
 }
 

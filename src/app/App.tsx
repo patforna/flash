@@ -168,7 +168,12 @@ function Reader({ deck, live }: { deck: Deck; live: HTMLElement | null }) {
           card === "end" ? (
             <EndCard key="end" total={view.total} />
           ) : (
-            <CardView key={card.id} card={card} side={role === "current" ? view.side : "front"} />
+            <CardView
+              key={card.id}
+              card={card}
+              side={role === "current" ? view.side : "front"}
+              page={role === "current" ? view.page : 0}
+            />
           )
         }
         onFullscreen={toggleFullscreen}
