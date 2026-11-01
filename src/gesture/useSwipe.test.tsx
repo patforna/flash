@@ -37,6 +37,13 @@
 //     settling from the top card's place to its own
 // [x] a horizontal drag finishes a running flip
 // [x] no getCoalescedEvents (an insecure context): the move's own sample
+// [x] pages: on the back of a card with pages, a vertical drag moves the page's sheet with the finger from the first
+//     pixel past the slop, the next sheet rising from where it peeks (or the one before coming down); let go past 28 %
+//     of the height, or flung, the page turns: onPage as it is decided, the sheets flying on (fill forwards), then
+//     onPageCommit, the fling cancelled and nothing left inline, the sheet that was shown settling into its peek; let go
+//     short of that, the sheets spring back on the cancel timing and onPage is not called; at the last page a drag up
+//     gives, rubber-banded; page(dir) turns from rest on commitEase; reduced motion cross-fades in place; without
+//     pages a vertical drag puts the card back as it did
 import { act, cleanup, render } from "@testing-library/react";
 import { Profiler, useRef, useState } from "react";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
@@ -62,47 +69,78 @@ interface StageProps {
   options: SwipeOptions;
   prev: boolean;
   next: boolean;
+  pages: number; // sheets on the back of the card on top; 0 for a card without pages (or its front)
   held: { swipe?: Swipe };
 }
 
-function Stage({ options, prev, next, held }: StageProps) {
+// Where a sheet lies against the page shown, as CardView lays them out.
+const posOf = (n: number, page: number) =>
+  n === page ? "current" : n === page + 1 ? "next" : n === page - 1 ? "prev" : "away";
+
+function Stage({ options, prev, next, pages, held }: StageProps) {
   const stage = useRef<HTMLDivElement>(null);
   const [commits, setCommits] = useState(0);
+  const [page, setPage] = useState(0);
+  const find = (selector: string) => stage.current?.querySelector<HTMLElement>(selector) ?? null;
   held.swipe = useSwipe(stage, {
     ...options,
     layers: () => {
-      const find = (role: string) => stage.current?.querySelector<HTMLElement>(`[data-role="${role}"]`) ?? null;
-      const current = find("current");
-      return current && { current, next: next ? find("next") : null, prev: prev ? find("prev") : null };
+      const current = find('[data-role="current"]');
+      return (
+        current && {
+          current,
+          next: next ? find('[data-role="next"]') : null,
+          prev: prev ? find('[data-role="prev"]') : null,
+        }
+      );
+    },
+    pages: () => {
+      const current = find('[data-pos="current"]');
+      return pages > 0 && current
+        ? { current, next: find('[data-pos="next"]'), prev: find('[data-pos="prev"]') }
+        : null;
     },
     onCommit: (dir) => {
       options.onCommit(dir);
       setCommits((n) => n + 1);
     },
+    onPageCommit: (dir) => {
+      options.onPageCommit(dir);
+      setPage((p) => p + (dir === "next" ? 1 : -1));
+    },
   });
   return (
     <div ref={stage} data-testid="stage">
       {(["next", "current", "prev"] as const).map((role) => (
-        <div key={`${role}-${commits}`} data-role={role} />
+        <div key={`${role}-${commits}`} data-role={role}>
+          {role === "current" &&
+            Array.from({ length: pages }, (_, n) => <div key={n} data-pos={posOf(n, page)} data-sheet={n} />)}
+        </div>
       ))}
     </div>
   );
 }
 
-// Without `next`, there is no card under the one on top: it is the end card.
-function setup(overrides: Partial<SwipeOptions> = {}, { prev = true, next = true } = {}) {
+// Without `next`, there is no card under the one on top: it is the end card. With `pages`, the card on top shows the
+// back of a card with that many pages, on page 1.
+function setup(overrides: Partial<SwipeOptions> = {}, { prev = true, next = true, pages = 0 } = {}) {
   const animations: FakeAnimation[] = [];
   const onTap = vi.fn();
   const onReshuffle = vi.fn();
   const onDecide = vi.fn();
   const onCommit = vi.fn();
+  const onPage = vi.fn();
+  const onPageCommit = vi.fn();
   const options: SwipeOptions = {
     layers: () => null,
+    pages: () => null,
     can: () => ({ prev: true, next: true }),
     onTap,
     onReshuffle,
     onDecide,
     onCommit,
+    onPage,
+    onPageCommit,
     reducedMotion: () => false,
     animate: (el, keyframes, opts) => {
       const animation = new FakeAnimation(el, keyframes, opts);
@@ -115,7 +153,7 @@ function setup(overrides: Partial<SwipeOptions> = {}, { prev = true, next = true
   const held: { swipe?: Swipe } = {};
   const view = render(
     <Profiler id="stage" onRender={() => renders++}>
-      <Stage options={options} prev={prev} next={next} held={held} />
+      <Stage options={options} prev={prev} next={next} pages={pages} held={held} />
     </Profiler>,
   );
   const stage = view.getByTestId("stage");
@@ -128,7 +166,26 @@ function setup(overrides: Partial<SwipeOptions> = {}, { prev = true, next = true
     if (!held.swipe) throw new Error("not rendered");
     return held.swipe;
   };
-  return { stage, layer, animations, onTap, onReshuffle, onDecide, onCommit, renders: () => renders, swipe };
+  // The sheet of page n (0-based) of the card on top.
+  const sheet = (n: number) => {
+    const el = stage.querySelector<HTMLElement>(`[data-sheet="${n}"]`);
+    if (!el) throw new Error(`no sheet ${n}`);
+    return el;
+  };
+  return {
+    stage,
+    layer,
+    sheet,
+    animations,
+    onTap,
+    onReshuffle,
+    onDecide,
+    onCommit,
+    onPage,
+    onPageCommit,
+    renders: () => renders,
+    swipe,
+  };
 }
 
 describe("taps", () => {
@@ -1172,5 +1229,149 @@ describe("a flip still turning", () => {
     act(() => swipe().commit(dir));
     expect(turning.finish).toHaveBeenCalledOnce();
     expect(animations).not.toEqual([]);
+  });
+});
+
+// The pages of a back: the card is 360 px tall, so a sheet peeks 12 px (12 of 360 card units), 28 % is 100.8 px, and
+// a sheet is gone 12 px past the card's edge, at ±372 px.
+describe("pages", () => {
+  // Finishing settles `finished` a microtask later, and the commit follows it.
+  const finish = (animations: FakeAnimation[]) =>
+    act(async () => {
+      for (const a of animations) a.finish();
+    });
+
+  test("a vertical drag on a paged back moves the sheet with the finger past the slop, the next sheet rising from its peek", () => {
+    const { stage, layer, sheet, renders } = setup({}, { pages: 3 });
+    const before = renders();
+    const finger = press(stage, layer("current"), 700, 200);
+    finger.move(702, 150);
+    expect(sheet(0).style.transform).toBe("translateY(-50px)");
+    expect(sheet(1).style.transform).toBe("translateY(10.3333px)");
+    finger.move(702, 20);
+    expect(sheet(0).style.transform).toBe("translateY(-180px)");
+    expect(sheet(1).style.transform).toBe("translateY(6px)");
+    expect(layer("current").style.transform, "the card itself stays").toBe("");
+    expect(renders()).toBe(before);
+  });
+
+  test("let go past 28 % of the height, the page turns: onPage now, the sheets fly on, then onPageCommit and nothing inline", async () => {
+    const { stage, layer, sheet, animations, onPage, onPageCommit, onDecide } = setup({}, { pages: 3 });
+    const finger = press(stage, layer("current"), 700, 200);
+    finger.move(700, 80);
+    const [first, second] = [sheet(0), sheet(1)];
+    finger.up();
+    expect(onPage).toHaveBeenCalledWith("next");
+    expect(onDecide).not.toHaveBeenCalled();
+    expect(onPageCommit).not.toHaveBeenCalled();
+    expect(animations.map((a) => [a.el === first, a.el === second, a.keyframes, a.options.fill])).toEqual([
+      [true, false, [{ transform: "translateY(-120px)" }, { transform: "translateY(-372px)" }], "forwards"],
+      [false, true, [{ transform: "translateY(8px)" }, { transform: "translateY(0px)" }], "forwards"],
+    ]);
+
+    await finish(animations.slice(0, 2));
+
+    expect(onPageCommit).toHaveBeenCalledWith("next");
+    expect(animations.slice(0, 2).map((a) => a.playState)).toEqual(["idle", "idle"]);
+    expect([inline(first).transform, inline(second).transform]).toEqual(["", ""]);
+    // The sheet that was shown is now the one before, and settles from where it flew into its peek at the head.
+    expect(first.dataset.pos).toBe("prev");
+    expect(animations[2]?.el).toBe(first);
+    expect(animations[2]?.keyframes).toEqual([{ transform: "translateY(-372px)" }, { transform: "translateY(-12px)" }]);
+    expect(animations[2]?.options.duration).toBe(260);
+  });
+
+  test("a drag down from a later page brings the page before down into place", async () => {
+    const { stage, layer, sheet, animations, onPage, onPageCommit, swipe } = setup({}, { pages: 3 });
+    act(() => swipe().page("next"));
+    await finish(animations.splice(0));
+    expect(onPageCommit).toHaveBeenCalledWith("next");
+    animations.splice(0);
+
+    const finger = press(stage, layer("current"), 700, 100);
+    finger.move(700, 190);
+    expect(sheet(1).style.transform).toBe("translateY(90px)");
+    expect(sheet(0).style.transform).toBe("translateY(-9px)");
+    finger.move(700, 220);
+    finger.up();
+    expect(onPage).toHaveBeenLastCalledWith("prev");
+    expect(animations[0]?.keyframes).toEqual([{ transform: "translateY(120px)" }, { transform: "translateY(372px)" }]);
+  });
+
+  test("let go short of the threshold, the sheets spring back on the cancel timing, and no page is turned", () => {
+    const { stage, layer, sheet, animations, onPage } = setup({}, { pages: 3 });
+    const finger = press(stage, layer("current"), 700, 200);
+    finger.move(700, 150, 300);
+    finger.up(100);
+    expect(onPage).not.toHaveBeenCalled();
+    expect(animations.map((a) => [a.el === sheet(0), a.el === sheet(1), a.keyframes, a.options])).toEqual([
+      [
+        true,
+        false,
+        [{ transform: "translateY(-50px)" }, { transform: "translateY(0px)" }],
+        { duration: 260, easing: "cubic-bezier(0.3, 1.25, 0.5, 1)" },
+      ],
+      [
+        false,
+        true,
+        [{ transform: "translateY(10.3333px)" }, { transform: "translateY(12px)" }],
+        { duration: 260, easing: "cubic-bezier(0.3, 1.25, 0.5, 1)" },
+      ],
+    ]);
+    expect([inline(sheet(0)).transform, inline(sheet(1)).transform]).toEqual(["", ""]);
+  });
+
+  test("on the last page a drag up gives, rubber-banded, and springs back", async () => {
+    const { stage, layer, sheet, animations, onPage, swipe } = setup({}, { pages: 2 });
+    act(() => swipe().page("next"));
+    await finish(animations.splice(0));
+    animations.splice(0);
+    const finger = press(stage, layer("current"), 700, 200);
+    finger.move(700, 150);
+    expect(sheet(1).style.transform).toBe("translateY(-20.4651px)");
+    finger.move(700, 20);
+    finger.up();
+    expect(onPage).toHaveBeenCalledTimes(1);
+    expect(animations[0]?.keyframes[1]).toEqual({ transform: "translateY(0px)" });
+  });
+
+  test("page(dir) turns from rest on the commit easing: onPage, the turn, onPageCommit", async () => {
+    const { sheet, animations, onPage, onPageCommit, swipe } = setup({}, { pages: 3 });
+    act(() => swipe().page("next"));
+    expect(onPage).toHaveBeenCalledWith("next");
+    expect(animations[0]?.el).toBe(sheet(0));
+    expect(animations[0]?.keyframes).toEqual([{ transform: "translateY(0px)" }, { transform: "translateY(-372px)" }]);
+    expect(animations[0]?.options).toMatchObject({ easing: "cubic-bezier(0.2, 0.7, 0.3, 1)", fill: "forwards" });
+    expect(animations[1]?.keyframes).toEqual([{ transform: "translateY(12px)" }, { transform: "translateY(0px)" }]);
+    await finish(animations.slice(0, 2));
+    expect(onPageCommit).toHaveBeenCalledWith("next");
+  });
+
+  test("page(dir) does nothing without a page that way, nor while a pointer is down", () => {
+    const { stage, layer, onPage, swipe } = setup({}, { pages: 3 });
+    act(() => swipe().page("prev"));
+    expect(onPage).not.toHaveBeenCalled();
+    press(stage, layer("current"), 700, 200);
+    act(() => swipe().page("next"));
+    expect(onPage).not.toHaveBeenCalled();
+  });
+
+  test("under reduced motion the next sheet is written in place and the page shown fades out", () => {
+    const { stage, layer, sheet, animations } = setup({ reducedMotion: () => true }, { pages: 3 });
+    const finger = press(stage, layer("current"), 700, 200);
+    finger.move(700, 80);
+    finger.up();
+    expect(sheet(1).style.transform).toBe("translateY(0px)");
+    expect(animations.map((a) => [a.el === sheet(0), a.keyframes])).toEqual([[true, [{ opacity: 1 }, { opacity: 0 }]]]);
+  });
+
+  test("without pages a vertical drag puts the card back, as it did", () => {
+    const { stage, layer, onPage, animations } = setup();
+    const finger = press(stage, layer("current"), 700, 200);
+    finger.move(700, 100);
+    finger.up();
+    expect(onPage).not.toHaveBeenCalled();
+    expect(animations).toEqual([]);
+    expect(inline(layer("current")).transform).toBe("");
   });
 });

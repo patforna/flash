@@ -2,11 +2,12 @@
 // [x] classify: under the slop pending; horizontal when |dx| ≥ 1.2·|dy| as the slop is crossed, otherwise vertical
 // [x] isTap: moved under 10 px and lasted at most 350 ms
 // [x] velocityX: least squares over the last 80 ms; older samples ignored; one sample gives 0
+// [x] velocityY: the same along y
 // [x] release: 28 % of the width, or 0.45 px/ms with |dx| ≥ 24; a fling against the drag cancels; only what `can` allows
 // [x] rubberBand: 0 gives 0, monotonic, always below 80
 // [x] unband: the pull that gives an offset, for a card caught on its way back
 import { describe, expect, test } from "vitest";
-import { classify, isTap, release, rubberBand, unband, velocityX } from "./gesture";
+import { classify, isTap, release, rubberBand, unband, velocityX, velocityY } from "./gesture";
 
 const at = (x: number, y: number, t = 0) => ({ t, x, y });
 
@@ -59,6 +60,16 @@ describe("velocityX", () => {
     const flick = [at(0, 0, 0), at(300, 0, 10)];
     const settle = [at(300, 0, 100), at(310, 0, 140), at(320, 0, 180)];
     expect(velocityX([...flick, ...settle])).toBeCloseTo(0.25);
+  });
+});
+
+describe("velocityY", () => {
+  test("a steady drag up gives its speed in px/ms, ignoring x", () => {
+    expect(velocityY([at(0, 700, 0), at(5, 680, 8), at(10, 660, 16), at(15, 640, 24)])).toBeCloseTo(-2.5);
+  });
+
+  test("one sample gives no velocity", () => {
+    expect(velocityY([at(100, 100, 0)])).toBe(0);
   });
 });
 

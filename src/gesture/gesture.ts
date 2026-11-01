@@ -29,20 +29,24 @@ export function isTap(start: Sample, end: Sample): boolean {
   return withinSlop(start, end) && end.t - start.t <= GESTURE.tapMaxMs;
 }
 
-export function velocityX(samples: readonly Sample[]): number {
+// The speed along one axis over the last 80 ms, in px/ms: the least-squares slope of the recent samples.
+function velocity(samples: readonly Sample[], axis: "x" | "y"): number {
   const end = samples.at(-1)?.t ?? 0;
   const recent = samples.filter((s) => s.t >= end - GESTURE.velocityWindowMs);
   const n = recent.length;
   const meanT = recent.reduce((sum, s) => sum + s.t, 0) / n;
-  const meanX = recent.reduce((sum, s) => sum + s.x, 0) / n;
+  const mean = recent.reduce((sum, s) => sum + s[axis], 0) / n;
   let covariance = 0;
   let variance = 0;
   for (const s of recent) {
-    covariance += (s.t - meanT) * (s.x - meanX);
+    covariance += (s.t - meanT) * (s[axis] - mean);
     variance += (s.t - meanT) ** 2;
   }
   return variance === 0 ? 0 : covariance / variance;
 }
+
+export const velocityX = (samples: readonly Sample[]): number => velocity(samples, "x");
+export const velocityY = (samples: readonly Sample[]): number => velocity(samples, "y");
 
 export function release(
   dx: number,

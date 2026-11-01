@@ -1,21 +1,30 @@
 import { type RefObject, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { flushSync } from "react-dom";
 import { flingDuration, flingEasing, MOTION } from "../motion/timing";
-import { classify, GESTURE, isTap, release, rubberBand, type Sample, unband, velocityX } from "./gesture";
+import { classify, GESTURE, isTap, release, rubberBand, type Sample, unband, velocityX, velocityY } from "./gesture";
 
 export interface SwipeOptions {
   layers(): { current: HTMLElement; next: HTMLElement | null; prev: HTMLElement | null } | null;
+  // The sheets of the back of the card on top, while it shows a back with more than one page: the page shown, the
+  // next (peeking under the foot) and the one before (peeking at the head); null otherwise, and a vertical drag then
+  // means nothing.
+  pages(): { current: HTMLElement; next: HTMLElement | null; prev: HTMLElement | null } | null;
   can(): { prev: boolean; next: boolean };
   onTap(): void;
   onReshuffle(): void; // once anything in flight has landed, so it goes by the card then on top
   onDecide(dir: "next" | "prev"): void; // as a release, a key or a button commits, before anything flies
   onCommit(dir: "next" | "prev"): void; // after the animation finishes
+  onPage(dir: "next" | "prev"): void; // a page turn decided, before the sheets fly
+  onPageCommit(dir: "next" | "prev"): void; // after the sheets have flown
   reducedMotion(): boolean;
   animate?: (el: Element, k: Keyframe[], o: KeyframeAnimationOptions) => Animation; // injectable
 }
 
 type Dir = "next" | "prev";
 type Layers = NonNullable<ReturnType<SwipeOptions["layers"]>>;
+type Sheets = NonNullable<ReturnType<SwipeOptions["pages"]>>;
+// The sheets a vertical drag moves, and how far a sheet peeks out past the card, in px.
+type Paging = Sheets & { peek: number };
 
 interface Gesture {
   pointer: number;
@@ -31,6 +40,8 @@ interface Gesture {
   // The touch landed on a card still coming back, which it leaves be until it moves it; arrived meanwhile, the card is
   // taken from its place then, the touch's drift not made up in a frame.
   waited: boolean;
+  // A vertical drag on the back of a card with pages: the sheets it moves.
+  paging: Paging | null;
 }
 
 // Animations in flight. A commit's carries its direction; input that lands it early lets a fling's card fly on as a
@@ -42,6 +53,8 @@ interface Run {
   flight?: Flight;
   arrival?: Motion;
   spring?: HTMLElement[];
+  page?: Dir; // a page turn: the sheets fly, then the page changes
+  sheetSpring?: boolean; // the sheets springing back: the next touch lands them rather than catching them
 }
 
 // A card's motion: its keyframes, its timing, and the animation playing them.
@@ -67,6 +80,10 @@ interface Covering {
 
 const FLING_TILT = 10; // degrees, as a flung card leaves
 const IN_PLACE = "translateX(0px) rotate(0deg)"; // the card on top at rest, spelt out for keyframes
+const PEEK = 12 / 360; // how far a sheet peeks out past the card, of its height: card.module.css's --peek
+const peekOf = (card: DOMRect) => card.height * PEEK;
+// Where a sheet rests: in place, or peeking past the foot (the next page) or the head (the one before).
+const sheetAt = (y: number) => `translateY(${fixed(y)}px)`;
 
 const sample = (e: PointerEvent): Sample => ({ t: e.timeStamp, x: e.clientX, y: e.clientY });
 const tilt = (dx: number) => Math.min(GESTURE.tiltMax, Math.max(-GESTURE.tiltMax, dx * GESTURE.tiltPerPx));
@@ -107,6 +124,8 @@ function swipe(stage: RefObject<HTMLElement | null>, options: RefObject<SwipeOpt
   // The card coming back when its move landed early, still on its way into its place, and the card it covers settling
   // into its own; no run of their own, so the next touch leaves them be.
   let arriving: Animation[] = [];
+  // The sheet a page turn has just shown settling into its peek behind the page now shown; the next touch ends it.
+  let tail: Animation[] = [];
   const touched = new Set<HTMLElement>();
 
   const write = (el: HTMLElement, transform: string) => {
@@ -249,8 +268,15 @@ function swipe(stage: RefObject<HTMLElement | null>, options: RefObject<SwipeOpt
     if (running?.flight) flyOn(running.flight);
     for (const animation of running?.animations ?? []) animation.cancel();
     arrived();
+    settled();
     stop();
     clear();
+  }
+
+  // The sheet settling into its peek is there now.
+  function settled() {
+    for (const animation of tail) animation.cancel();
+    tail = [];
   }
 
   // Nothing in flight any more: the stage is idle, and no longer dealing.
@@ -260,11 +286,19 @@ function swipe(stage: RefObject<HTMLElement | null>, options: RefObject<SwipeOpt
     stage.current?.removeAttribute("data-dealing");
   }
 
-  // Whether the cards moved on.
+  // Whether the cards (or the pages) moved on.
   function complete(run: Run): boolean {
     if (running !== run) return false;
     stop();
-    const { dir } = run;
+    const { dir, page } = run;
+    if (page) {
+      settling = run;
+      flushSync(() => options.current.onPageCommit(page));
+      const turned = settling === null;
+      settle();
+      if (turned) settleSheet(page);
+      return turned;
+    }
     if (!dir) {
       clear();
       return false;
@@ -290,6 +324,112 @@ function swipe(stage: RefObject<HTMLElement | null>, options: RefObject<SwipeOpt
   function clear() {
     for (const el of touched) rest(el);
     touched.clear();
+  }
+
+  // The sheet that was shown, now peeking behind the page turned to, settles from where it flew into its peek: it
+  // would otherwise be there in a frame as the page changes.
+  function settleSheet(dir: Dir) {
+    const sheets = options.current.pages();
+    const layer = options.current.layers()?.current;
+    const was = dir === "next" ? sheets?.prev : sheets?.next;
+    if (!was || !layer || options.current.reducedMotion()) return;
+    const rect = place(layer);
+    const peek = peekOf(rect);
+    const sign = dir === "next" ? -1 : 1;
+    const timing = { duration: MOTION.cancelMs, easing: MOTION.cancelEase };
+    const settle = carryOn(
+      was,
+      [{ transform: sheetAt(sign * (rect.height + peek)) }, { transform: sheetAt(sign * peek) }],
+      timing,
+    );
+    tail = [settle];
+    settle.finished.then(
+      () => {
+        if (tail.includes(settle)) tail = [];
+      },
+      () => {},
+    );
+  }
+
+  // A vertical drag on the back of a card with pages: the page's sheet moves with the finger, and the sheet it uncovers
+  // rises from where it peeks (the next page, from under the foot) or comes down (the one before, from the head) into
+  // its place as the drag nears the card's height. Past the last page, or before the first, the sheet gives a little.
+  function followY(g: Gesture, dy: number) {
+    if (!g.paging) return;
+    const { current, next, prev, peek } = g.paging;
+    const target = dy < 0 ? next : prev;
+    const other = dy < 0 ? prev : next;
+    if (other) rest(other);
+    if (!target) return write(current, sheetAt(Math.sign(dy) * rubberBand(Math.abs(dy))));
+    write(current, sheetAt(dy));
+    const progress = Math.min(Math.abs(dy) / g.rect.height, 1);
+    write(target, sheetAt((dy < 0 ? peek : -peek) * (1 - progress)));
+  }
+
+  // A page turn's motion, from a release at dy and vy, or from rest for a key (easing given): the page's sheet flies
+  // past the card's edge, the sheet turned to into its place. Under reduced motion the sheet turned to is put in place
+  // and the page's sheet fades out over it.
+  function turnPage(paging: Paging, rect: DOMRect, dy: number, vy: number, dir: Dir, easing?: string) {
+    const { current, next, prev, peek } = paging;
+    const target = dir === "next" ? next : prev;
+    if (!target) return;
+    const sign = dir === "next" ? -1 : 1;
+    if (options.current.reducedMotion()) {
+      write(target, sheetAt(0));
+      const fade = carryOn(current, [{ opacity: 1 }, { opacity: 0 }], { duration: MOTION.fadeMs, fill: "forwards" });
+      return play({ animations: [fade], dir: null, page: dir });
+    }
+    const to = sign * (rect.height + peek);
+    const remaining = Math.abs(to - dy);
+    const timing = {
+      duration: flingDuration(remaining, vy),
+      easing: easing ?? flingEasing(remaining, vy),
+      fill: "forwards" as const,
+    };
+    const animations = [
+      carryOn(current, [{ transform: current.style.transform || sheetAt(0) }, { transform: sheetAt(to) }], timing),
+      carryOn(
+        target,
+        [{ transform: target.style.transform || sheetAt(-sign * peek) }, { transform: sheetAt(0) }],
+        timing,
+      ),
+    ];
+    play({ animations, dir: null, page: dir });
+  }
+
+  // The sheets a drag moved go back where they rest, on the cancel timing.
+  function springSheets(g: Gesture) {
+    if (!g.paging) return;
+    if (options.current.reducedMotion()) return clear();
+    const { current, next, prev, peek } = g.paging;
+    const timing = { duration: MOTION.cancelMs, easing: MOTION.cancelEase };
+    const animations: Animation[] = [];
+    const spring: HTMLElement[] = [];
+    for (const [el, home] of [
+      [current, sheetAt(0)],
+      [next, sheetAt(peek)],
+      [prev, sheetAt(-peek)],
+    ] as const) {
+      const from = el?.style.transform;
+      if (!el || !from) continue;
+      rest(el);
+      animations.push(carryOn(el, [{ transform: from }, { transform: home }], timing));
+      spring.push(el);
+    }
+    play({ animations, dir: null, spring, sheetSpring: true });
+  }
+
+  // A page turned by a key: from rest, on the commit easing; nothing without a page that way, nor while a pointer is
+  // down, and only once anything in flight has landed.
+  function page(dir: Dir) {
+    if (gesture) return;
+    finishRunning();
+    const layers = options.current.layers();
+    const sheets = options.current.pages();
+    if (!layers || !sheets || !(dir === "next" ? sheets.next : sheets.prev)) return;
+    options.current.onPage(dir);
+    const rect = place(layers.current);
+    turnPage({ ...sheets, peek: peekOf(rect) }, rect, 0, 0, dir, MOTION.commitEase);
   }
 
   // A card that moves on mid-flip would travel edge-on: the flip (the card's [data-side] transition) ends first.
@@ -426,9 +566,10 @@ function swipe(stage: RefObject<HTMLElement | null>, options: RefObject<SwipeOpt
     const onCard =
       rect && start.x >= rect.left && start.x <= rect.right && start.y >= rect.top && start.y <= rect.bottom;
     if (!rect || onButton || !onCard) return finishRunning();
-    // A spring back under the thumb is caught where it is; anything else in flight lands at once.
-    const from = running?.spring ? catchSpring(running, rect) : 0;
+    // A spring back under the thumb is caught where it is (the sheets' is landed); anything else in flight lands at once.
+    const from = running?.spring && !running.sheetSpring ? catchSpring(running, rect) : 0;
     finishRunning();
+    settled();
     const layers = options.current.layers();
     if (!layers) return;
     gesture = {
@@ -441,6 +582,7 @@ function swipe(stage: RefObject<HTMLElement | null>, options: RefObject<SwipeOpt
       from,
       held: { x: 0, risen: 0 },
       waited: arriving.length > 0,
+      paging: null,
     };
     stage.current?.setPointerCapture(e.pointerId);
     // The card is picked up: its lift rises (the stylesheets key off data-pressed), never the layer that drags.
@@ -467,9 +609,17 @@ function swipe(stage: RefObject<HTMLElement | null>, options: RefObject<SwipeOpt
         mark("dragging");
         finishFlip(g.layers.current);
       }
-      // Not a sideways drag after all: whatever followed the finger goes back.
-      if (g.axis === "vertical") return putBack(g);
+      // Not a sideways drag after all: whatever followed the finger goes back, and on the back of a card with pages
+      // (the cards at rest) the drag takes the pages.
+      if (g.axis === "vertical") {
+        putBack(g);
+        const sheets = g.from === 0 ? options.current.pages() : null;
+        if (!sheets) return;
+        g.paging = { ...sheets, peek: peekOf(g.rect) };
+        mark("dragging");
+      }
     }
+    if (g.axis === "vertical") return followY(g, e.clientY - g.start.y);
     const dx = g.from + e.clientX - g.start.x;
     if (g.axis === "horizontal" || (g.axis === "pending" && early(g, e, dx))) follow(g, dx);
   };
@@ -486,8 +636,8 @@ function swipe(stage: RefObject<HTMLElement | null>, options: RefObject<SwipeOpt
     const g = own(e);
     if (!g) return;
     end(g);
-    // A vertical drag was put back as it turned out vertical.
-    if (g.axis === "vertical") return;
+    // A vertical drag was put back as it turned out vertical, unless it took the pages.
+    if (g.axis === "vertical") return g.paging ? releaseY(g, e) : undefined;
     if (g.axis === "pending") {
       putBack(g);
       if (isTap(g.start, sample(e))) options.current.onTap();
@@ -503,12 +653,25 @@ function swipe(stage: RefObject<HTMLElement | null>, options: RefObject<SwipeOpt
     if (decision === "cancel") springBack(g);
   };
 
+  // A vertical drag let go: past 28 % of the card's height or flung, the page turns; else the sheets spring back.
+  const releaseY = (g: Gesture, e: PointerEvent) => {
+    if (!g.paging) return;
+    g.samples.push(sample(e));
+    const dy = e.clientY - g.start.y;
+    const vy = velocityY(g.samples);
+    const decision = release(dy, vy, g.rect.height, { next: g.paging.next !== null, prev: g.paging.prev !== null });
+    if (decision === "cancel") return springSheets(g);
+    options.current.onPage(decision);
+    turnPage(g.paging, g.rect, dy, vy, decision);
+  };
+
   // The browser took the pointer (a scroll, a system gesture): whatever moved goes back.
   const cancel = (e: PointerEvent) => {
     const g = own(e);
     if (!g) return;
     end(g);
     if (g.axis === "horizontal") springBack(g);
+    if (g.axis === "vertical" && g.paging) springSheets(g);
     if (g.axis === "pending") putBack(g);
   };
 
@@ -563,13 +726,19 @@ function swipe(stage: RefObject<HTMLElement | null>, options: RefObject<SwipeOpt
     stage.current?.setAttribute("data-dealing", "");
   }
 
-  return { listen, settle, commit, tap: () => onTop("onTap"), reshuffle: () => onTop("onReshuffle"), deal };
+  return { listen, settle, commit, page, tap: () => onTop("onTap"), reshuffle: () => onTop("onReshuffle"), deal };
 }
 
 export function useSwipe(
   stage: RefObject<HTMLElement | null>,
   o: SwipeOptions,
-): { commit(dir: "next" | "prev"): void; tap(): void; reshuffle(): void; deal(): void } {
+): {
+  commit(dir: "next" | "prev"): void;
+  page(dir: "next" | "prev"): void;
+  tap(): void;
+  reshuffle(): void;
+  deal(): void;
+} {
   const options = useRef(o);
   useLayoutEffect(() => {
     options.current = o;
@@ -581,5 +750,11 @@ export function useSwipe(
   useLayoutEffect(() => {
     machine.settle();
   });
-  return { commit: machine.commit, tap: machine.tap, reshuffle: machine.reshuffle, deal: machine.deal };
+  return {
+    commit: machine.commit,
+    page: machine.page,
+    tap: machine.tap,
+    reshuffle: machine.reshuffle,
+    deal: machine.deal,
+  };
 }
