@@ -209,13 +209,12 @@
   font-weight: 400;
 }
 
-/* Code: the blue highlighter over the same hand (no second face: the mark is enough). An inline adds nothing to its
-   line's height, or the writing would drift off the rules. */
+/* Inline code: the same hand in a second pen, teal ink, and nothing else (the browser's own stylesheet would set it
+   in monospace). */
 .question code,
 .answer :where(:not(pre)) > code {
-  --m: var(--mark-code);
   font-family: inherit;
-  line-height: 0;
+  color: var(--ink-code);
 }
 
 /* A highlighter stroke, in the colour --m: one quick swipe of translucent ink, heavier where the marker was put down
@@ -225,9 +224,7 @@
    to the left, so the top edge is ragged rather than ruled. Broken over two lines it is sliced, not cloned: in
    Chromium a cloned inline turns text-wrap: pretty off for its whole block, which then ends on a lone word. */
 .question strong,
-.answer strong,
-.question code,
-.answer :where(:not(pre)) > code {
+.answer strong {
   --ink: rgb(from var(--m) r g b / 0.92);
   --body: rgb(from var(--m) r g b / 0.42);
   --edge: rgb(from var(--m) r g b / 0.6);

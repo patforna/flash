@@ -64,7 +64,7 @@ Answers use a small part of Markdown; questions only `code` and `**bold**`.
 | `- item` on consecutive lines                 | a list, each item with a pink dash in the margin                         |
 | `1. item` on consecutive lines                | a numbered list, with pink numbers                                       |
 | `**words**`                                   | highlighted                                                              |
-| `` `code` ``                                  | code, inline                                                             |
+| `` `code` ``                                  | code, inline, in a second pen                                            |
 | three backticks on the lines before and after | a block of code, exactly as typed                                        |
 | `->`, `<-` and `<->`                          | →, ← and ↔ (`-->` and `<--` too), except inside code                     |
 | `'`                                           | ’ after a letter or digit (don’t, clients’), else ‘, except inside code  |

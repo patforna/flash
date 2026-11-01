@@ -82,7 +82,7 @@ Run both and open http://localhost:5173. The server reads the deck when it start
 
 Each step of `verify` also runs alone, as `bun run <step>`; `budget` checks the size budgets over `dist/`. `bunx biome check --write .` fixes formatting and import order. The e2e suite serves your deck too, for the fit test: every card must fit both its faces without scrolling.
 
-`CLAUDE.md` is the project brief for [Claude Code](https://claude.com/claude-code), which wrote most of this: every design decision with its reason, the conventions, and the gotchas met on the way. `docs/plan.md` is the spec it was built to; `docs/original-request.md` the brief it started from.
+`CLAUDE.md` is the project brief for [Claude Code](https://claude.com/claude-code), which wrote most of this: every design decision with its reason, the conventions, and the gotchas met on the way. `docs/plan.md` is the spec it was built to.
 
 ## Deploying
 
@@ -114,7 +114,7 @@ server/              Markdown rendering, loading and checking the deck, the API,
 src/                 the app: deck engine, gestures and motion, stage, card, the desk's controls, the topic drawer
 scripts/             cards:check, the size budgets, the icons, the deploy script
 tests/               the fixture deck, the Playwright specs and their screenshots, the conventions test
-docs/                the original request, the plan, the card guide
+docs/                the plan, the card guide
 ```
 
 ## Credits

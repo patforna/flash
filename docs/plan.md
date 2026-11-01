@@ -1,6 +1,6 @@
 # flash v0: the plan
 
-The synthesis of three independent plans (panel of 30 Oct 2026: Codex at `xhigh`, Claude Opus 5.5 and Claude Fable 5.1 at `max`; raw answers and brief archived outside the repository), merged with `/at:synthesize`, plus Patric's later direction: **TypeScript 7 and whatever is state of the art; don't get hung up on openapi-fetch**. Part 1 records how it was merged. Part 2 is the spec the build follows. `docs/original-request.md` wins over both.
+The synthesis of three independent plans (panel of 30 Oct 2026: Codex at `xhigh`, Claude Opus 5.5 and Claude Fable 5.1 at `max`; raw answers and brief archived outside the repository), merged with `/at:synthesize`, plus Patric's later direction: **TypeScript 7 and whatever is state of the art; don't get hung up on openapi-fetch**. Part 1 records how it was merged. Part 2 is the spec the build follows. the brief (kept outside the public repository) wins over both.
 
 ---
 
@@ -313,7 +313,7 @@ flash/
 ├── tests/e2e/                     specs, helpers.ts
 ├── tests/screenshots/             baselines
 ├── tests/conventions.test.ts      e.g. no expression-bodied effects
-└── docs/                          original-request.md, plan.md, cards.md, seed.md
+└── docs/                          plan.md, cards.md, seed.md
 ```
 
 Every test sits beside its module (`x.test.ts`). Server and scripts run under `bun test` (they use `Bun.markdown` and `Bun.serve`); `src/` and `tests/conventions.test.ts` under Vitest with happy-dom; `bun run test` runs both.
@@ -520,13 +520,13 @@ Adapted from `~/github/plant-selection/scripts/deploy-do.sh`.
 - `CLAUDE.md` (future agents): purpose and constraints (reading only, landscape first, KISS/YAGNI, British English, no dead code); every decision here with its one-line reason; conventions (strict TDD; braced effect bodies; `document.fonts.load()`; 44 px; no sideways scroll; transform and opacity only; no React state during drags; the 48 px edge strip); where things are; shipping cards versus code; gotchas (Bun's TOML parser; openapi-typescript and TS 7; the Android back gesture; the hostname is public; Caddy's one-line blocks; the service-worker kill switch); current state.
 - `docs/cards.md` (Patric, and Claude Code editing cards): the format with a complete example; every rule and limit; the markup with examples; how to write a good card; the topic list and how to add or rename one; the check and ship commands; a link to `docs/seed.md`.
 - `docs/seed.md`: how the seed was made from the notes; the stubs not carded; the corrections log (notes line, what it said, what the card says, the source).
-- `docs/original-request.md`: verbatim, later clarifications appended with dates. `docs/plan.md`: this file, frozen.
+- The brief: verbatim, later clarifications appended with dates (kept outside the public repository). `docs/plan.md`: this file, frozen.
 
 ## 15. Seed cards
 
 - Scope: all 157 lines of the source notes.
 - One idea per card: what you could answer aloud in 20–40 s. Two facts share a card when one explains the other.
-- About 65 cards across the 13 topics declared above (Patterns, Case studies, Sharding, Real-time, Edge, Postgres, SQL, Queues, Streams, Redis, Consistency, Concurrency); merge or split within ±5.
+- About 65 cards across the topics declared above (Patterns, Case studies, Sharding, Real-time, Edge, Postgres, SQL, Queues, Streams, Redis, Consistency, Concurrency); merge or split within ±5.
 - Questions: what you would be asked (What, Why, How, When, "Walk through", "Sketch"), never a bare noun; 40–80 characters, at most 100.
 - Answers: the gist first in one line, then up to 4 bullets; highlight at most one or two key facts; 150–350 characters, at most 520 and 12 lines; code lines at most 46; tight lists only (no blank lines between items); numbers with units; British spelling; self-contained.
 - Stubs ("Scaling writes: ...", "Webhooks"): no cards; named in the comment at the top of the file.

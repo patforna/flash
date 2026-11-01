@@ -24,10 +24,10 @@
      where the sticker pink is 2.4:1). */
   --pen-pink: #d02a68;
 
-  /* Highlighters: yellow for bold, the focus ring and the wordmark; blue for code. The card's stylesheet draws them as
-     translucent marker strokes. */
+  /* The highlighter: bold, the focus ring and the wordmark; the card's stylesheet draws it as a translucent marker
+     stroke. Inline code is written with a second pen, teal ink (5.9:1 on paper). */
   --hl: #fff04d;
-  --mark-code: #a9d4ff;
+  --ink-code: #0f6e78;
 
   /* On the desk, chalk (15.4:1): the page's text, the stage's buttons, the controls' tint and the selected rows of the
      topic list; dim chalk for the rows not selected (7.2:1 on the drawer). The drawer's ground is the desk, a shade
