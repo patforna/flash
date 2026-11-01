@@ -1,6 +1,17 @@
 import type { Locator, Page } from "@playwright/test";
 import type { Deck } from "../../shared/types";
-import { announcer, expect, finger, firstCard, flipper, openTopics, settled, test } from "./helpers";
+import {
+  announcer,
+  expect,
+  FIXTURE_URL,
+  finger,
+  firstCard,
+  flipper,
+  openTopics,
+  REAL_DECK_URL,
+  settled,
+  test,
+} from "./helpers";
 
 // The real deck fits the screen. Long answers (docs/plan.md §7 and §8): every card fits both its faces without the
 // last resort (data-fit="scroll"), and every line written on a back sits on a rule. Topics (§3): every row of the
@@ -10,7 +21,7 @@ import { announcer, expect, finger, firstCard, flipper, openTopics, settled, tes
 // Under reduced motion the faces lie flat, unturned (the back fades in over the front), so both are measured in place
 // without turning the card: the layout is the same either way.
 
-test.use({ baseURL: "http://127.0.0.1:4174", reducedMotion: "reduce" });
+test.use({ baseURL: REAL_DECK_URL, reducedMotion: "reduce" });
 
 test.beforeEach(() => {
   test.skip(test.info().project.name !== "pixel11", "the Pixel 11 sizes the card");
@@ -138,7 +149,7 @@ test("every card of the real deck fits both faces without scrolling, each line o
 });
 
 test.describe("the fixture deck, which uses every kind of markup", () => {
-  test.use({ baseURL: "http://127.0.0.1:4173" });
+  test.use({ baseURL: FIXTURE_URL });
 
   test("every line sits on a rule at every fit step, code included", async ({ page }) => {
     const walked = await walk(page);

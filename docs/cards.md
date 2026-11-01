@@ -38,6 +38,7 @@ Do the job in that transaction, then mark it done.
 
 - The question goes in double quotes: write `\"` for a double quote inside it and `\\` for a backslash; apostrophes need nothing.
 - The answer goes between two `'''` lines: everything in between is taken as typed, with no escapes, and the line break after the opening `'''` doesn't count. An answer can't contain `'''`.
+- A line of three or more dashes (`---`) on its own breaks the answer into pages: at most three, each a back of its own under the same rules (lines, length, code width). Most answers are one page; an answer that needs a second is usually two cards.
 - Lines starting with `#` are comments, for the author only: the app never shows them.
 
 ## Rules

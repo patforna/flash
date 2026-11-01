@@ -7,6 +7,11 @@ import type { Deck } from "../../shared/types";
 
 export { expect };
 
+// The two servers' addresses: the fixture deck, and the real deck (playwright.config.ts).
+const PORT = Number(process.env.E2E_PORT ?? 4173);
+export const FIXTURE_URL = `http://127.0.0.1:${PORT}`;
+export const REAL_DECK_URL = `http://127.0.0.1:${PORT + 1}`;
+
 export const test = base.extend({
   page: async ({ page }, use) => {
     await seed(page);

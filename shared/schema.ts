@@ -9,8 +9,9 @@ export const LIMITS = {
   cardTopics: 3,
   questionMin: 1, // a topic alone makes a front
   questionMax: 100,
-  answerMax: 520,
-  answerLines: 11, // what the smallest fit step holds
+  answerMax: 520, // per page
+  answerLines: 11, // per page: what the smallest fit step holds
+  answerPages: 3,
   codeLine: 46,
 } as const;
 
@@ -26,6 +27,11 @@ export const DeckSchema: z.ZodType<Deck> = z.strictObject({
   version: z.string(),
   topics: z.array(z.string()),
   cards: z.array(
-    z.strictObject({ id: z.string(), topics: z.array(z.string()), questionHtml: z.string(), answerHtml: z.string() }),
+    z.strictObject({
+      id: z.string(),
+      topics: z.array(z.string()),
+      questionHtml: z.string(),
+      answerPages: z.array(z.string()),
+    }),
   ),
 });

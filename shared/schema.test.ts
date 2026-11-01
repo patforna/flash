@@ -32,7 +32,7 @@ describe("DeckSchema", () => {
     id: "what-is-redis",
     topics: ["Redis"],
     questionHtml: "What is Redis?",
-    answerHtml: "<p>A store.</p>",
+    answerPages: ["<p>A store.</p>"],
   };
   const deck = { version: "abcdefghijkl", topics: ["Redis"], cards: [wireCard] };
 

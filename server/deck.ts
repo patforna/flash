@@ -96,7 +96,7 @@ function readCard(raw: CardsFile["card"][number], declared: readonly string[] | 
     id: slug(raw.question.trim()),
     topics: raw.topics,
     questionHtml: question.html,
-    answerHtml: answer.html,
+    answerPages: answer.pages,
   };
   return { card, problems: [...question.problems, ...checkCardTopics(raw.topics, declared), ...answer.problems] };
 }
@@ -113,21 +113,49 @@ function readQuestion(question: string) {
   return finish("question", question, renderQuestion(question), problems);
 }
 
+// An answer is one to three pages, split at lines of three or more dashes outside code fences (Markdown's thematic
+// break, which a page otherwise refuses). Each page is checked and rendered as an answer of its own; a page's
+// problems name it when there is more than one.
 function readAnswer(answer: string) {
+  const pages = splitPages(answer);
   const problems: string[] = [];
-  if (answer === "") problems.push("answer is empty");
-  if (answer.length > LIMITS.answerMax)
-    problems.push(`answer is ${answer.length} characters (max ${LIMITS.answerMax})`);
-  const lines = answer.split("\n");
-  if (lines.length > LIMITS.answerLines) problems.push(`answer is ${lines.length} lines (max ${LIMITS.answerLines})`);
+  if (pages.length > LIMITS.answerPages) problems.push(`answer has ${pages.length} pages (max ${LIMITS.answerPages})`);
+  const html: string[] = [];
+  pages.forEach((page, i) => {
+    const field = pages.length > 1 ? `answer page ${i + 1}` : "answer";
+    const read = readPage(field, page.trim());
+    problems.push(...read.problems);
+    html.push(read.html);
+  });
+  return { pages: html, problems };
+}
+
+const PAGE_BREAK = /^ *-{3,} *$/;
+
+function splitPages(answer: string): string[] {
   const { kinds } = readLines(answer);
+  const pages: string[][] = [[]];
+  answer.split("\n").forEach((line, n) => {
+    if (kinds[n] === "text" && PAGE_BREAK.test(line)) pages.push([]);
+    else pages[pages.length - 1]?.push(line);
+  });
+  return pages.map((lines) => lines.join("\n"));
+}
+
+function readPage(field: string, page: string) {
+  const problems: string[] = [];
+  if (page === "") problems.push(`${field} is empty`);
+  if (page.length > LIMITS.answerMax) problems.push(`${field} is ${page.length} characters (max ${LIMITS.answerMax})`);
+  const lines = page.split("\n");
+  if (lines.length > LIMITS.answerLines) problems.push(`${field} is ${lines.length} lines (max ${LIMITS.answerLines})`);
+  const { kinds } = readLines(page);
   lines.forEach((line, n) => {
-    if (line.includes("\t")) problems.push(`answer has a tab on line ${n + 1}`);
+    if (line.includes("\t")) problems.push(`${field} has a tab on line ${n + 1}`);
     if (kinds[n] === "code" && line.length > LIMITS.codeLine) {
-      problems.push(`code on answer line ${n + 1} is ${line.length} characters (max ${LIMITS.codeLine})`);
+      problems.push(`code on ${field} line ${n + 1} is ${line.length} characters (max ${LIMITS.codeLine})`);
     }
   });
-  return finish("answer", answer, renderAnswer(answer), problems);
+  return finish(field, page, renderAnswer(page), problems);
 }
 
 // Adds what the markup and the characters break to a field's problems, and keeps its HTML.

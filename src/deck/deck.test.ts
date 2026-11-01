@@ -24,7 +24,7 @@ import type { Card } from "../../shared/types";
 import { deal, flip, next, poolFor, prev, reselect, reshuffle, shuffle } from "./deck";
 import type { Pass, Rng, Side } from "./types";
 
-const card = (id: string, ...topics: string[]): Card => ({ id, topics, questionHtml: id, answerHtml: id });
+const card = (id: string, ...topics: string[]): Card => ({ id, topics, questionHtml: id, answerPages: [id] });
 const cards = [card("a", "Redis"), card("b", "Postgres"), card("c", "Redis", "Queues"), card("d", "Queues")];
 // A pass of three cards; index 3 is the end card.
 const at = (index: number, side: Side = "front"): Pass => ({ order: ["a", "b", "c"], index, side });

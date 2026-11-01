@@ -52,7 +52,7 @@ answer = '''
 '''
 ```
 
-[docs/cards.md](docs/cards.md) has the format, every rule and how to write a card that fits. `bun run cards:check` lists every problem at once; the server refuses to start on a bad deck, so a broken one never goes live. Keep the file somewhere private (a separate private repository, symlinked in, works well): the address the app is served on is public, whatever `noindex` says.
+A `---` line breaks a long answer into pages, three at most. [docs/cards.md](docs/cards.md) has the format, every rule and how to write a card that fits. `bun run cards:check` lists every problem at once; the server refuses to start on a bad deck, so a broken one never goes live. Keep the file somewhere private (a separate private repository, symlinked in, works well): the address the app is served on is public, whatever `noindex` says.
 
 ## Installing it on the phone
 

@@ -19,6 +19,11 @@ MVCC never changes a row in place: an `UPDATE` writes a new row version and leav
 VACUUM makes that space reusable.
 - It also freezes old transaction ids before they wrap around.
 - Autovacuum runs it in the background: tune it, never turn it off.
+---
+Page two: a `---` line in the source breaks a page (this card has three, the only one in the fixture with more than one).
+- `VACUUM FULL` rewrites the table and takes an exclusive lock: a last resort.
+---
+Page three: watch `n_dead_tup` in `pg_stat_user_tables`, and bloat with `pgstattuple`.
 '''
 
 [[card]]

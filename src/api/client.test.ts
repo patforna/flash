@@ -10,7 +10,12 @@ const deck: Deck = {
   version: "abcdefghijkl",
   topics: ["Redis"],
   cards: [
-    { id: "what-is-redis-for", topics: ["Redis"], questionHtml: "What is Redis for?", answerHtml: "<p>Caching.</p>" },
+    {
+      id: "what-is-redis-for",
+      topics: ["Redis"],
+      questionHtml: "What is Redis for?",
+      answerPages: ["<p>Caching.</p>"],
+    },
   ],
 };
 

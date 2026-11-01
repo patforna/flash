@@ -32,14 +32,14 @@ const deck: Deck = {
   version: "abcdefghijkl",
   topics: ["Redis", "Postgres", "Queues"],
   cards: [
-    { id: "what-is-redis", topics: ["Redis"], questionHtml: "What is Redis?", answerHtml: "<p>A cache.</p>" },
+    { id: "what-is-redis", topics: ["Redis"], questionHtml: "What is Redis?", answerPages: ["<p>A cache.</p>"] },
     {
       id: "why-cache-postgres",
       topics: ["Postgres", "Redis"],
       questionHtml: "Why cache Postgres?",
-      answerHtml: "<p>Fewer reads.</p>",
+      answerPages: ["<p>Fewer reads.</p>"],
     },
-    { id: "why-queue", topics: ["Queues"], questionHtml: "Why queue work?", answerHtml: "<p>To smooth peaks.</p>" },
+    { id: "why-queue", topics: ["Queues"], questionHtml: "Why queue work?", answerPages: ["<p>To smooth peaks.</p>"] },
   ],
 };
 

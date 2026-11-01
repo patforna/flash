@@ -21,7 +21,7 @@ import type { Card, Deck } from "../../shared/types";
 import type { DeckView, Rng } from "./types";
 import { useDeck } from "./useDeck";
 
-const card = (id: string, ...topics: string[]): Card => ({ id, topics, questionHtml: id, answerHtml: id });
+const card = (id: string, ...topics: string[]): Card => ({ id, topics, questionHtml: id, answerPages: [id] });
 const deck: Deck = {
   version: "v1",
   topics: ["Redis", "Postgres", "Queues"],

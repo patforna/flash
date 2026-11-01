@@ -9,6 +9,10 @@ const pixel11 = {
     "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/156.0.0.0 Mobile Safari/537.36",
 };
 
+// The ports: E2E_PORT (4173) serves the fixture deck, the next one the real deck, so parallel checkouts can pick
+// their own. The specs that switch servers read the same variable (tests/e2e/helpers.ts).
+export const PORT = Number(process.env.E2E_PORT ?? 4173);
+
 // The built server (`bun run build` first) on its own port and deck.
 function server(port: number, cards: string) {
   return {
@@ -27,7 +31,7 @@ export default defineConfig({
   },
   use: {
     // Port 4173 serves the fixture deck; the fit spec switches to 4174 (the real deck) with test.use({ baseURL }).
-    baseURL: "http://127.0.0.1:4173",
+    baseURL: `http://127.0.0.1:${PORT}`,
     headless: true,
     locale: "en-GB",
     timezoneId: "Europe/Zurich",
@@ -59,5 +63,5 @@ export default defineConfig({
       dependencies: ["pixel11", "portrait", "laptop"],
     },
   ],
-  webServer: [server(4173, "tests/fixtures/cards.toml"), server(4174, "cards/cards.toml")],
+  webServer: [server(PORT, "tests/fixtures/cards.toml"), server(PORT + 1, "cards/cards.toml")],
 });

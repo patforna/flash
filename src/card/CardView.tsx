@@ -28,7 +28,7 @@ export function CardView({ card, side }: CardViewProps) {
         </div>
         <div ref={back} className={`${styles.face} ${styles.back}`} {...hiddenUnless(side === "back")}>
           {/* biome-ignore lint/security/noDangerouslySetInnerHtml: the server renders the deck's Markdown through an allowlist of tags */}
-          <div className={styles.answer} dangerouslySetInnerHTML={{ __html: card.answerHtml }} />
+          <div className={styles.answer} dangerouslySetInnerHTML={{ __html: card.answerPages[0] ?? "" }} />
         </div>
       </div>
     </div>

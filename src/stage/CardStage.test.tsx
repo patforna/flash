@@ -43,7 +43,7 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
-const card = (id: string): Card => ({ id, topics: ["Redis"], questionHtml: `${id}?`, answerHtml: `${id}.` });
+const card = (id: string): Card => ({ id, topics: ["Redis"], questionHtml: `${id}?`, answerPages: [`${id}.`] });
 
 interface Pass {
   order: Card[];

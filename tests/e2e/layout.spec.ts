@@ -5,12 +5,14 @@ import {
   closeTopics,
   controls,
   expect,
+  FIXTURE_URL,
   finger,
   firstCard,
   fullscreen,
   insets,
   layer,
   openTopics,
+  REAL_DECK_URL,
   revealControls,
   settled,
   test,
@@ -70,8 +72,8 @@ const tooSmall = (buttons: Awaited<ReturnType<typeof shown>>) =>
   buttons.filter(({ width, height }) => width < 44 || height < 44);
 
 for (const [deck, baseURL] of [
-  ["fixture", "http://127.0.0.1:4173"],
-  ["real", "http://127.0.0.1:4174"],
+  ["fixture", FIXTURE_URL],
+  ["real", REAL_DECK_URL],
 ] as const) {
   test(`every visible control is at least 44 × 44 px (${deck} deck)`, async ({ page }) => {
     test.skip(project() === "laptop", "a fine pointer");

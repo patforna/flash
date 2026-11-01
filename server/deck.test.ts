@@ -82,13 +82,13 @@ answer = "Dead tuples."
         id: "what-does-setnx-do",
         topics: ["Redis"],
         questionHtml: "What does <code>SETNX</code> do?",
-        answerHtml: "<p>Sets a key <strong>only if it is absent</strong>.</p>",
+        answerPages: ["<p>Sets a key <strong>only if it is absent</strong>.</p>"],
       },
       {
         id: "why-does-postgres-need-vacuum",
         topics: ["Postgres", "Redis"],
         questionHtml: "Why does Postgres need VACUUM?",
-        answerHtml: "<p>Dead tuples.</p>",
+        answerPages: ["<p>Dead tuples.</p>"],
       },
     ]);
   });
@@ -265,6 +265,44 @@ answer = "Dead tuples."
       'card 3 "which-answer-has-12-lines": answer is 12 lines (max 11)',
       'card 4 "which-answer-has-a-tab": answer has a tab on line 2',
       'card 5 "which-answer-has-a-heading": answer has a heading (a line starting with #, or a line underlined with --- or ===)',
+    ]);
+  });
+
+  test("splits an answer into pages at lines of three or more dashes, each page rendered on its own", () => {
+    const toml = file([card({ answer: "The gist.\n- one\n\n---\n\nPage two, **bold**.\n----\nPage three." })]);
+
+    expect(loadDeck(toml).cards[0]?.answerPages).toEqual([
+      "<p>The gist.</p><ul><li>one</li></ul>",
+      "<p>Page two, <strong>bold</strong>.</p>",
+      "<p>Page three.</p>",
+    ]);
+  });
+
+  test("a card without a page break has one page, as every card had", () => {
+    expect(loadDeck(file([card({ answer: "One page." })])).cards[0]?.answerPages).toEqual(["<p>One page.</p>"]);
+  });
+
+  test("leaves a line of dashes inside a code fence as code", () => {
+    const toml = file([card({ answer: "Before\n```\n---\n```\nAfter" })]);
+
+    expect(loadDeck(toml).cards[0]?.answerPages).toHaveLength(1);
+  });
+
+  test("checks each page as it checks an answer, naming the page, and allows at most 3 pages", () => {
+    const toml = file([
+      card({ question: "Which page is empty?", answer: "Fine.\n---\n\n---\nAlso fine." }),
+      card({ question: "Which page is too long?", answer: `Fine.\n---\n${"word ".repeat(105)}` }),
+      card({ question: "Which has 12 lines on page 2?", answer: `Fine.\n---\n${"x\n".repeat(11)}x` }),
+      card({ question: "Which has four pages?", answer: "1\n---\n2\n---\n3\n---\n4" }),
+      card({ question: "Which has code too wide on page 2?", answer: `Fine.\n---\n\`\`\`\n${"x".repeat(47)}\n\`\`\`` }),
+    ]);
+
+    expect(problemsOf(toml)).toEqual([
+      'card 1 "which-page-is-empty": answer page 2 is empty',
+      'card 2 "which-page-is-too-long": answer page 2 is 524 characters (max 520)',
+      'card 3 "which-has-12-lines-on-page-2": answer page 2 is 12 lines (max 11)',
+      'card 4 "which-has-four-pages": answer has 4 pages (max 3)',
+      'card 5 "which-has-code-too-wide-on-page-2": code on answer page 2 line 2 is 47 characters (max 46)',
     ]);
   });
 

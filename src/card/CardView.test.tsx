@@ -2,7 +2,7 @@
 // [x] the DOM contract: frame > flipper[data-side] > two faces, front then back
 // [x] the hidden face is inert and aria-hidden; the face on show is neither
 // [x] the front: the question, and nothing else
-// [x] the back: the answer, and nothing else (the question is on the front, a tap away)
+// [x] the back: the answer's first page, and nothing else (the question is on the front, a tap away)
 // [x] no live region: the card remounts on every move, so the app announces the position
 // [x] each face carries data-fit once measured
 import { configure, render, within } from "@testing-library/react";
@@ -17,9 +17,10 @@ const vacuum: Card = {
   id: "why-does-postgres-need-vacuum",
   topics: ["Postgres", "Queues"],
   questionHtml: "Why does Postgres need <code>VACUUM</code>?",
-  answerHtml:
+  answerPages: [
     "<p>MVCC never changes a row in place: an <code>UPDATE</code> writes a new row version.<br>VACUUM makes that space reusable.</p>" +
-    "<ul><li>It also freezes old transaction ids.</li><li>Autovacuum runs it in the background.</li></ul>",
+      "<ul><li>It also freezes old transaction ids.</li><li>Autovacuum runs it in the background.</li></ul>",
+  ],
 };
 
 beforeEach(() => {
@@ -65,7 +66,7 @@ describe("CardView", () => {
     expect(Array.from(front.children)).toEqual([question]);
   });
 
-  it("writes the answer on the back, and nothing else: no question, no topics, no count", () => {
+  it("writes the answer's first page on the back, and nothing else: no question, no topics, no count", () => {
     const back = renderFace("back");
     const answer = within(back);
     expect(answer.queryByRole("heading")).toBeNull();
