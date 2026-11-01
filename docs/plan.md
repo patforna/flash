@@ -1,6 +1,6 @@
 # flash v0: the plan
 
-The synthesis of three independent plans (panel of 30 Oct 2026: Codex at `xhigh`, Claude Opus 5.5 and Claude Fable 5.1 at `max`; raw answers and brief archived in `an archive outside the repositorypanel/`), merged with `/at:synthesize`, plus Patric's later direction: **TypeScript 7 and whatever is state of the art; don't get hung up on openapi-fetch**. Part 1 records how it was merged. Part 2 is the spec the build follows. `docs/original-request.md` wins over both.
+The synthesis of three independent plans (panel of 30 Oct 2026: Codex at `xhigh`, Claude Opus 5.5 and Claude Fable 5.1 at `max`; raw answers and brief archived outside the repository), merged with `/at:synthesize`, plus Patric's later direction: **TypeScript 7 and whatever is state of the art; don't get hung up on openapi-fetch**. Part 1 records how it was merged. Part 2 is the spec the build follows. `docs/original-request.md` wins over both.
 
 ---
 
@@ -501,7 +501,7 @@ A failing test first, the simplest change to green, refactor at green, commit at
 
 Adapted from `~/github/plant-selection/scripts/deploy-do.sh`.
 
-- `NAME=flash`, `REGION=fra1`, `SIZE=s-1vcpu-512mb-10gb`, `IMAGE=ubuntu-24-04-x64`, `SSH_KEY=${SSH_KEY:-0}`, `APP=/opt/flash`, `DOMAIN=flash.patforna.com` (A record, TTL 300, through the existing `record`/`dns` functions), service `flash.service` running as user `app`, tag `web-app`, `--enable-monitoring`.
+- `NAME=flash`, `REGION=fra1`, `SIZE=s-1vcpu-512mb-10gb`, `IMAGE=ubuntu-24-04-x64`, `SSH_KEY` (from the environment), `APP=/opt/flash`, `DOMAIN=flash.patforna.com` (A record, TTL 300, through the existing `record`/`dns` functions), service `flash.service` running as user `app`, tag `web-app`, `--enable-monitoring`.
 - Removed from the reference: the `KEY` env file and `?key=` link, `backup` (nothing on the droplet is unique), the bare-IP Caddy block.
 - Subcommands: `up`, `cards`, `link` (prints `https://flash.patforna.com/`), `logs`, `down` (deletes the droplet and its A record).
 - **Gate**: `up` runs `bun install --frozen-lockfile && bun run verify` before touching the droplet. No flag skips it.
@@ -524,7 +524,7 @@ Adapted from `~/github/plant-selection/scripts/deploy-do.sh`.
 
 ## 15. Seed cards
 
-- Scope: all 157 lines of `/Users/patric/Desktop/# System Design Learnings.md`.
+- Scope: all 157 lines of the source notes.
 - One idea per card: what you could answer aloud in 20–40 s. Two facts share a card when one explains the other.
 - About 65 cards across the 13 topics declared above (Patterns, Case studies, Sharding, Real-time, Edge, Postgres, SQL, Queues, Streams, Redis, Consistency, Concurrency); merge or split within ±5.
 - Questions: what you would be asked (What, Why, How, When, "Walk through", "Sketch"), never a bare noun; 40–80 characters, at most 100.

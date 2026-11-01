@@ -6,3 +6,8 @@ test-results/
 playwright-report/
 *.tsbuildinfo
 .DS_Store
+# The deck is private: cards/cards.toml is yours (a symlink to a private repository, or a copy of cards/example.toml).
+cards/cards.toml
+cards/cards.toml.prev
+# The deploy script's settings: copy .env.deploy.example.
+.env.deploy

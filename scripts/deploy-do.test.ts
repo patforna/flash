@@ -4,7 +4,7 @@ import { join } from "node:path";
 // Only what runs without DigitalOcean: never call the script with a subcommand here, as up, cards, logs and down reach
 // the droplet, its DNS record or rsync.
 // To do:
-// [x] with no argument it prints usage naming every subcommand and exits non-zero
+// [x] with no argument it prints usage naming every subcommand and exits non-zero, with or without .env.deploy
 // [x] bash parses it
 // [x] shellcheck finds nothing
 
@@ -20,6 +20,12 @@ test("with no argument it prints usage naming every subcommand and exits non-zer
     expect(out).toContain(`scripts/deploy-do.sh ${subcommand} `);
   }
   expect(exitCode).not.toBe(0);
+});
+
+test("without .env.deploy it says what to set and exits non-zero, before any subcommand", () => {
+  const { exitCode, err } = run(["env", "-u", "DOMAIN", "-u", "SSH_KEY", "DEPLOY_ENV=/nonexistent", script, "link"]);
+  expect(exitCode).not.toBe(0);
+  expect(err).toMatch(/DOMAIN|SSH_KEY/);
 });
 
 test("bash parses it", () => {

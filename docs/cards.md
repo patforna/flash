@@ -1,16 +1,16 @@
 # Writing cards
 
-The deck is one file, `cards/cards.toml`. Edit it here, by hand or with Claude Code, check it, then ship it; the app only reads it.
+The deck is one file, `cards/cards.toml`, which is yours and not in the repository (copy `cards/example.toml` to start). Edit it by hand or with Claude Code, check it, then ship it; the app only reads it.
 
 ## The format
 
 [TOML](https://toml.io): the topics, then one `[[card]]` table per card, each with exactly a `question`, its `topics` and an `answer`.
 
 ````toml
-# flash deck. Edit, run `bun run cards:check`, ship with `scripts/deploy-do.sh cards`. Rules: docs/cards.md.
+# My deck. Edit, run `bun run cards:check`, ship with `scripts/deploy-do.sh cards`. Rules: docs/cards.md.
 topics = ["Redis", "Postgres", "Queues"]
 
-# Corrected: notes line 129 say "LRU eviction by default"; redis.conf: maxmemory-policy noeviction (redis.io/docs/latest/develop/reference/eviction).
+# Source: redis.conf, maxmemory-policy noeviction (redis.io/docs/latest/develop/reference/eviction).
 [[card]]
 question = "What does Redis do by default when memory is full?"
 topics = ["Redis"]
@@ -114,15 +114,13 @@ These don't fail but show exactly as typed: HTML tags such as `<b>`, tables, `~~
 - **The answer** gives the gist first, in one line, then up to 4 bullets. Aim for 150–350 characters. Highlight one or two key facts at most.
 - Tight lists only, with no blank lines between items. Numbers with units. British spelling.
 - **Self-contained**: it makes sense without the notes or any other card.
-- **Corrections** of the source notes go in a `# Corrected:` comment above the card, citing the notes' line and a primary source; anything added beyond the notes in an `# Added:` comment with its source. Never on the card: it's study material, not commentary.
-- **Nothing private**: the address is public (every certificate is logged publicly), even though search engines are told not to index it.
+- **Provenance** goes in TOML comments above the card (where a fact came from, what was corrected against which source), never on the card: it's study material, not commentary.
+- **Nothing private**: the address is public (every certificate is logged publicly), even though search engines are told not to index it. Keep the deck file itself out of a public repository.
 
 ## Topics
 
-The 13 topics, in panel order: Patterns, Case studies, Sharding, Real-time, Edge, Postgres, SQL, Redis, Queues, Streams, Consistency, Concurrency.
-
 - **Colour** follows the position in `topics`, cycling through pink, marigold, mint, sky, lilac, tangerine, teal and lime, so neighbours never share one. Inserting a topic shifts the colours of those after it. Topics 8 apart share a colour, so no card may carry two of them (the check names the card): reorder `topics` until none does.
-- **To add one**, put its label in `topics` where it should appear in the panel, and use it on at least one card. A deck may have more topics than fit in the panel (today's 13 fill its six rows): it then scrolls, its foot fading until you reach the end.
+- **To add one**, put its label in `topics` where it should appear in the list, and use it on at least one card. A deck may have more topics than fit the list: it then scrolls, its foot fading until you reach the end.
 - **To rename one**, change it in `topics` and on every card: search and replace the quoted label, such as `"Real-time"`. The phone forgets a selection whose label disappeared.
 - **To remove one**, take it out of `topics` and off every card; a card left with no topic fails.
 
@@ -142,8 +140,4 @@ card 12 "what-does-redis-do-by-default-when-memory-is-full": answer is 611 chara
 
 The server refuses to start with the same list, so a broken deck never goes live.
 
-`scripts/deploy-do.sh cards` ships the deck alone, never code: it runs the check, stops unless the droplet runs the code this checkout builds (if not, ship the code first with `scripts/deploy-do.sh up`), runs the fit test (every card of the real deck fits without scrolling, and every topic chip comes into full view in the panel), uploads the file, restarts the server and confirms that https://flash.patforna.com/healthz reports the new deck's version, which `bun scripts/check-cards.ts --version cards/cards.toml` prints. Should the server refuse the deck all the same, the last one goes back.
-
-## The seed deck
-
-How the first deck was made from the system design notes, the stubs left out and every correction: [seed.md](seed.md).
+`scripts/deploy-do.sh cards` ships the deck alone, never code: it runs the check, stops unless the droplet runs the code this checkout builds (if not, ship the code first with `scripts/deploy-do.sh up`), runs the fit test (every card of your deck fits without scrolling, and every topic row comes into full view in the list), uploads the file, restarts the server and confirms that `/healthz` on your domain reports the new deck's version, which `bun scripts/check-cards.ts --version cards/cards.toml` prints. Should the server refuse the deck all the same, the last one goes back.

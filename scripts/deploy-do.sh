@@ -1,24 +1,30 @@
 #!/usr/bin/env bash
-# DigitalOcean deployment: the Bun server behind Caddy, HTTPS on flash.patforna.com.
+# DigitalOcean deployment: the Bun server behind Caddy, which gets the certificate for $DOMAIN.
 # Usage: scripts/deploy-do.sh up     run the gate, create the droplet if needed, provision, sync, check, print the link
 #        scripts/deploy-do.sh cards  ship cards/cards.toml alone (checked and fit-tested), restart, check; never code
 #        scripts/deploy-do.sh link   print the link
 #        scripts/deploy-do.sh logs   tail the service log
 #        scripts/deploy-do.sh down   destroy the droplet and its A record
-# Needs: doctl (authenticated), rsync, bun, what `bun run verify` needs (README), and an SSH key registered on DO
-# (SSH_KEY = its DO id).
+# Needs: doctl (authenticated), rsync, bun, what `bun run verify` needs (README), and .env.deploy in the repo root
+# (copy .env.deploy.example): DOMAIN, whose zone DigitalOcean's DNS serves, and SSH_KEY, the DO id of a registered
+# SSH key; NAME, REGION and SIZE optionally.
 set -euo pipefail
 
-NAME=flash
-REGION=fra1
-SIZE=s-1vcpu-512mb-10gb
-IMAGE=ubuntu-24-04-x64
-SSH_KEY=${SSH_KEY:-0}
-APP=/opt/flash
-# patforna.com's DNS is on DigitalOcean; ~/github/system README, "Web apps".
-DOMAIN=flash.patforna.com
-
 root=$(cd "$(dirname "$0")/.." && pwd)
+# The settings file; DEPLOY_ENV names another (the test points it at a missing one).
+env_file=${DEPLOY_ENV:-$root/.env.deploy}
+# shellcheck source=/dev/null
+[[ -f $env_file ]] && source "$env_file"
+: "${DOMAIN:?set DOMAIN in .env.deploy (see .env.deploy.example)}"
+: "${SSH_KEY:?set SSH_KEY in .env.deploy (see .env.deploy.example)}"
+NAME=${NAME:-flash}
+REGION=${REGION:-fra1}
+SIZE=${SIZE:-s-1vcpu-512mb-10gb}
+IMAGE=ubuntu-24-04-x64
+APP=/opt/flash
+# The DNS zone the A record lives in: everything after the domain's first label.
+ZONE=${DOMAIN#*.}
+
 mkdir -p "$root/var"
 SSH="ssh -o StrictHostKeyChecking=accept-new -o UserKnownHostsFile=$root/var/known_hosts -o ConnectTimeout=5"
 
@@ -26,20 +32,21 @@ ip() { doctl compute droplet list "$NAME" --format PublicIPv4 --no-header; }
 remote() { $SSH "root@$(ip)" "$@"; }
 # $DOMAIN's A record. up points it at the droplet, so a recreated droplet keeps its link; down removes it, so a
 # released IP can't serve the name for whoever gets it next.
-record() { doctl compute domain records list patforna.com --format ID,Type,Name --no-header | awk -v n="${DOMAIN%%.*}" '$2 == "A" && $3 == n { print $1 }'; }
+record() { doctl compute domain records list "$ZONE" --format ID,Type,Name --no-header | awk -v n="${DOMAIN%%.*}" '$2 == "A" && $3 == n { print $1 }'; }
 dns() {
   local id
   id=$(record)
   if [[ -n $id ]]; then
-    doctl compute domain records update patforna.com --record-id "$id" --record-data "$(ip)" >/dev/null
+    doctl compute domain records update "$ZONE" --record-id "$id" --record-data "$(ip)" >/dev/null
   else
-    doctl compute domain records create patforna.com --record-type A --record-name "${DOMAIN%%.*}" --record-data "$(ip)" --record-ttl 300 >/dev/null
+    doctl compute domain records create "$ZONE" --record-type A --record-name "${DOMAIN%%.*}" --record-data "$(ip)" --record-ttl 300 >/dev/null
   fi
 }
 link() { echo "https://$DOMAIN/"; }
 
 # The droplet's app directory, staged here so that one rsync --delete makes the droplet match it: the bundled server
-# (every dependency inside, so no node_modules), the built client and the deck.
+# (every dependency inside, so no node_modules), the built client and the deck (cp follows the symlink a private deck
+# comes in by, so the droplet gets the file).
 stage() {
   local out=$root/build/release
   rm -rf "$out"
@@ -154,7 +161,7 @@ cards() {
   [[ $(code "$root/build/release") == "$(remote "$(declare -f code); code $APP/app")" ]] ||
     { echo "the droplet runs other code than this checkout builds: ship it with up first" >&2; exit 1; }
   (cd "$root" && CI=1 bun run e2e tests/e2e/fit.spec.ts)
-  rsync -az -e "$SSH" "$root/cards/cards.toml" "root@$(ip):$APP/app/cards/cards.toml.next"
+  rsync -az -e "$SSH" "$root/build/release/cards/cards.toml" "root@$(ip):$APP/app/cards/cards.toml.next"
   remote "cd $APP/app/cards && cp -p cards.toml cards.toml.prev && mv cards.toml.next cards.toml && chown app: cards.toml && systemctl restart flash"
   if ! started; then
     remote "cd $APP/app/cards && mv cards.toml.prev cards.toml; systemctl reset-failed flash; systemctl restart flash"
@@ -171,11 +178,11 @@ logs() { remote "journalctl -u flash -n 100 --no-pager"; }
 down() {
   if [[ -n $(ip) ]]; then doctl compute droplet delete "$NAME" --force; else echo "no droplet named $NAME"; fi
   local id; id=$(record)
-  [[ -z $id ]] || doctl compute domain records delete patforna.com "$id" --force
+  [[ -z $id ]] || doctl compute domain records delete "$ZONE" "$id" --force
   rm -f "$root/var/known_hosts"
 }
 
 case ${1:-} in
   up | cards | link | logs | down) "$1" ;;
-  *) sed -n '2,7p' "$0"; exit 1 ;;
+  *) sed -n '2,10p' "$0"; exit 1 ;;
 esac

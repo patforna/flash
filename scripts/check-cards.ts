@@ -13,7 +13,11 @@ if (file === undefined || others.length > 0) fail("usage: bun scripts/check-card
 
 const text = await Bun.file(file)
   .text()
-  .catch((error: NodeJS.ErrnoException) => fail(`can't read ${file} (${error.code})`));
+  .catch((error: NodeJS.ErrnoException) =>
+    error.code === "ENOENT" && file === "cards/cards.toml"
+      ? fail('no deck at cards/cards.toml: copy cards/example.toml there, or link your own (README, "Your deck")')
+      : fail(`can't read ${file} (${error.code})`),
+  );
 try {
   const deck = loadDeck(text);
   console.log(

@@ -2,11 +2,11 @@
 
 A flash card PWA for studying on a Pixel 11 in fullscreen landscape: a hand-written index card alone on a dark desk; tap to flip, swipe for the next card; a tap on the desk brings up the two controls, one of which opens the topics. Reading only; the deck is `cards/cards.toml`, edited outside the app. Live at https://flash.patforna.com.
 
-Patric's brief is `docs/original-request.md`: it wins over everything. The spec is `docs/plan.md` (Part 2; frozen, Part 1 records why). `README.md` is for Patric; `docs/cards.md` is the card format and rules; `docs/seed.md` is how the seed deck was made and corrected.
+Patric's brief is `docs/original-request.md`: it wins over everything. The spec is `docs/plan.md` (Part 2; frozen, Part 1 records why). `README.md` is for whoever runs the app; `docs/cards.md` is the card format and rules. The repository is public (1 Nov 2026, so a friend can fork it): the deck is not in it. Patric's lives in the private repository `~/github/flash-deck` (`cards.toml`, and `seed.md`, how it was first made from his notes), and `cards/cards.toml` is a gitignored symlink to it; `cards/example.toml` is the fixture deck, for a fresh clone to copy.
 
 ## Purpose and constraints
 
-- What it's for: Patric studying system design on his phone. The deck began as his own notes (`docs/seed.md`); a card should be what he would be asked, answered as he would answer aloud.
+- What it's for: Patric studying system design on his phone. The deck began as his own notes (`seed.md` in the deck's repository); a card should be what he would be asked, answered as he would answer aloud.
 - The first requirement: extremely smooth, snappy and polished; high quality, funky and hip.
 - Reading only: no editing in the app, no write API, no auth, no accounts.
 - Landscape first, on a Pixel 11 (923 × 412 CSS px in fullscreen); portrait works in a tab but isn't polished.
@@ -84,12 +84,12 @@ Data:
 - A question is 1–100 characters with a letter or digit for its id, not plan §9's 8–100: the brief's front is "a short sentence (question, tell me about..., topic, etc.)", so a topic alone ("TLS") is one.
 - An answer has at most 11 lines, not plan §9's 12: the smallest fit step holds 11.5 rules, so a 12-line answer passed `cards:check` and could only scroll, which the fit test fails at ship time.
 - The source checks (an unclosed fence, `[label]:` lines, the 46 characters of code) read the lines as Bun's md4c does with indented code off, through one reader (`readLines` in `server/markdown.ts`): at any indentation, a fence closed only by a line of the same character, at least as long, with nothing after it. Not plan §9's count of fence lines: four backticks closed by three, a fence closed by ```` ``` x ````, or an indented fence passed the check and turned the rest of the answer into code.
-- Corrections of the source notes live in TOML comments and `docs/seed.md`, never on a card: commentary about the source is not study material. The notes' stubs get no cards.
+- Corrections of the source notes live in TOML comments and the deck repository's `seed.md`, never on a card: commentary about the source is not study material. The notes' stubs get no cards.
 - The deck's version (the first 12 characters of the base64url SHA-256 of its canonical JSON) is the ETag and what `/healthz` reports, so a deploy can confirm what it shipped.
 
 Hosting:
 
-- Its own droplet, `flash` in fra1, Caddy in front with `encode zstd gzip`, the server bundled into one `server.js` with no `node_modules`: in line with Patric's other apps.
+- Its own droplet, `flash` in fra1, Caddy in front with `encode zstd gzip`, the server bundled into one `server.js` with no `node_modules`: in line with Patric's other apps. The script reads `DOMAIN` and `SSH_KEY` (and optionally `NAME`, `REGION`, `SIZE`) from `.env.deploy`, gitignored, so a fork sets its own; the A record's zone is everything after the domain's first label.
 - `deploy-do.sh up` runs `bun install --frozen-lockfile && bun run verify` first, and no flag skips it: there is no CI, so the gate lives in the deploy.
 - `deploy-do.sh cards` ships the deck without code: the most frequent change gets a fast path (about 30 s) that can't touch the code. It ships only onto the code it checked the deck against, and puts the last deck back if the server refuses the new one: the M3 review alone changed the rules or the renderer five times, each enough for a deck checked on other code to crash the server or fail the version check.
 - Bun on the droplet is pinned to the laptop's `bun --version`: the droplet runs what the gate tested, and `Bun.markdown` is unstable.
@@ -114,7 +114,8 @@ Hosting:
 ## Where things are
 
 ```text
-cards/cards.toml           the deck
+cards/cards.toml           the deck: gitignored, Patric's a symlink into ~/github/flash-deck
+cards/example.toml         the example deck a fresh clone copies (the fixture deck, with its own header)
 shared/types.ts            the wire types, Card and Deck
 shared/schema.ts           the Zod schema of the deck file, LIMITS, the wire shape's Zod mirror
 shared/glyphs.ts           the characters the two fonts cover, extracted once from the font files
@@ -146,7 +147,7 @@ tests/fixtures/cards.toml  the fixture deck
 tests/e2e/                 the Playwright specs and helpers
 tests/screenshots/         the screenshot baselines, by project
 tests/conventions.test.ts  conventions checked on the sources by regex
-docs/                      original-request.md, plan.md, cards.md, seed.md
+docs/                      original-request.md, plan.md, cards.md
 ```
 
 - The stage and the card meet at a DOM contract (plan §11), outer to inner: `stage` › `layer[data-role="prev|current|next"]` › `lift` › `frame` › `flipper` › two `face`s. `CardStage` takes a `renderCard` prop, so it never imports the card.
@@ -170,7 +171,7 @@ docs/                      original-request.md, plan.md, cards.md, seed.md
 
 ## Shipping cards versus code
 
-- **Cards**: edit `cards/cards.toml`, `bun run cards:check`, commit and push, then `scripts/deploy-do.sh cards`: the check, a build (about a second), a stop unless the droplet runs exactly that code (Bun's version and the checksum of every file of `server.js` and `dist/`, the same command on both sides: on other code a deck the droplet refuses, or renders to another version, would pass), the fit test on the real deck (`tests/e2e/fit.spec.ts`, which the script runs by name: every card fits both faces, every row of the topic list is in full view in the drawer or, when they outgrow it, scrolls into it with no fade left at the end, at 412, 356 and 332 px), one file uploaded with the last deck kept as `cards.toml.prev`, a restart, and the health check; should the server refuse the deck all the same, the last one goes back and the server restarts, so the app is never left down. It never ships code. The phone shows the new deck on the next launch.
+- **Cards**: edit `cards/cards.toml` (Patric's: in `~/github/flash-deck`, through the symlink), `bun run cards:check`, commit and push there, then `scripts/deploy-do.sh cards`: the check, a build (about a second), a stop unless the droplet runs exactly that code (Bun's version and the checksum of every file of `server.js` and `dist/`, the same command on both sides: on other code a deck the droplet refuses, or renders to another version, would pass), the fit test on the real deck (`tests/e2e/fit.spec.ts`, which the script runs by name: every card fits both faces, every row of the topic list is in full view in the drawer or, when they outgrow it, scrolls into it with no fade left at the end, at 412, 356 and 332 px), one file uploaded with the last deck kept as `cards.toml.prev`, a restart, and the health check; should the server refuse the deck all the same, the last one goes back and the server restarts, so the app is never left down. It never ships code. The phone shows the new deck on the next launch.
 - **Code**: commit and push, then `scripts/deploy-do.sh up`: the gate, `build/release/` staged (`server.js`, `dist/`, `cards/cards.toml`) and sent with one `rsync -az --delete`, a restart, and the health check. The phone runs the new code one launch late.
 - **The health check**: `/healthz` on the droplet first (its journal printed if the server won't start), then https://flash.patforna.com/healthz from the laptop, whose `version` must equal `bun scripts/check-cards.ts --version cards/cards.toml`, retried for up to 2 minutes while a new droplet's DNS record and certificate come up.
 - `link` prints the address, `logs` the server's journal; `down` deletes the droplet and its A record.
@@ -216,5 +217,6 @@ docs/                      original-request.md, plan.md, cards.md, seed.md
 - 31 Oct 2026, review (M3, round 5): six findings from the same five lenses applied, each in its own commit: `s` and the flip keys wait for a move in flight and leave a card under a thumb alone, the chips-in-view tests count the deck being served, the flip takes 260 ms and ends as its motion does (the answer no longer lies soft for 190 ms) and turns in the first frame after the input, a third quick move back carries the card it covers on from where it is, and a card that arrived while a touch waited is taken from its place; the departures are recorded above. Every card of the real deck still fits at step 0 on both faces.
 - 31 Oct 2026, deployed (M4): `https://flash.patforna.com` on the droplet `flash` (fra1, `s-1vcpu-512mb-10gb`, tag `web-app`); the repo is private on GitHub, `patforna/flash`. The first `up` passed its gate, provisioned and served, and failed only its laptop-side health check on a cached missing name (see Gotchas), since fixed.
 - 31 Oct 2026, first use on Patric's Pixel 11: swiping and turning feel "extremely snappy". He called the haptics amazing but wasn't sure what "haptics" referred to, so whether the 8 ms vibration tick is felt at all is open (`tick()` in `src/platform/haptics.ts`: on each decided move and chip toggle, never on a flip). Ask him; if it isn't felt, try a slightly longer tick, or check Android's touch-vibration setting. Not yet confirmed on the phone: the installed app opening fullscreen in landscape, Android's back gesture never taking a swipe that starts on the card near the right edge, the screen staying on while reading.
-- 31 Oct 2026, Patric's first feedback applied: the card carries its question and its answer and nothing else, both faces ruled; fullscreen shows the cards alone. His picks from the explorations (https://claude.ai/artifact/MZJUbPike3RioMmo7QpkJi) applied the same day: Permanent Marker and Caveat (no code font; highlights drawn as marker strokes), the controls that show on a tap on the desk, the topics in a drawer holding a quiet list in Geist, the tidied palette. Deployed. From the same page, later that day: code blocks as typed slips in Geist Mono, the swipe wordmark and the one-card icon, and All as a never-ticked default in the topic list. The page now keeps only the decisions.
-- How v0 was built (the three panel plans, the plan critic's report, the fact-check of the notes, every review round's findings with what was applied or rejected and why): `an archive outside the repository`, outside the repo.
+- 31 Oct 2026, Patric's first feedback applied: the card carries its question and its answer and nothing else, both faces ruled; fullscreen shows the cards alone. His picks from the explorations (a page outside the repo, rendering the options on the real deck) applied the same day: Permanent Marker and Caveat (no code font; highlights drawn as marker strokes), the controls that show on a tap on the desk, the topics in a drawer holding a quiet list in Geist, the tidied palette. Deployed. From the same page, later that day: code blocks as typed slips in Geist Mono, the swipe wordmark and the one-card icon, and All as a never-ticked default in the topic list. The page now keeps only the decisions.
+- 1 Nov 2026, public: the deck and `seed.md` moved to the private repository `flash-deck` and purged from this repository's history (the full history is bundled outside the repo), the deploy script reads its domain and SSH key from `.env.deploy`, the README was written for whoever forks it, MIT licence. Open from the explorations: inline code (section 6).
+- How v0 was built (the three panel plans, the plan critic's report, the fact-check of the notes, every review round's findings with what was applied or rejected and why): archived outside the repo.
