@@ -114,7 +114,10 @@ function Stage({ options, prev, next, pages, held }: StageProps) {
       {(["next", "current", "prev"] as const).map((role) => (
         <div key={`${role}-${commits}`} data-role={role}>
           {role === "current" &&
-            Array.from({ length: pages }, (_, n) => <div key={n} data-pos={posOf(n, page)} data-sheet={n} />)}
+            Array.from({ length: pages }, (_, n) => (
+              // biome-ignore lint/suspicious/noArrayIndexKey: a sheet is its page
+              <div key={n} data-pos={posOf(n, page)} data-sheet={n} />
+            ))}
         </div>
       ))}
     </div>

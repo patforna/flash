@@ -34,68 +34,77 @@ interface Report {
   offsets: number[];
 }
 
-// Runs in the page, on the card on top's flipper: the faces' fit steps, then where each line of the answer sits
-// against the rules. A zero-size inline-block sits on its line's baseline, so one goes before every word; the rules
-// are drawn by the answer's background, the first at --rule-baseline below its top, then one every line height.
+// Runs in the page, on the card on top's flipper: the front's fit step and every sheet's of the back (one per page,
+// all in the DOM), then where each line of each page sits against its rules. A zero-size inline-block sits on its
+// line's baseline, so one goes before every word; the rules are drawn by the answer's background, the first at
+// --rule-baseline below its top, then one every line height. A sheet peeking above or below the card is measured
+// against its own box, which moves with it.
 function measure(flipper: Element): Report {
   const [front, back] = Array.from(flipper.children) as HTMLElement[];
   if (!front || !back) throw new Error("a card has two faces");
   const card = JSON.stringify(front.querySelector("h2")?.textContent ?? "");
   const problems: string[] = [];
-  for (const [face, side] of [
-    [front, "front"],
-    [back, "back"],
-  ] as const) {
-    const fit = face.dataset.fit;
-    if (fit !== "0" && fit !== "1" && fit !== "2") problems.push(`${card}: the ${side} is at data-fit="${fit}"`);
-  }
-
-  const answer = back.querySelector<HTMLElement>(":scope > div");
-  if (!answer) throw new Error("a back holds its answer");
-  const rule = document.createElement("div");
-  rule.style.cssText = "position: absolute; top: calc(var(--rule-baseline) * var(--u)); height: 0; margin: 0";
-  answer.append(rule);
-  const firstRule = rule.getBoundingClientRect().top;
-  rule.remove();
-  const pitch = Number.parseFloat(getComputedStyle(answer).lineHeight);
-  // The plan's ruling: the red rule at 48 of the card's 360 units, the first blue one a line below it.
-  const unit = back.getBoundingClientRect().height / 360;
-  const planned = back.getBoundingClientRect().top + 48 * unit + pitch;
-  if (Math.abs(firstRule - planned) > 1) {
-    problems.push(`${card}: the first rule is at ${firstRule.toFixed(1)} px, not ${planned.toFixed(1)}`);
-  }
-
-  const probes: HTMLElement[] = [];
-  const walker = document.createTreeWalker(answer, NodeFilter.SHOW_TEXT);
-  const texts: Text[] = [];
-  // A code block is a typed slip taped onto the card: its lines aren't written on the rules.
-  while (walker.nextNode()) {
-    const text = walker.currentNode as Text;
-    if (!text.parentElement?.closest("pre")) texts.push(text);
-  }
-  for (const text of texts) {
-    const starts = Array.from(text.data.matchAll(/\S+/g), (m) => m.index);
-    for (const start of starts.reverse()) {
-      const probe = document.createElement("span");
-      probe.style.cssText = "display: inline-block; width: 0; height: 0; margin: 0; padding: 0; border: 0";
-      text.splitText(start).before(probe);
-      probes.push(probe);
-    }
-  }
-  const baselines = [...new Set(probes.map((probe) => Math.round(probe.getBoundingClientRect().top * 100) / 100))];
-  for (const probe of probes) probe.remove();
-  answer.normalize();
-
+  const checkFit = (el: HTMLElement, name: string) => {
+    const fit = el.dataset.fit;
+    if (fit !== "0" && fit !== "1" && fit !== "2") problems.push(`${card}: the ${name} is at data-fit="${fit}"`);
+  };
+  checkFit(front, "front");
+  const sheets = Array.from(back.querySelectorAll<HTMLElement>("[data-pos]"));
+  if (sheets.length === 0) throw new Error("a back holds its sheets");
   const offsets: number[] = [];
-  for (const baseline of baselines.sort((a, b) => a - b)) {
-    const line = Math.round((baseline - firstRule) / pitch);
-    const off = baseline - (firstRule + line * pitch);
-    offsets.push(off);
-    if (line < 0 || Math.abs(off) > 1) {
-      problems.push(`${card}: the line at ${baseline.toFixed(1)} px is ${off.toFixed(1)} px off rule ${line + 1}`);
+  const fits: string[] = [];
+  sheets.forEach((sheet, n) => {
+    const name = sheets.length > 1 ? `back's page ${n + 1}` : "back";
+    checkFit(sheet, name);
+    fits.push(sheet.dataset.fit ?? "");
+    const answer = sheet.querySelector<HTMLElement>(":scope > div");
+    if (!answer) throw new Error("a sheet holds its answer");
+    const rule = document.createElement("div");
+    rule.style.cssText = "position: absolute; top: calc(var(--rule-baseline) * var(--u)); height: 0; margin: 0";
+    answer.append(rule);
+    const firstRule = rule.getBoundingClientRect().top;
+    rule.remove();
+    const pitch = Number.parseFloat(getComputedStyle(answer).lineHeight);
+    // The plan's ruling: the red rule at 48 of the card's 360 units, the first blue one a line below it.
+    const box = sheet.getBoundingClientRect();
+    const planned = box.top + 48 * (box.height / 360) + pitch;
+    if (Math.abs(firstRule - planned) > 1) {
+      problems.push(`${card}: ${name}: the first rule is at ${firstRule.toFixed(1)} px, not ${planned.toFixed(1)}`);
     }
-  }
-  return { problems, fits: [front.dataset.fit ?? "", back.dataset.fit ?? ""], offsets };
+
+    const probes: HTMLElement[] = [];
+    const walker = document.createTreeWalker(answer, NodeFilter.SHOW_TEXT);
+    const texts: Text[] = [];
+    // A code block is a typed slip taped onto the card: its lines aren't written on the rules.
+    while (walker.nextNode()) {
+      const text = walker.currentNode as Text;
+      if (!text.parentElement?.closest("pre")) texts.push(text);
+    }
+    for (const text of texts) {
+      const starts = Array.from(text.data.matchAll(/\S+/g), (m) => m.index);
+      for (const start of starts.reverse()) {
+        const probe = document.createElement("span");
+        probe.style.cssText = "display: inline-block; width: 0; height: 0; margin: 0; padding: 0; border: 0";
+        text.splitText(start).before(probe);
+        probes.push(probe);
+      }
+    }
+    const baselines = [...new Set(probes.map((probe) => Math.round(probe.getBoundingClientRect().top * 100) / 100))];
+    for (const probe of probes) probe.remove();
+    answer.normalize();
+
+    for (const baseline of baselines.sort((a, b) => a - b)) {
+      const line = Math.round((baseline - firstRule) / pitch);
+      const off = baseline - (firstRule + line * pitch);
+      offsets.push(off);
+      if (line < 0 || Math.abs(off) > 1) {
+        problems.push(
+          `${card}: ${name}: the line at ${baseline.toFixed(1)} px is ${off.toFixed(1)} px off rule ${line + 1}`,
+        );
+      }
+    }
+  });
+  return { problems, fits: [front.dataset.fit ?? "", fits.join("+")], offsets };
 }
 
 // Walks the whole pass with l, measuring the card on top each time; every problem at once.
@@ -155,8 +164,9 @@ test.describe("the fixture deck, which uses every kind of markup", () => {
     const walked = await walk(page);
     annotate(walked);
     expect(walked.problems).toEqual([]);
-    // Its 11-line answer needs the smallest step.
+    // Its 11-line answer needs the smallest step; its three-page answer is measured page by page.
     expect(walked.fits.map((f) => f[1])).toContain("2");
+    expect(walked.fits.map((f) => f[1])).toContain("0+0+0");
   });
 });
 

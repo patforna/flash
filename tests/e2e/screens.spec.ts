@@ -77,7 +77,8 @@ test.describe("the Pixel 11", () => {
     await open(page);
     await goTo(page, /shard key/);
     await turnOver(page);
-    await expect(flipper(page).locator("> :nth-child(2)")).toHaveAttribute("data-fit", "2");
+    // The back's sheet carries the fit step.
+    await expect(flipper(page).locator('[data-pos="current"]')).toHaveAttribute("data-fit", "2");
     await expect(page).toHaveScreenshot("back-step-2.png");
   });
 
