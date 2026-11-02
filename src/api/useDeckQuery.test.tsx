@@ -3,12 +3,18 @@
 // [x] retries twice, then fails with the error
 // [x] keeps the deck for the session: a later reader gets it without a request, and it outlives its readers
 // [x] after failing, waits to be asked again: no refetch on focus or reconnect
+// [x] given a deck this code can't read, doesn't retry but reloads into the new code, shuffling meanwhile; when that
+//     isn't possible, fails with OutOfDate
 import { focusManager, onlineManager, QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { act, renderHook, waitFor } from "@testing-library/react";
 import { type ReactNode, StrictMode } from "react";
 import { afterEach, describe, expect, test, vi } from "vitest";
 import type { Deck } from "../../shared/types";
+import { OutOfDate } from "./client";
+import { reloadIntoNewCode } from "./update";
 import { useDeckQuery } from "./useDeckQuery";
+
+vi.mock("./update", () => ({ reloadIntoNewCode: vi.fn() }));
 
 const deck: Deck = {
   version: "abcdefghijkl",
@@ -44,6 +50,7 @@ function renderDeckQuery() {
 }
 
 afterEach(() => {
+  vi.mocked(reloadIntoNewCode).mockReset();
   vi.unstubAllGlobals();
   vi.useRealTimers();
   focusManager.setFocused(undefined);
@@ -101,5 +108,29 @@ describe("useDeckQuery", () => {
     await new Promise((resolve) => setTimeout(resolve, 50));
 
     expect(fetchMock).toHaveBeenCalledTimes(3);
+  });
+
+  test("given a deck it can't read, doesn't retry but reloads into the new code, shuffling meanwhile", async () => {
+    const fetchMock = answer(200, { ...deck, cards: [{ id: "x", topics: [], questionHtml: "x", answerHtml: "x" }] });
+    vi.mocked(reloadIntoNewCode).mockReturnValue(new Promise(() => {}));
+
+    const { result } = renderDeckQuery();
+
+    await waitFor(() => expect(reloadIntoNewCode).toHaveBeenCalledWith(expect.any(OutOfDate)));
+    expect(result.current.isPending).toBe(true);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  test("fails with OutOfDate, without retrying, when it can't reload", async () => {
+    const fetchMock = answer(200, { ...deck, cards: [{ id: "x", topics: [], questionHtml: "x", answerHtml: "x" }] });
+    vi.mocked(reloadIntoNewCode).mockImplementation(async (error) => {
+      throw error;
+    });
+
+    const { result } = renderDeckQuery();
+
+    await waitFor(() => expect(result.current.isError).toBe(true));
+    expect(result.current.error).toBeInstanceOf(OutOfDate);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 });

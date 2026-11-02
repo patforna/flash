@@ -1,4 +1,5 @@
 import type { Page } from "@playwright/test";
+import type { Deck } from "../../shared/types";
 import { cdp, expect, firstCard, questions, test } from "./helpers";
 
 // The installable app and its service worker (plan §6 and §12).
@@ -163,4 +164,49 @@ test("installed and offline, the first card shows within 350 ms with the CPU slo
   const ms = await page.evaluate(() => performance.getEntriesByName("flash:first-card")[0]?.startTime ?? Infinity);
   test.info().annotations.push({ type: "first card, warm and offline", description: `${Math.round(ms)} ms` });
   expect(ms).toBeLessThanOrEqual(350);
+});
+
+// A deck in the shape before 1 Nov 2026, when the answer was one string: what an app a deploy behind met on 2 Nov, with
+// the field renamed (or, offline, what new code finds in the worker's cache). It read every back as nothing.
+async function olderDeck(page: Page): Promise<string> {
+  const deck: Deck = await (await page.request.get("/api/cards")).json();
+  const cards = deck.cards.map(({ answerPages, ...card }) => ({ ...card, answerHtml: answerPages.join("") }));
+  return JSON.stringify({ ...deck, cards });
+}
+
+test("given a deck it can't read, reloads once into the code that can, and reads it", async ({ page, context }) => {
+  const anyQuestion = await deckQuestions(page);
+  const older = await olderDeck(page);
+  let served = 0;
+  // The first answer is unreadable; the reload gets the deck as the server has it.
+  await context.route("**/api/cards", (route) =>
+    served++ === 0 ? route.fulfill({ contentType: "application/json", body: older }) : route.continue(),
+  );
+  let loads = 0;
+  page.on("load", () => loads++);
+
+  await page.goto("/");
+
+  await expect(questionShown(page, anyQuestion)).toBeVisible();
+  expect(loads).toBe(2);
+  await page.keyboard.press("Space");
+  // The back face (the flipper's second), fitted, so its writing shows, and written on.
+  const back = page.locator('[data-role="current"] [data-side="back"] > *').nth(1);
+  await expect(back).toHaveAttribute("data-fit", /.+/);
+  await expect(back).toHaveText(/\w/);
+});
+
+test("given a deck it still can't read after the reload, says it can't reach the deck, never a blank back", async ({
+  page,
+  context,
+}) => {
+  const older = await olderDeck(page);
+  await context.route("**/api/cards", (route) => route.fulfill({ contentType: "application/json", body: older }));
+  let loads = 0;
+  page.on("load", () => loads++);
+
+  await page.goto("/");
+
+  await expect(page.getByRole("button", { name: /Can’t reach the deck/ })).toBeVisible();
+  expect(loads).toBe(2);
 });
