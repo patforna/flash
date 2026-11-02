@@ -14,20 +14,22 @@ Built for a Pixel 11 in landscape, as an installable web app that works offline.
 - **Tap** the card to turn it over, and again to turn it back.
 - **Swipe left** for the next card, from either side, so a card can be skipped unread.
 - **Swipe right** for the previous one. Every card you land on shows its question first.
+- An answer of several pages scrolls: drag it up. Its foot fades while there is more below.
 - Each pass is a fresh shuffle with no repeats. After the last card, tap or swipe left to shuffle again.
 - **Topics**: tap the desk beside the card, then the lower sticker (or press `t`): the topics slide in. Tap topics to narrow the deck; a card shows if it has any selected topic. **All** clears the selection. Tap beside the list to close it. The selection survives closing the app; the place in the pass doesn't.
 - The screen stays on while you read, until 5 minutes without a touch.
 
 With a keyboard:
 
-| Key                          | Does                   |
-|------------------------------|------------------------|
-| Space, Enter, ↑, ↓, `j`, `k` | turn the card over     |
-| →, `l`, Page Down            | next card              |
-| ←, `h`, Page Up              | previous card          |
-| `s`                          | shuffle again          |
-| `f`                          | fullscreen, on and off |
-| `t`, Escape                  | topics, open and shut  |
+| Key                    | Does                                                       |
+|------------------------|------------------------------------------------------------|
+| Space, Enter, `j`, `k` | turn the card over                                         |
+| ↓, ↑                   | scroll a long answer while it can, else turn the card over |
+| →, `l`, Page Down      | next card                                                  |
+| ←, `h`, Page Up        | previous card                                              |
+| `s`                    | shuffle again                                              |
+| `f`                    | fullscreen, on and off                                     |
+| `t`, Escape            | topics, open and shut                                      |
 
 ## Your deck
 
