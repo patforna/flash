@@ -4,7 +4,7 @@
 // [x] the front: the question, and nothing else
 // [x] the back: the answer, and nothing else (the question is on the front, a tap away)
 // [x] a back with pages: every page in order, each after a break (an hr the stylesheet turns into one empty ruled
-//     line); the answer scrolls (data-scroll) and a pencil ↓ says there is more; a one-page back has none of it
+//     line); the answer scrolls (data-scroll) and a grey highlighter arrow says there is more; a one-page back has none of it
 // [x] no live region: the card remounts on every move, so the app announces the position
 // [x] each face carries data-fit once measured
 import { configure, render, within } from "@testing-library/react";
@@ -93,10 +93,12 @@ describe("CardView", () => {
     expect(answer.hasAttribute("data-scroll")).toBe(true);
     expect(Array.from(answer.children, (el) => el.tagName.toLowerCase())).toEqual(["p", "hr", "p", "ul", "hr", "p"]);
     expect(answer.textContent).toBe("One.Two.aThree.");
-    // The pencil arrow, outside the scroller so it stays put, hidden from assistive tech.
+    // The grey highlighter arrow (a shaft and a head, two strokes), outside the scroller so it stays put, hidden from
+    // assistive tech.
     const more = back.lastElementChild as HTMLElement;
     expect(more).not.toBe(answer);
-    expect(more.textContent).toBe("↓");
+    expect(more.tagName.toLowerCase()).toBe("svg");
+    expect(Array.from(more.children, (el) => el.tagName.toLowerCase())).toEqual(["path", "path"]);
     expect(more.getAttribute("aria-hidden")).toBe("true");
   });
 

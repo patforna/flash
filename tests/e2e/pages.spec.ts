@@ -14,8 +14,8 @@ import {
   test,
 } from "./helpers";
 
-// An answer of several pages (variant A): the back is one column that scrolls under a finger, its foot fading and a
-// pencil ↓ showing while there is more below; a sideways swipe still changes cards from a scrolled back, and a tap
+// An answer of several pages (variant A): the back is one column that scrolls under a finger, its foot fading and an
+// arrow showing while there is more below; a sideways swipe still changes cards from a scrolled back, and a tap
 // still turns it over. The fixture's VACUUM card has three pages; every other card has one, and none of this.
 
 test.beforeEach(async ({ page }) => {
@@ -46,7 +46,7 @@ const fade = (el: Locator) =>
   el.evaluate((node) => Number(/([\d.]+)px\)$/.exec(getComputedStyle(node).maskImage)?.[1] ?? 0));
 const opacity = (el: Locator) => el.evaluate((node) => Number(getComputedStyle(node).opacity));
 
-test("the pages of a long answer scroll under a finger, the fade and the ↓ showing while there is more", async ({
+test("the pages of a long answer scroll under a finger, the fade and the arrow showing while there is more", async ({
   page,
 }) => {
   await openBack(page, /VACUUM/);

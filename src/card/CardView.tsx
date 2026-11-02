@@ -15,8 +15,8 @@ export interface CardViewProps {
 // An index card: the question alone on the front, the answer alone on the back. Its topics and its place in the pass
 // are nowhere on it (the panel and the live region have them): a card is for reading.
 // An answer of several pages is one column that scrolls, the pages following one another after a break (an hr the
-// stylesheet turns into one empty ruled line); such a back keeps the largest type (useFit pins it) and a pencil ↓ in
-// the corner says there is more, until the end is reached. Its scroll starts at the top each time the card is turned
+// stylesheet turns into one empty ruled line); such a back keeps the largest type (useFit pins it) and a grey
+// highlighter arrow in the corner says there is more, until the end is reached. Its scroll starts at the top each time the card is turned
 // to its back.
 export function CardView({ card, side }: CardViewProps) {
   const front = useRef<HTMLDivElement>(null);
@@ -49,9 +49,11 @@ export function CardView({ card, side }: CardViewProps) {
             dangerouslySetInnerHTML={{ __html: card.answerPages.join("<hr>") }}
           />
           {pages > 1 && (
-            <span className={styles.more} aria-hidden="true">
-              ↓
-            </span>
+            // Two chisel strokes, as the end card's tick: the shaft, then the head, darker where they cross.
+            <svg className={styles.more} viewBox="0 0 22 30" aria-hidden="true">
+              <path d="M10 1.4 L12.6 1.8 L12.2 24.2 L9.8 23.6 Z" />
+              <path d="M3 16.2 L5.6 15 L11.2 23.4 L16.6 13.4 L19 14.8 L11.4 27.8 Z" />
+            </svg>
           )}
         </div>
       </div>

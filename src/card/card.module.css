@@ -303,7 +303,7 @@
 /* A back with pages (data-pages): its answer is one column of every page, which scrolls (the browser's own scroll; a
    sideways drag is still the stage's). The rules scroll with the writing (the background is local). The foot fades
    only while there is more below, as the topic list's does: --fade (registered in global.css) is 45 units until the last 45 units of the scroll, then goes out with them, and stays 0 with
-   nothing to scroll. The scroll's own timeline is named for the pencil arrow beside it. The scroller takes pan-y
+   nothing to scroll. The scroll's own timeline is named for the arrow beside it. The scroller takes pan-y
    itself: a touch's default behaviour is decided by the chain up to the nearest scroll container, so the frame's
    pan-y no longer counts here, and under the page's `manipulation` the browser took a sideways swipe for a pan and
    cancelled the pointer. */
@@ -339,20 +339,31 @@
   display: none;
 }
 
-/* The pencil ↓, bottom right, outside the scroller so it stays put: shown while there is more below, gone over the
-   last 45 units of the scroll; nothing with nothing to scroll (the timeline is inactive and the base opacity holds). */
+/* The arrow saying there is more: two strokes of a grey highlighter (the bold's chisel strokes in translucent pencil
+   grey, multiplied, darker where they cross), bottom right, outside the scroller so it stays put. Shown while there
+   is more below, gone over the last 45 units of the scroll; nothing with nothing to scroll (the timeline is inactive
+   and the base opacity holds). */
 .more {
   position: absolute;
   right: calc(22 * var(--u));
-  bottom: calc(8 * var(--u));
-  font-size: calc(17 * var(--u));
-  line-height: 1;
-  font-weight: 500;
-  color: var(--ink-pencil);
+  bottom: calc(10 * var(--u));
+  width: calc(17.6 * var(--u));
+  height: calc(24 * var(--u));
+  overflow: visible;
+  transform: rotate(-5deg);
   opacity: 0;
   animation: more linear both;
   animation-timeline: --answer;
   animation-range: max(0px, 100% - 45 * var(--u)) 100%;
+}
+
+.more path {
+  fill: var(--ink-pencil);
+  stroke: var(--ink-pencil);
+  stroke-width: 0.5;
+  stroke-linejoin: round;
+  opacity: 0.42;
+  mix-blend-mode: multiply;
 }
 
 @keyframes more {
