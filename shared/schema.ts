@@ -22,8 +22,9 @@ export const CardsFileSchema = z.strictObject({
 });
 export type CardsFile = z.infer<typeof CardsFileSchema>;
 
-// The wire shape of shared/types.ts, for the contract test.
+// The wire shape of shared/types.ts, for the contract test and WIRE's fingerprint.
 export const DeckSchema: z.ZodType<Deck> = z.strictObject({
+  wire: z.number(),
   version: z.string(),
   topics: z.array(z.string()),
   cards: z.array(

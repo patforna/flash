@@ -166,10 +166,11 @@ test("installed and offline, the first card shows within 350 ms with the CPU slo
   expect(ms).toBeLessThanOrEqual(350);
 });
 
-// A deck in the shape before 1 Nov 2026, when the answer was one string: what an app a deploy behind met on 2 Nov, with
-// the field renamed (or, offline, what new code finds in the worker's cache). It read every back as nothing.
+// A deck in the shape before 1 Nov 2026, when the answer was one string and the deck named no wire: what an app a
+// deploy behind met on 2 Nov, with the field renamed (or, offline, what new code finds in the worker's cache). It read
+// every back as nothing.
 async function olderDeck(page: Page): Promise<string> {
-  const deck: Deck = await (await page.request.get("/api/cards")).json();
+  const { wire: _, ...deck }: Deck = await (await page.request.get("/api/cards")).json();
   const cards = deck.cards.map(({ answerPages, ...card }) => ({ ...card, answerHtml: answerPages.join("") }));
   return JSON.stringify({ ...deck, cards });
 }

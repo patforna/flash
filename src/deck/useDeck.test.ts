@@ -17,12 +17,13 @@
 
 import { act, renderHook } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import type { Card, Deck } from "../../shared/types";
+import { type Card, type Deck, WIRE } from "../../shared/types";
 import type { DeckView, Rng } from "./types";
 import { useDeck } from "./useDeck";
 
 const card = (id: string, ...topics: string[]): Card => ({ id, topics, questionHtml: id, answerPages: [id] });
 const deck: Deck = {
+  wire: WIRE,
   version: "v1",
   topics: ["Redis", "Postgres", "Queues"],
   cards: [

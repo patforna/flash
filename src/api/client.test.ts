@@ -2,13 +2,13 @@
 // [x] fetchDeck gets the deck with GET /api/cards at the client's base
 // [x] fetchDeck throws on a status other than 2xx, naming it
 // [x] the client's base defaults to the page's origin
-// [x] fetchDeck throws OutOfDate on a deck this code can't read: the shape before 1 Nov (answerHtml), a field missing or
-//     of another type; a field it doesn't know is no reason
+// [x] fetchDeck throws OutOfDate on a deck in a wire other than this code's: none (before 2 Nov), a newer, an older
 import { afterEach, describe, expect, test, vi } from "vitest";
-import type { Deck } from "../../shared/types";
+import { type Deck, WIRE } from "../../shared/types";
 import { createClient, fetchDeck, OutOfDate } from "./client";
 
 const deck: Deck = {
+  wire: WIRE,
   version: "abcdefghijkl",
   topics: ["Redis"],
   cards: [
@@ -55,30 +55,17 @@ describe("fetchDeck", () => {
   });
 });
 
-describe("fetchDeck, given a deck this code can't read", () => {
-  const [card] = deck.cards;
-  const unreadable: [string, unknown][] = [
-    ["the shape before 1 Nov 2026", { ...deck, cards: [{ ...card, answerPages: undefined, answerHtml: "<p>x</p>" }] }],
-    ["no answer at all", { ...deck, cards: [{ ...card, answerPages: undefined }] }],
-    ["a page that isn't a string", { ...deck, cards: [{ ...card, answerPages: [42] }] }],
-    ["no question", { ...deck, cards: [{ ...card, questionHtml: undefined }] }],
-    ["topics that aren't a list", { ...deck, topics: "Redis" }],
-    ["cards that aren't a list", { ...deck, cards: {} }],
-    ["no version", { ...deck, version: undefined }],
-    ["not an object", ["a deck?"]],
+describe("fetchDeck, given a deck in another wire", () => {
+  const others: [string, unknown][] = [
+    ["none, as before 2 Nov 2026", { ...deck, wire: undefined }],
+    ["a newer one: this code is a deploy behind", { ...deck, wire: WIRE + 1 }],
+    ["an older one: the worker's cache, offline", { ...deck, wire: WIRE - 1 }],
   ];
 
-  test.each(unreadable)("throws OutOfDate on %s", async (_, body) => {
+  test.each(others)("throws OutOfDate on %s", async (_, body) => {
     const { fetchImpl } = server(200, body);
 
     await expect(fetchDeck(createClient("https://flash.test", fetchImpl))).rejects.toBeInstanceOf(OutOfDate);
-  });
-
-  test("reads a deck with a field it doesn't know: an addition breaks nothing", async () => {
-    const newer = { ...deck, generated: "2026-11-02", cards: [{ ...card, hint: "x" }] };
-    const { fetchImpl } = server(200, newer);
-
-    expect(await fetchDeck(createClient("https://flash.test", fetchImpl))).toEqual(newer);
   });
 });
 

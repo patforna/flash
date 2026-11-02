@@ -23,12 +23,13 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { StrictMode } from "react";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
-import type { Deck } from "../../shared/types";
+import { type Deck, WIRE } from "../../shared/types";
 import cardStyles from "../card/card.module.css";
 import { FakeAnimation } from "../gesture/testing";
 import { App } from "./App";
 
 const deck: Deck = {
+  wire: WIRE,
   version: "abcdefghijkl",
   topics: ["Redis", "Postgres", "Queues"],
   cards: [

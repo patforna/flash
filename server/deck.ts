@@ -3,7 +3,7 @@ import type { z } from "zod";
 import { isCovered } from "../shared/glyphs";
 import { type CardsFile, CardsFileSchema, LIMITS } from "../shared/schema";
 import { STICKERS } from "../shared/stickers";
-import type { Card, Deck } from "../shared/types";
+import { type Card, type Deck, WIRE } from "../shared/types";
 import { type Rendered, readLines, renderAnswer, renderQuestion } from "./markdown";
 
 export class DeckError extends Error {
@@ -84,7 +84,7 @@ export function loadDeck(toml: string): Deck {
 
   // Grouped by card, in file order (the sort is stable).
   if (problems.length > 0) throw new DeckError(problems.sort(([a], [b]) => a - b).map(([, text]) => text));
-  const content = { topics: file.topics, cards: rendered };
+  const content = { wire: WIRE, topics: file.topics, cards: rendered };
   return { version: version(content), ...content };
 }
 
@@ -239,7 +239,8 @@ function explain(issue: z.core.$ZodIssue, path: PropertyKey[]): string[] {
   return [`${field} must be ${/^[aeiou]/.test(issue.expected) ? "an" : "a"} ${issue.expected}`];
 }
 
-// The ETag and what /healthz reports: the first 12 characters of the base64url SHA-256 of the deck's JSON.
+// The ETag and what /healthz reports: the first 12 characters of the base64url SHA-256 of the deck's JSON, its wire
+// included, so a cached body never answers for another wire.
 function version(content: Omit<Deck, "version">): string {
   return new Bun.CryptoHasher("sha256").update(JSON.stringify(content)).digest("base64url").slice(0, 12);
 }

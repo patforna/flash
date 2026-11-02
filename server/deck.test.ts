@@ -1,7 +1,8 @@
 // To do:
 // [x] slug: lowercase ASCII words joined by "-"; accents dropped; at most 64 characters, never ending in "-"
 // [x] loadDeck turns a minimal deck into its declared topics and cards, ids slugged from the questions
-// [x] the version: 12 base64url characters, stable for the same deck, different when a card changes
+// [x] the version: 12 base64url characters, stable for the same deck, different when a card or the wire changes;
+//     the deck carries the wire it is in
 // [x] every problem at once, naming the card: undeclared topic, duplicate question, long question, unknown key
 // [x] a TOML syntax error is one problem with its line and column
 // [x] shape: unknown top-level key, missing field, wrong type; a misspelt key doesn't stop the other cards' checks
@@ -18,6 +19,7 @@
 // [x] the fixture deck loads cleanly
 import { describe, expect, test } from "bun:test";
 import { stringify } from "smol-toml";
+import { WIRE } from "../shared/types";
 import { DeckError, loadDeck, slug } from "./deck";
 
 type RawCard = Record<string, unknown>;
@@ -93,11 +95,13 @@ answer = "Dead tuples."
     ]);
   });
 
-  test("versions the deck: the first 12 characters of the base64url SHA-256 of its JSON", () => {
+  test("versions the deck: the first 12 characters of the base64url SHA-256 of its JSON, its wire included", () => {
     const toml = 'topics = ["Redis"]\n[[card]]\nquestion = "What is Redis?"\ntopics = ["Redis"]\nanswer = "A store."';
-    const { version, topics, cards } = loadDeck(toml);
-    const sha = new Bun.CryptoHasher("sha256").update(JSON.stringify({ topics, cards })).digest("base64url");
+    const { version, wire, topics, cards } = loadDeck(toml);
+    const sha = new Bun.CryptoHasher("sha256").update(JSON.stringify({ wire, topics, cards })).digest("base64url");
 
+    // The wire is in the ETag, so a cached body never answers for another wire.
+    expect(wire).toBe(WIRE);
     expect(version).toBe(sha.slice(0, 12));
     expect(loadDeck(toml.replace("A store.", "A cache.")).version).not.toBe(version);
   });
