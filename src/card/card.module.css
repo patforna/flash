@@ -41,7 +41,9 @@
   position: absolute;
   inset: 0;
   isolation: isolate;
-  border-radius: calc(6 * var(--u));
+  /* 6 units at each corner, unless the card's wear has worn one round (CardView, from wearFor). */
+  border-radius: calc(var(--r-tl, 6) * var(--u)) calc(var(--r-tr, 6) * var(--u)) calc(var(--r-br, 6) * var(--u))
+    calc(var(--r-bl, 6) * var(--u));
   background: var(--paper);
   box-shadow: inset 0 0 0 1px var(--paper-edge);
   backface-visibility: hidden;
@@ -495,6 +497,90 @@ button.message:focus-visible {
 
 .message[data-tone="error"] .title {
   color: var(--rule-red);
+}
+
+/* Wear: now and then a card shows its age (wearFor, from its id, sets each mark's properties). Every mark fills the
+   face and paints only its background, so nothing overflows into the fit; the layer clips them to the card's corners.
+   Over the writing, as a stain is, and under the grain. The back is the same sheet turned over around the X axis, so
+   its marks are the front's upside down. Plain alpha, not multiply: at these strengths it looks the same, and a blend
+   group over the writing is one more thing for the compositor. */
+.wear {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  border-radius: inherit;
+  pointer-events: none;
+}
+
+.wear > * {
+  position: absolute;
+  inset: 0;
+}
+
+.back .wear > * {
+  transform: scaleY(-1);
+}
+
+/* A cup set down once: a broken, uneven ring, darker where the cup's rim pressed, centred at (--cx, --cy) and --s
+   across, flipped one of four ways (--fx, --fy) so its breaks fall differently. */
+.ring {
+  scale: var(--fx) var(--fy);
+  opacity: var(--o);
+  background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200'%3E%3Cfilter id='d' x='-10%25' y='-10%25' width='120%25' height='120%25'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.035' numOctaves='2' seed='9'/%3E%3CfeDisplacementMap in='SourceGraphic' scale='9'/%3E%3CfeGaussianBlur stdDeviation='0.6'/%3E%3C/filter%3E%3Cg filter='url(%23d)' fill='none' stroke='rgb(140,95,45)'%3E%3Ccircle cx='100' cy='100' r='78' stroke-width='3.2' stroke-dasharray='300 40 120 30' opacity='.9'/%3E%3Ccircle cx='101' cy='99' r='76.5' stroke-width='1.2' opacity='.5'/%3E%3C/g%3E%3Ccircle cx='100' cy='100' r='76' fill='rgb(170,125,60)' opacity='.12'/%3E%3C/svg%3E")
+    no-repeat calc((300 + var(--fx) * (var(--cx) - 300) - var(--s) / 2) * var(--u))
+    calc((180 + var(--fy) * (var(--cy) - 180) - var(--s) / 2) * var(--u)) / calc(var(--s) * var(--u))
+    calc(var(--s) * var(--u));
+}
+
+/* The shade of handling around the corner a thumb has worn round (the face's radius does the rounding). */
+.corner {
+  background: radial-gradient(
+    calc(var(--s) * var(--u)) calc(var(--s) * 0.75 * var(--u)) at var(--x) var(--y),
+    rgb(120 100 70 / var(--o)),
+    rgb(120 100 70 / calc(var(--o) * 0.4)) 45%,
+    transparent 80%
+  );
+}
+
+/* A fold pressed flat again: a hairline lit on one side and shaded on the other, at angle --a through --at. */
+.crease {
+  background: linear-gradient(
+    var(--a),
+    transparent calc(var(--at) - 0.6%),
+    rgb(255 255 255 / var(--light)) calc(var(--at) - 0.15%),
+    rgb(90 70 40 / var(--shade)) calc(var(--at) + 0.05%),
+    rgb(90 70 40 / calc(var(--shade) / 3)) calc(var(--at) + 0.8%),
+    transparent calc(var(--at) + 1.6%)
+  );
+}
+
+/* A few rust specks near an edge: wearFor writes the gradients themselves. */
+.foxing {
+  background: var(--specks);
+}
+
+/* A patch where the stock's long fibres show: stretched turbulence, faded out from the patch's middle. */
+.fibres {
+  opacity: var(--o);
+  background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='600' height='360'%3E%3Cfilter id='f'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.006 0.22' numOctaves='3' seed='4'/%3E%3CfeColorMatrix values='0 0 0 0 0.45 0 0 0 0 0.38 0 0 0 0 0.25 0 0 0 -2.2 1.4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23f)'/%3E%3C/svg%3E")
+    calc(var(--dx) * var(--u)) 0 / calc(900 * var(--u)) 100%;
+  mask: radial-gradient(
+    calc(var(--w) * var(--u)) calc(var(--h) * var(--u)) at calc(var(--x) * var(--u)) calc(var(--y) * var(--u)),
+    #000 30%,
+    transparent
+  );
+}
+
+/* The stock a shade warmer from the outside in, more on the side away from (--x, --y). */
+.edges {
+  background: radial-gradient(
+    120% 140% at var(--x) var(--y),
+    transparent 55%,
+    rgb(200 170 110 / var(--o)) 85%,
+    rgb(190 155 95 / calc(var(--o) * 1.6))
+  );
 }
 
 /* Blank paper until the face is fitted, and while the card on top turns over or is dealt: near 90° a turning card is

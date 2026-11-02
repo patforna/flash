@@ -3,6 +3,8 @@
 // [x] the hidden face is inert and aria-hidden; the face on show is neither
 // [x] the front: the question, and nothing else
 // [x] the question is written at its card's own slant (--tilt, from tiltFor)
+// [x] a worn card carries its marks on both faces, hidden from assistive tech, its faces rounded as wearFor says; a
+//     clean card has no wear layer
 // [x] the back: the answer, and nothing else (the question is on the front, a tap away)
 // [x] a back with pages: every page in order, each after a break (an hr the stylesheet turns into one empty ruled
 //     line); the answer scrolls (data-scroll) and a grey highlighter arrow says there is more; a one-page back has none of it
@@ -14,6 +16,7 @@ import type { Card } from "../../shared/types";
 import { CardView } from "./CardView";
 import styles from "./card.module.css";
 import { tiltFor } from "./tilt";
+import { wearFor } from "./wear";
 
 configure({ reactStrictMode: true });
 
@@ -73,6 +76,36 @@ describe("CardView", () => {
   it("writes the question at its card's own slant", () => {
     const question = within(renderFace("front")).getByRole("heading");
     expect(question.style.getPropertyValue("--tilt")).toBe(`${tiltFor(vacuum.id)}deg`);
+  });
+
+  it("writes a worn card's marks on both faces, out of assistive tech's way", () => {
+    const id = Array.from({ length: 200 }, (_, i) => `worn-${i}`).find((id) =>
+      wearFor(id).marks.some((m) => m.kind === "corner"),
+    );
+    if (!id) throw new Error("some card has a soft corner");
+    const wear = wearFor(id);
+    const { container } = render(<CardView card={{ ...vacuum, id }} side="front" />);
+    const faces = Array.from(container.querySelectorAll<HTMLElement>(`.${styles.face}`));
+    for (const face of faces) {
+      const layer = face.querySelector(`.${styles.wear}`);
+      expect(layer?.getAttribute("aria-hidden")).toBe("true");
+      expect(Array.from(layer?.children ?? [], (mark) => mark.className)).toEqual(
+        wear.marks.map((m) => styles[m.kind]),
+      );
+    }
+    const [front, back] = faces;
+    for (const [face, radii] of [
+      [front, wear.front],
+      [back, wear.back],
+    ] as const) {
+      for (const [name, value] of Object.entries(radii)) expect(face?.style.getPropertyValue(name)).toBe(value);
+    }
+  });
+
+  it("gives a clean card no wear", () => {
+    expect(wearFor(vacuum.id).marks).toEqual([]);
+    const { container } = render(<CardView card={vacuum} side="front" />);
+    expect(container.querySelector(`.${styles.wear}`)).toBeNull();
   });
 
   it("writes the answer on the back, and nothing else: no question, no topics, no count", () => {

@@ -4,6 +4,7 @@ import type { Side } from "../deck/types";
 import styles from "./card.module.css";
 import { useFit } from "./fit";
 import { tiltFor } from "./tilt";
+import { type Wear, wearFor } from "./wear";
 
 // Each face goes through its own type steps: the question's three on the front, the answer's three on the back.
 const STEPS = 3;
@@ -15,7 +16,8 @@ export interface CardViewProps {
 
 // An index card: the question alone on the front, the answer alone on the back. Its topics and its place in the pass
 // are nowhere on it (the panel and the live region have them): a card is for reading. The question is written at the
-// card's own slant (tiltFor), so the fronts don't all lie dead level.
+// card's own slant (tiltFor), so the fronts don't all lie dead level, and now and then a card shows its age (wearFor):
+// a ring, a soft corner, a crease, on both faces, the back's upside down.
 // An answer of several pages is one column that scrolls, the pages following one another after a break (an hr the
 // stylesheet turns into one empty ruled line); such a back keeps the largest type (useFit pins it) and a grey
 // highlighter arrow in the corner says there is more, until the end is reached. Its scroll starts at the top each time the card is turned
@@ -25,6 +27,7 @@ export function CardView({ card, side }: CardViewProps) {
   const back = useRef<HTMLDivElement>(null);
   const answer = useRef<HTMLDivElement>(null);
   const pages = card.answerPages.length;
+  const wear = wearFor(card.id);
   useFit(front, STEPS, `${card.id}/front`);
   useFit(back, STEPS, `${card.id}/back`, pages > 1);
   useLayoutEffect(() => {
@@ -33,18 +36,25 @@ export function CardView({ card, side }: CardViewProps) {
   return (
     <div className={styles.frame}>
       <div className={styles.flipper} data-side={side}>
-        <div ref={front} className={`${styles.face} ${styles.front}`} {...hiddenUnless(side === "front")}>
+        <div
+          ref={front}
+          className={`${styles.face} ${styles.front}`}
+          style={wear.front as CSSProperties}
+          {...hiddenUnless(side === "front")}
+        >
           <h2
             className={styles.question}
             style={{ "--tilt": `${tiltFor(card.id)}deg` } as CSSProperties}
             // biome-ignore lint/security/noDangerouslySetInnerHtml: the server renders the deck's Markdown through an allowlist of tags
             dangerouslySetInnerHTML={{ __html: card.questionHtml }}
           />
+          <WearLayer wear={wear} />
         </div>
         <div
           ref={back}
           className={`${styles.face} ${styles.back}`}
           data-pages={pages > 1 ? pages : undefined}
+          style={wear.back as CSSProperties}
           {...hiddenUnless(side === "back")}
         >
           <div
@@ -61,8 +71,21 @@ export function CardView({ card, side }: CardViewProps) {
               <path d="M3 16.2 L5.6 15 L11.2 23.4 L16.6 13.4 L19 14.8 L11.4 27.8 Z" />
             </svg>
           )}
+          <WearLayer wear={wear} />
         </div>
       </div>
+    </div>
+  );
+}
+
+// A face's marks of age, over the writing and under the grain; nothing at all on a clean card.
+function WearLayer({ wear }: { wear: Wear }) {
+  if (wear.marks.length === 0) return null;
+  return (
+    <div className={styles.wear} aria-hidden="true">
+      {wear.marks.map((mark) => (
+        <i key={mark.kind} className={styles[mark.kind]} style={mark.vars as CSSProperties} />
+      ))}
     </div>
   );
 }
