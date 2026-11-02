@@ -1,8 +1,9 @@
-import { useLayoutEffect, useRef } from "react";
+import { type CSSProperties, useLayoutEffect, useRef } from "react";
 import type { Card } from "../../shared/types";
 import type { Side } from "../deck/types";
 import styles from "./card.module.css";
 import { useFit } from "./fit";
+import { tiltFor } from "./tilt";
 
 // Each face goes through its own type steps: the question's three on the front, the answer's three on the back.
 const STEPS = 3;
@@ -13,7 +14,8 @@ export interface CardViewProps {
 }
 
 // An index card: the question alone on the front, the answer alone on the back. Its topics and its place in the pass
-// are nowhere on it (the panel and the live region have them): a card is for reading.
+// are nowhere on it (the panel and the live region have them): a card is for reading. The question is written at the
+// card's own slant (tiltFor), so the fronts don't all lie dead level.
 // An answer of several pages is one column that scrolls, the pages following one another after a break (an hr the
 // stylesheet turns into one empty ruled line); such a back keeps the largest type (useFit pins it) and a grey
 // highlighter arrow in the corner says there is more, until the end is reached. Its scroll starts at the top each time the card is turned
@@ -32,8 +34,12 @@ export function CardView({ card, side }: CardViewProps) {
     <div className={styles.frame}>
       <div className={styles.flipper} data-side={side}>
         <div ref={front} className={`${styles.face} ${styles.front}`} {...hiddenUnless(side === "front")}>
-          {/* biome-ignore lint/security/noDangerouslySetInnerHtml: the server renders the deck's Markdown through an allowlist of tags */}
-          <h2 className={styles.question} dangerouslySetInnerHTML={{ __html: card.questionHtml }} />
+          <h2
+            className={styles.question}
+            style={{ "--tilt": `${tiltFor(card.id)}deg` } as CSSProperties}
+            // biome-ignore lint/security/noDangerouslySetInnerHtml: the server renders the deck's Markdown through an allowlist of tags
+            dangerouslySetInnerHTML={{ __html: card.questionHtml }}
+          />
         </div>
         <div
           ref={back}

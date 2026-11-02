@@ -129,6 +129,9 @@
   font-weight: 400;
   text-align: center;
   text-wrap: balance;
+  /* The card's own slant, rising left to right (CardView, from its id): a 2D turn at rest stays crisp, and a transform
+     on the question itself counts nowhere in the fit, which reads its scrollHeight. */
+  transform: rotate(var(--tilt));
 }
 
 /* Back: the answer in pen under the red rule, each line on a blue rule. The rule pitch follows the fit step, so the

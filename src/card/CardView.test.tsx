@@ -2,6 +2,7 @@
 // [x] the DOM contract: frame > flipper[data-side] > two faces, front then back
 // [x] the hidden face is inert and aria-hidden; the face on show is neither
 // [x] the front: the question, and nothing else
+// [x] the question is written at its card's own slant (--tilt, from tiltFor)
 // [x] the back: the answer, and nothing else (the question is on the front, a tap away)
 // [x] a back with pages: every page in order, each after a break (an hr the stylesheet turns into one empty ruled
 //     line); the answer scrolls (data-scroll) and a grey highlighter arrow says there is more; a one-page back has none of it
@@ -12,6 +13,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { Card } from "../../shared/types";
 import { CardView } from "./CardView";
 import styles from "./card.module.css";
+import { tiltFor } from "./tilt";
 
 configure({ reactStrictMode: true });
 
@@ -66,6 +68,11 @@ describe("CardView", () => {
     expect(question.textContent).toBe("Why does Postgres need VACUUM?");
     expect(question.querySelector("code")?.textContent).toBe("VACUUM");
     expect(Array.from(front.children)).toEqual([question]);
+  });
+
+  it("writes the question at its card's own slant", () => {
+    const question = within(renderFace("front")).getByRole("heading");
+    expect(question.style.getPropertyValue("--tilt")).toBe(`${tiltFor(vacuum.id)}deg`);
   });
 
   it("writes the answer on the back, and nothing else: no question, no topics, no count", () => {
