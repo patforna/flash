@@ -2,13 +2,6 @@
    when the topics outgrow it, its foot fading only while there is more below: no fade with every row in view, none
    once scrolled to the end, so the last row shows whole. Only transform and opacity ever move. */
 
-/* How far up from the list's foot its fade reaches: 0 unless the list's own scroll drives it (the fade animation). */
-@property --fade {
-  syntax: "<length>";
-  inherits: false;
-  initial-value: 0px;
-}
-
 .scrim {
   position: fixed;
   inset: 0;
