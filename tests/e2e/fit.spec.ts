@@ -52,6 +52,11 @@ function measure(flipper: Element): Report {
 
   const answer = back.querySelector<HTMLElement>(":scope > div");
   if (!answer) throw new Error("a back holds its answer");
+  // A back with pages isn't measured (it scrolls down), so nothing else checks it across: a part wider than the column
+  // would be cut off, and a sideways scroller fights the swipe. A highlight's 2 units of end padding may hang past.
+  if (back.dataset.pages && answer.scrollWidth > answer.clientWidth + Math.ceil((2 * back.clientHeight) / 360)) {
+    problems.push(`${card}: the back is ${answer.scrollWidth} px wide, over its ${answer.clientWidth} px column`);
+  }
   const rule = document.createElement("div");
   rule.style.cssText = "position: absolute; top: calc(var(--rule-baseline) * var(--u)); height: 0; margin: 0";
   answer.append(rule);
