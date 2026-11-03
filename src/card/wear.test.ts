@@ -1,6 +1,6 @@
 // To do:
 // [x] a card always shows the same wear: it follows from its id
-// [x] only occasionally: most cards are clean, none carries more than two marks
+// [x] about half the cards worn, none with more than two marks
 // [x] every kind turns up, each on a small share of the cards
 // [x] each mark differs from card to card (nearly always): rings and soft corners at all four corners, creases at many angles
 // [x] a soft corner rounds the front at its corner and the back at the mirrored one (the card turns around X)
@@ -16,24 +16,24 @@ describe("wearFor", () => {
     expect(wearFor("why-does-postgres-need-vacuum")).toEqual(wearFor("why-does-postgres-need-vacuum"));
   });
 
-  it("marks a card only now and then, and never with more than two marks", () => {
+  it("marks about half the cards, and never with more than two marks", () => {
     const marked = all.filter((wear) => wear.marks.length > 0).length / all.length;
-    expect(marked).toBeGreaterThan(0.25);
-    expect(marked).toBeLessThan(0.45);
+    expect(marked).toBeGreaterThan(0.4);
+    expect(marked).toBeLessThan(0.55);
     expect(Math.max(...all.map((wear) => wear.marks.length))).toBe(2);
   });
 
-  it.each(["ring", "corner", "crease", "foxing", "fibres", "edges"] as const)(
+  it.each(["ring", "corner", "crease", "foxing", "edges"] as const)(
     "puts a %s on a small share of the cards",
     (kind) => {
       const share = withKind(kind).length / all.length;
-      expect(share).toBeGreaterThan(1 / 30);
-      expect(share).toBeLessThan(1 / 8);
+      expect(share).toBeGreaterThan(1 / 16);
+      expect(share).toBeLessThan(1 / 6);
     },
   );
 
   it("varies every mark from card to card", () => {
-    for (const kind of ["ring", "corner", "crease", "foxing", "fibres", "edges"] as const) {
+    for (const kind of ["ring", "corner", "crease", "foxing", "edges"] as const) {
       const looks = new Set(withKind(kind).map((mark) => JSON.stringify(mark)));
       expect(looks.size / withKind(kind).length, kind).toBeGreaterThan(0.85);
     }

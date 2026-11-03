@@ -1,10 +1,10 @@
 import { fnv1a, stream } from "./seed";
 
-// Now and then a card shows its age: a coffee ring, one soft corner, a crease, foxing, fibres in the stock, or edges
-// gone warm. A card has at most two, most have none, and each is placed and weighted afresh per card from its id, so
-// no two look alike and a card always looks the same. Each mark is a layer of the face (card.module.css) set through
-// its custom properties, in card units where it has a size; the back shows the front's marks upside down.
-export type Kind = "ring" | "corner" | "crease" | "foxing" | "fibres" | "edges";
+// About half the cards show their age: a coffee ring, one soft corner, a crease, foxing, or edges gone warm. A card
+// has at most two, each placed and weighted afresh per card from its id, so no two look alike and a card always looks
+// the same. Each mark is a layer of the face (card.module.css) set through its custom properties, in card units where
+// it has a size; the back shows the front's marks upside down.
+export type Kind = "ring" | "corner" | "crease" | "foxing" | "edges";
 
 type Vars = Record<`--${string}`, string>;
 
@@ -22,12 +22,11 @@ export interface Wear {
 
 // How often each kind turns up, in this order of precedence when more than two come up together.
 const CHANCE: [Kind, number][] = [
-  ["ring", 1 / 13],
-  ["corner", 1 / 13],
-  ["crease", 1 / 20],
-  ["foxing", 1 / 15],
-  ["fibres", 1 / 18],
-  ["edges", 1 / 12],
+  ["ring", 1 / 8],
+  ["corner", 1 / 8],
+  ["crease", 1 / 12],
+  ["foxing", 1 / 9],
+  ["edges", 1 / 7],
 ];
 
 const MIRROR = { tl: "bl", tr: "br", bl: "tl", br: "tr" } as const;
@@ -100,19 +99,6 @@ export function wearFor(id: string): Wear {
         return `radial-gradient(calc(${size} * var(--u)) calc(${size} * 0.8 * var(--u)) at calc(${x} * var(--u)) calc(${y} * var(--u)), rgb(150 95 45 / ${alpha}%), rgb(150 95 45 / ${Number(alpha) / 3}%) 55%, transparent)`;
       });
       marks.push({ kind, vars: { "--specks": specks.join(", ") } });
-    } else if (kind === "fibres") {
-      // A patch where the stock's long fibres show through.
-      marks.push({
-        kind,
-        vars: {
-          "--x": between(80, 520, 0),
-          "--y": between(60, 300, 0),
-          "--w": between(140, 240, 0),
-          "--h": between(90, 150, 0),
-          "--dx": between(-300, 0, 0),
-          "--o": between(0.08, 0.12),
-        },
-      });
     } else {
       // The stock gone a shade warmer from the outside in, more on one side.
       marks.push({
