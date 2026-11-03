@@ -183,8 +183,12 @@ test("given a deck it can't read, reloads once into the code that can, and reads
   await context.route("**/api/cards", (route) =>
     served++ === 0 ? route.fulfill({ contentType: "application/json", body: older }) : route.continue(),
   );
+  // Navigations, not load events: the reload can come before the first page has finished loading (the deck answers
+  // before the fonts are in), and then that page never fires one.
   let loads = 0;
-  page.on("load", () => loads++);
+  page.on("request", (request) => {
+    if (request.isNavigationRequest() && request.frame() === page.mainFrame()) loads++;
+  });
 
   await page.goto("/");
 
@@ -203,8 +207,12 @@ test("given a deck it still can't read after the reload, says it can't reach the
 }) => {
   const older = await olderDeck(page);
   await context.route("**/api/cards", (route) => route.fulfill({ contentType: "application/json", body: older }));
+  // Navigations, not load events: the reload can come before the first page has finished loading (the deck answers
+  // before the fonts are in), and then that page never fires one.
   let loads = 0;
-  page.on("load", () => loads++);
+  page.on("request", (request) => {
+    if (request.isNavigationRequest() && request.frame() === page.mainFrame()) loads++;
+  });
 
   await page.goto("/");
 
