@@ -3,9 +3,10 @@ import type { Deck } from "../../shared/types";
 import { fetchDeck, OutOfDate } from "./client";
 import { reloadIntoNewCode } from "./update";
 
-// One fetch per launch, kept for the session: a new deck arrives with the next launch (the service worker fetches it
-// network-first). After a failure only the error card's tap asks again. A deck this code can't read is no failure to
-// retry: the new code that reads it shipped with it (`reloadIntoNewCode`).
+// One fetch per page load, kept for the session: a new deck on the server reloads the page at the next launch or return
+// to the app (keepFresh), and the service worker fetches it network-first. After a failure only the error card's tap
+// asks again. A deck this code can't read is no failure to retry: the new code that reads it shipped with it
+// (`reloadIntoNewCode`).
 export function useDeckQuery(): UseQueryResult<Deck, Error> {
   return useQuery({
     queryKey: ["deck"],

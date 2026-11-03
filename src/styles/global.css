@@ -19,15 +19,17 @@
   box-sizing: border-box;
 }
 
-/* Taps answer at once (no double-tap zoom), nothing flashes under a finger, nothing scrolls past its edge or pulls
-   to refresh, and a long press neither selects text nor opens a callout: the card and the panel are all there is. */
+/* Taps answer at once (no double-tap zoom), nothing flashes under a finger, nothing scrolls past its edge sideways,
+   and a long press neither selects text nor opens a callout: the card and the panel are all there is. A pull down
+   from the top reloads, as on any page: the card and the desk leave a downward drag to the browser (pan-y), and a
+   long answer and the topic list keep their own scroll to themselves (contain). */
 * {
   touch-action: manipulation;
 }
 
 html {
   height: 100%;
-  overscroll-behavior: none;
+  overscroll-behavior-x: none;
   -webkit-tap-highlight-color: transparent;
   -webkit-text-size-adjust: none;
   text-size-adjust: none;
@@ -39,7 +41,7 @@ html {
 body {
   min-height: 100%;
   margin: 0;
-  overscroll-behavior: none;
+  overscroll-behavior-x: none;
   -webkit-user-select: none;
   user-select: none;
   -webkit-touch-callout: none;

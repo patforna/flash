@@ -7,10 +7,10 @@ export function createClient(base = location.origin, fetchImpl?: typeof fetch) {
   return hc<Api>(base, { fetch: fetchImpl });
 }
 
-// A deck in a wire other than this code's. The deck is fetched fresh at launch but the code arrives one launch late, so
-// after a deploy that changes the wire the code running may be older than the deck it gets (or, offline, newer than the
-// deck the worker kept). The types promise nothing across that gap: an old client read a renamed field as nothing and
-// showed every back blank (2 Nov 2026).
+// A deck in a wire other than this code's. The deck is fetched fresh at launch but new code lands only after it
+// (keepFresh), so after a deploy that changes the wire the code running may be older than the deck it gets (or,
+// offline, newer than the deck the worker kept). The types promise nothing across that gap: an old client read a
+// renamed field as nothing and showed every back blank (2 Nov 2026).
 export class OutOfDate extends Error {
   override name = "OutOfDate";
 }

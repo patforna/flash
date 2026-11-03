@@ -11,8 +11,8 @@ export default defineConfig({
     // Kill switch for a broken service worker: add `selfDestroying: true` and redeploy.
     VitePWA({
       strategies: "generateSW",
-      registerType: "autoUpdate",
-      injectRegister: "script-defer",
+      // The app registers the worker itself and decides when new code is applied (src/api/fresh.ts).
+      injectRegister: false,
       manifest: {
         id: "/",
         name: "flash",

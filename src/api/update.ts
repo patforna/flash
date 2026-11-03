@@ -47,7 +47,7 @@ function browser(): UpdateEnv {
 }
 
 // Reading sessionStorage itself throws where site data is blocked.
-function storageOrBlocked(): Pick<Storage, "getItem" | "setItem"> {
+export function storageOrBlocked(): Pick<Storage, "getItem" | "setItem"> {
   try {
     return sessionStorage;
   } catch {
